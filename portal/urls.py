@@ -1,0 +1,28 @@
+from django.contrib.auth import views as auth_views
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    # Main pages
+    path('',              views.home,          name='home'),
+    path('teams/',        views.teams,         name='teams'),
+    path('schedule/',     views.schedule,      name='schedule'),
+    path('messages/',     views.messages_view, name='messages'),
+    path('organisation/', views.organisation,  name='organisation'),
+    path('reports/',      views.reports,       name='reports'),
+
+    # Auth
+    path('login/',           auth_views.LoginView.as_view(
+                                 template_name='login.html',
+                                 redirect_authenticated_user=True,
+                             ), name='login'),
+    path('logout/',          auth_views.LogoutView.as_view(
+                                 next_page='/login/',
+                             ), name='logout'),
+    path('register/',        views.register_view, name='register'),
+    path('forgot-password/', auth_views.PasswordResetView.as_view(
+                                 template_name='login.html',
+                                 success_url='/accounts/password_reset/done/',
+                             ), name='forgot_password'),
+]

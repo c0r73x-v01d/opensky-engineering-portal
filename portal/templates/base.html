@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}OpenSky{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/sky-base.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <!-- Decorative background orbs -->
+  <div class="sky-orb sky-orb--1"></div>
+  <div class="sky-orb sky-orb--2"></div>
+  <div class="sky-orb sky-orb--3"></div>
+
+  <nav class="sky-nav">
+    <div class="sky-nav__left">
+      <div class="sky-nav__logo">
+        <div class="sky-nav__logo-icon">S</div>
+        <span class="sky-nav__title">OpenSky</span>
+      </div>
+      <div class="sky-nav__links">
+        <a href="{% url 'schedule' %}" class="sky-nav__link {% if active_page == 'schedule' %}sky-nav__link--active{% endif %}">Schedule</a>
+        <a href="{% url 'teams' %}" class="sky-nav__link {% if active_page == 'teams' %}sky-nav__link--active{% endif %}">Teams</a>
+        <a href="{% url 'messages' %}" class="sky-nav__link {% if active_page == 'messages' %}sky-nav__link--active{% endif %}">Messages</a>
+        <a href="{% url 'organisation' %}" class="sky-nav__link {% if active_page == 'organisation' %}sky-nav__link--active{% endif %}">Organisation</a>
+        <a href="{% url 'reports' %}" class="sky-nav__link {% if active_page == 'reports' %}sky-nav__link--active{% endif %}">Reports</a>
+      </div>
+    </div>
+
+    <div class="sky-nav__right">
+      <div class="sky-nav-dd-wrap">
+        <button class="sky-nav-btn" id="notifBtn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+          <span class="sky-icon" id="notifIcon"></span>
+          {% if unread_notif_count %}<div class="sky-nav-btn__dot"></div>{% endif %}
+        </button>
+        <div class="sky-nav-notif" id="notifDropdown" role="menu">
+          <div class="sky-nav-notif__head">
+            <span class="sky-nav-notif__title">Notifications</span>
+            <button class="sky-nav-notif__mark" id="markAllRead">Mark all read</button>
+          </div>
+          {% for notif in notifications %}
+          <div class="sky-nav-notif__item {% if not notif.is_read %}sky-nav-notif__item--unread{% endif %}">
+            <div class="sky-nav-notif__body">
+              <div class="sky-nav-notif__msg">{{ notif.message }}</div>
+              <div class="sky-nav-notif__time">{{ notif.time }}</div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="sky-nav-notif__empty">No notifications</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="sky-nav-dd-wrap">
+        <button class="sky-nav-btn sky-nav-btn--avatar" id="avatarBtn" aria-label="User menu" aria-haspopup="true" aria-expanded="false">{{ user.f_name.0 }}{{ user.l_name.0 }}</button>
+        <div class="sky-nav-dd" id="avatarDropdown" role="menu">
+          <div class="sky-nav-dd__head">
+            <div class="sky-nav-dd__name">{{ user.f_name }} {{ user.l_name }}</div>
+            <div class="sky-nav-dd__sub">{{ user.email }}</div>
+          </div>
+          <a href="{% url 'schedule' %}" class="sky-nav-dd__btn" role="menuitem">
+            <span class="sky-icon" data-icon="Calendar" data-size="15"></span>My Schedule
+          </a>
+          <div class="sky-nav-dd__divider">
+            <form method="post" action="{% url 'logout' %}" style="margin:0;">
+              {% csrf_token %}
+              <button type="submit" class="sky-nav-dd__btn sky-nav-dd__btn--danger" role="menuitem" style="width:100%; border:none; background:none; cursor:pointer; text-align:left;">
+                <span class="sky-icon" data-icon="LogOut" data-size="15"></span>Sign Out
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  <!-- Toast container -->
+  <div id="toastContainer"></div>
+
+  <script src="{% static 'icons/sky-icons.js' %}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      /* Populate all SVG icons via the SKY_ICONS registry */
+      const notifIcon = document.getElementById('notifIcon');
+      if (notifIcon) notifIcon.innerHTML = SKY_ICONS.Bell(18);
+      document.querySelectorAll('.sky-icon[data-icon]').forEach(el => {
+        const name = el.dataset.icon;
+        const size = parseInt(el.dataset.size) || 18;
+        if (SKY_ICONS[name]) el.innerHTML = SKY_ICONS[name](size);
+      });
+
+      /* Dropdown toggles — notification bell + user avatar */
+      const notifBtn = document.getElementById('notifBtn');
+      const notifDd = document.getElementById('notifDropdown');
+      const avatarBtn = document.getElementById('avatarBtn');
+      const avatarDd = document.getElementById('avatarDropdown');
+
+      function toggleDropdown(btn, dd, otherDd, otherBtn, openClass) {
+        if (!btn || !dd) return;
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const isOpen = dd.classList.toggle(openClass);
+          btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          if (otherDd && otherBtn) {
+            otherDd.classList.remove(otherDd === notifDd ? 'sky-nav-notif--open' : 'sky-nav-dd--open');
+            otherBtn.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+      toggleDropdown(notifBtn, notifDd, avatarDd, avatarBtn, 'sky-nav-notif--open');
+      toggleDropdown(avatarBtn, avatarDd, notifDd, notifBtn, 'sky-nav-dd--open');
+
+      /* Click-outside closes both dropdowns */
+      document.addEventListener('click', () => {
+        if (notifDd) {
+          notifDd.classList.remove('sky-nav-notif--open');
+          if (notifBtn) notifBtn.setAttribute('aria-expanded', 'false');
+        }
+        if (avatarDd) {
+          avatarDd.classList.remove('sky-nav-dd--open');
+          if (avatarBtn) avatarBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+
+    /* CSRF token helper for AJAX */
+    function getCsrfToken() {
+      const el = document.querySelector('[name=csrfmiddlewaretoken]');
+      if (el) return el.value;
+      const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+      return cookie ? cookie.split('=')[1] : '';
+    }
+
+    /* Toast helper — appends a .sky-toast to #toastContainer for 3 seconds */
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = 'sky-toast';
+      if (type === 'success') toast.style.background = 'var(--sky-positive)';
+      if (type === 'error') toast.style.background = 'var(--sky-negative)';
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

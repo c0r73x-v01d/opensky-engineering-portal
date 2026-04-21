@@ -1,0 +1,823 @@
+/* ════════════════════════════════════════════════════════════════
+   SKY Design System
+   ════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+/* ─── CSS Custom Properties ─────────────────────────────────── */
+:root {
+  /* Brand */
+  --sky-primary: #000FF5;
+  --sky-primary-dark: #000FBE;
+  --sky-positive: #007E13;
+  --sky-positive-dark: #007613;
+  --sky-negative: #DD1717;
+  --sky-attention: #F15A22;
+
+  /* Surfaces */
+  --sky-surface: #FAFAFD;
+  --sky-surface-blue: #0C1B87;
+  --sky-white: #FFFFFF;
+  --sky-black: #000000;
+
+  /* Greys */
+  --sky-grey90: #1A1A1A;
+  --sky-grey80: #333333;
+  --sky-grey60: #666666;
+  --sky-grey50: #808080;
+  --sky-grey40: #999999;
+  --sky-grey30: #B3B3B3;
+  --sky-grey20: #CCCCCC;
+  --sky-grey10: #E6E6E6;
+  --sky-grey05: #F2F2F5;
+
+  /* Sub-brands */
+  --sky-news: #041957;
+  --sky-sports: #021158;
+  --sky-entertainment: #6626A1;
+  --sky-store: #003268;
+  --sky-kids: #FF6218;
+  --sky-loyalty: #C28724;
+
+  /* Spacing */
+  --sky-sp0: 0px;
+  --sky-sp1: 4px;
+  --sky-sp2: 8px;
+  --sky-sp3: 12px;
+  --sky-sp4: 16px;
+  --sky-sp5: 24px;
+  --sky-sp6: 32px;
+  --sky-sp8: 48px;
+  --sky-sp12: 72px;
+
+  /* Radii */
+  --sky-rad-xs: 4px;
+  --sky-rad-s: 8px;
+  --sky-rad-full: 128px;
+
+  /* Typography */
+  --sky-font: 'Plus Jakarta Sans', sans-serif;
+  --sky-body-sm: 14px;
+  --sky-body: 18px;
+  --sky-body-ln: 28px;
+
+  /* Gradients */
+  --sky-grad-primary: linear-gradient(135deg, #000FF5, #000FBE);
+  --sky-grad-positive: linear-gradient(135deg, #007E13, #007613);
+}
+
+/* ─── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--sky-font);
+  background: var(--sky-surface);
+  color: var(--sky-grey90);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0, 15, 245, 0.12); border-radius: 3px; }
+
+/* ─── Placeholder ────────────────────────────────────────────── */
+input::placeholder,
+textarea::placeholder { color: var(--sky-grey30); }
+
+/* ─── Animations ─────────────────────────────────────────────── */
+@keyframes sUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sOrb {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(40px, -25px) scale(1.08); }
+  66%      { transform: translate(-25px, 20px) scale(0.94); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+@keyframes sFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes sPanel {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes sComposeIn {
+  from { opacity: 0; transform: translateY(30px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes sSlideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+/* ─── Background orbs (decorative) ───────────────────────────── */
+.sky-orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.sky-orb--1 {
+  top: -120px; right: -80px;
+  width: 520px; height: 520px;
+  background: radial-gradient(circle, rgba(0,15,245,0.03) 0%, transparent 70%);
+  animation: sOrb 22s ease-in-out infinite;
+}
+.sky-orb--2 {
+  bottom: -180px; left: -120px;
+  width: 620px; height: 620px;
+  background: radial-gradient(circle, rgba(102,38,161,0.02) 0%, transparent 70%);
+  animation: sOrb 28s ease-in-out infinite reverse;
+}
+.sky-orb--3 {
+  top: 40%; left: 30%;
+  width: 380px; height: 380px;
+  background: radial-gradient(circle, rgba(0,126,19,0.015) 0%, transparent 70%);
+  animation: sOrb 25s ease-in-out infinite 3s;
+}
+
+/* ─── Buttons ────────────────────────────────────────── */
+.sky-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sky-sp2);
+  padding: var(--sky-sp3) var(--sky-sp5);
+  border-radius: var(--sky-rad-s);
+  border: none;
+  cursor: pointer;
+  font-family: var(--sky-font);
+  font-size: 14px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+.sky-btn--primary {
+  background: var(--sky-grad-primary);
+  color: var(--sky-white);
+  box-shadow: 0 4px 16px rgba(0, 15, 245, 0.19);
+}
+.sky-btn--primary:hover { box-shadow: 0 6px 24px rgba(0, 15, 245, 0.25); }
+.sky-btn--primary:disabled {
+  background: var(--sky-grey30);
+  box-shadow: none;
+  cursor: wait;
+}
+.sky-btn--secondary {
+  background: linear-gradient(135deg, var(--sky-entertainment), var(--sky-primary));
+  color: var(--sky-white);
+  box-shadow: 0 4px 16px rgba(102, 38, 161, 0.19);
+}
+.sky-btn--secondary:hover { box-shadow: 0 6px 24px rgba(102, 38, 161, 0.25); }
+.sky-btn--outline {
+  background: var(--sky-white);
+  color: var(--sky-grey90);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.sky-btn--outline:hover {
+  background: var(--sky-grey05);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.sky-btn--ghost {
+  background: none;
+  color: var(--sky-grey40);
+  padding: var(--sky-sp2) var(--sky-sp3);
+}
+.sky-btn--ghost:hover { color: var(--sky-grey60); }
+.sky-btn--link {
+  background: none;
+  border: none;
+  color: var(--sky-primary);
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--sky-font);
+}
+.sky-btn--positive {
+  background: var(--sky-grad-positive);
+  color: var(--sky-white);
+  box-shadow: 0 4px 12px rgba(0, 126, 19, 0.19);
+}
+.sky-btn--positive:hover { box-shadow: 0 6px 20px rgba(0, 126, 19, 0.25); }
+.sky-btn--danger {
+  background: rgba(221, 23, 23, 0.03);
+  color: var(--sky-negative);
+  border: 1px solid rgba(221, 23, 23, 0.19);
+}
+.sky-btn--danger:hover {
+  background: rgba(221, 23, 23, 0.06);
+  border-color: rgba(221, 23, 23, 0.28);
+}
+
+/* ─── Inputs ─────────────────────────────────────────── */
+.sky-field { margin-bottom: var(--sky-sp4); }
+.sky-field--compact { margin-bottom: 0; }
+textarea.sky-field__input {
+  resize: vertical;
+  min-height: 80px;
+  font-family: var(--sky-font);
+}
+.sky-field__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sky-grey50);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--sky-sp2);
+}
+.sky-field__wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.sky-field__icon {
+  position: absolute;
+  left: var(--sky-sp4);
+  color: var(--sky-grey30);
+  display: flex;
+  pointer-events: none;
+  transition: color 0.15s ease;
+}
+.sky-field__input {
+  width: 100%;
+  padding: var(--sky-sp3) var(--sky-sp4);
+  border-radius: var(--sky-rad-s);
+  border: 1.5px solid rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  font-size: 14px;
+  font-family: var(--sky-font);
+  color: var(--sky-grey90);
+  outline: none;
+  transition: all 0.15s ease;
+}
+.sky-field__input--with-icon { padding-left: 44px; }
+.sky-field__input--with-right { padding-right: 44px; }
+.sky-field__input:focus {
+  border-color: rgba(0, 15, 245, 0.25);
+  box-shadow: 0 0 0 3px rgba(0, 15, 245, 0.03);
+}
+.sky-field__wrap:focus-within .sky-field__icon { color: var(--sky-primary); }
+.sky-field__input--error {
+  border-color: var(--sky-negative);
+  box-shadow: 0 0 0 3px rgba(221, 23, 23, 0.06);
+}
+.sky-field__error {
+  display: flex;
+  align-items: center;
+  gap: var(--sky-sp1);
+  margin-top: var(--sky-sp1);
+  font-size: 12px;
+  color: var(--sky-negative);
+  font-weight: 600;
+}
+.sky-field__hint {
+  margin-top: var(--sky-sp1);
+  font-size: 12px;
+  color: var(--sky-grey40);
+}
+.sky-field__right {
+  position: absolute;
+  right: var(--sky-sp3);
+  display: flex;
+  cursor: pointer;
+  color: var(--sky-grey30);
+}
+
+/* ─── Cards ──────────────────────────────────────────── */
+.sky-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(0, 15, 245, 0.04);
+  border-radius: var(--sky-sp4);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+  padding: var(--sky-sp5);
+  transition: all 0.2s ease;
+}
+.sky-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+.sky-card--glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(0, 15, 245, 0.04);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.02), 0 4px 16px rgba(0, 0, 0, 0.015);
+}
+
+/* ─── Modal / Overlay ────────────────────────────────── */
+.sky-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 25, 87, 0.35);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: sFade 0.2s ease-out;
+}
+.sky-overlay--open { display: flex; }
+
+.sky-modal {
+  background: var(--sky-surface);
+  border-radius: var(--sky-sp4);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.12);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: sComposeIn 0.3s ease-out;
+}
+.sky-modal--narrow { width: min(540px, 94vw); }
+.sky-modal__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: var(--sky-sp5) var(--sky-sp6) var(--sky-sp4);
+  background: rgba(250, 250, 253, 0.95);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sky-modal__title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--sky-grey90);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.sky-modal__close {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--sky-rad-s);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: var(--sky-white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sky-grey50);
+}
+.sky-modal__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sky-sp5) var(--sky-sp6);
+}
+.sky-modal__footer {
+  padding: var(--sky-sp4) var(--sky-sp6);
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sky-sp2);
+}
+
+/* ─── Slide panel (right-side, with backdrop) ───────── */
+.sky-slide-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  justify-content: flex-end;
+}
+.sky-slide-panel--open { display: flex; }
+.sky-slide-panel__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 25, 87, 0.25);
+  backdrop-filter: blur(6px);
+  animation: sFade 0.2s ease-out;
+}
+.sky-slide-panel__content {
+  position: relative;
+  width: min(620px, 94vw);
+  height: 100%;
+  background: rgba(250, 250, 253, 0.97);
+  backdrop-filter: blur(40px);
+  border-left: 1px solid rgba(0, 15, 245, 0.05);
+  box-shadow: -24px 0 64px rgba(0, 0, 0, 0.05);
+  overflow-y: auto;
+  animation: sSlideIn 0.35s cubic-bezier(.22, 1, .36, 1);
+}
+.sky-slide-panel__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: var(--sky-sp5) var(--sky-sp6);
+  background: rgba(250, 250, 253, 0.9);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sky-slide-panel__title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--sky-grey90);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.sky-slide-panel__subtitle {
+  font-size: 13px;
+  color: var(--sky-grey50);
+  margin: var(--sky-sp1) 0 0;
+}
+.sky-slide-panel__close {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--sky-rad-s);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: var(--sky-white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sky-grey50);
+}
+.sky-slide-panel__body { padding: var(--sky-sp5) var(--sky-sp6); }
+
+/* ─── Badges ─────────────────────────────────────────── */
+.sky-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sky-sp1);
+  padding: 2px 10px;
+  border-radius: var(--sky-rad-full);
+  font-size: 11px;
+  font-weight: 700;
+}
+.sky-badge--primary {
+  background: rgba(0, 15, 245, 0.08);
+  color: var(--sky-primary);
+}
+.sky-badge--positive {
+  background: rgba(0, 126, 19, 0.08);
+  color: var(--sky-positive);
+}
+.sky-badge--negative {
+  background: rgba(221, 23, 23, 0.08);
+  color: var(--sky-negative);
+}
+.sky-badge--attention {
+  background: rgba(241, 90, 34, 0.08);
+  color: var(--sky-attention);
+}
+.sky-badge--grey {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--sky-grey50);
+}
+
+/* ─── Avatar ─────────────────────────────────────────── */
+.sky-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  color: var(--sky-white);
+  flex-shrink: 0;
+}
+.sky-avatar--sm { width: 28px; height: 28px; font-size: 11px; }
+.sky-avatar--md { width: 36px; height: 36px; font-size: 13px; }
+.sky-avatar--lg { width: 48px; height: 48px; font-size: 16px; }
+
+/* ─── Navigation bar ─────────────────────────────────── */
+.sky-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sky-sp3) var(--sky-sp5);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 15, 245, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.sky-nav__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--sky-sp2);
+}
+.sky-nav__logo-icon {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  background: var(--sky-grad-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 15, 245, 0.15);
+  color: var(--sky-white);
+  font-size: 13px;
+  font-weight: 800;
+}
+.sky-nav__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--sky-grey90);
+  letter-spacing: -0.03em;
+}
+.sky-nav__links {
+  display: flex;
+  gap: var(--sky-sp1);
+}
+.sky-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--sky-rad-s);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--sky-font);
+  background: transparent;
+  color: var(--sky-grey40);
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+.sky-nav__link:hover { background: rgba(0, 0, 0, 0.03); color: var(--sky-grey60); }
+.sky-nav__link--active {
+  background: rgba(0, 15, 245, 0.06);
+  color: var(--sky-primary);
+}
+
+/* ─── Nav layout sections (left/right halves of the navbar) ── */
+.sky-nav__left,
+.sky-nav__right {
+  display: flex;
+  align-items: center;
+}
+.sky-nav__left  { gap: var(--sky-sp6); }
+.sky-nav__right { gap: var(--sky-sp3); }
+
+/* ─── Icon wrapper — JS hook for SVG hydration ───────── */
+.sky-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ─── Utility: hide element (use for JS-controlled visibility) ─── */
+.is-hidden { display: none !important; }
+
+/* ─── Nav shell buttons (bell, avatar) ───────────────── */
+.sky-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--sky-rad-s);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: var(--sky-white);
+  color: var(--sky-grey50);
+  cursor: pointer;
+  position: relative;
+  font-family: var(--sky-font);
+}
+.sky-nav-btn--avatar {
+  width: 34px;
+  height: 34px;
+  background: var(--sky-grad-primary);
+  border: none;
+  color: var(--sky-white);
+  font-size: 12px;
+  font-weight: 800;
+}
+.sky-nav-btn__dot {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sky-primary);
+  border: 2px solid var(--sky-white);
+}
+
+/* ─── Nav dropdown wrapper + panel ───────────────────── */
+.sky-nav-dd-wrap { position: relative; }
+
+.sky-nav-dd {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: var(--sky-white);
+  border-radius: var(--sky-sp3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  z-index: 200;
+  overflow: hidden;
+}
+.sky-nav-dd--open { display: block; animation: sFade 0.15s ease-out; }
+.sky-nav-dd__head {
+  padding: var(--sky-sp4);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+.sky-nav-dd__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sky-grey90);
+}
+.sky-nav-dd__sub {
+  font-size: 12px;
+  color: var(--sky-grey40);
+  margin-top: 2px;
+}
+.sky-nav-dd__btn {
+  display: flex;
+  align-items: center;
+  gap: var(--sky-sp2);
+  width: 100%;
+  padding: 10px var(--sky-sp4);
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sky-grey60);
+  font-family: var(--sky-font);
+  text-decoration: none;
+}
+.sky-nav-dd__btn:hover { background: rgba(0, 0, 0, 0.02); }
+.sky-nav-dd__btn--danger { color: var(--sky-negative); }
+.sky-nav-dd__divider {
+  border-top: 1px solid rgba(0, 0, 0, 0.03);
+  padding: var(--sky-sp1) 0;
+}
+
+/* ─── Nav notification dropdown ──────────────────────── */
+.sky-nav-notif {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 340px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--sky-white);
+  border-radius: var(--sky-sp3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  z-index: 200;
+}
+.sky-nav-notif--open { display: block; animation: sFade 0.15s ease-out; }
+.sky-nav-notif__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px var(--sky-sp4);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+.sky-nav-notif__title { font-size: 14px; font-weight: 700; }
+.sky-nav-notif__mark {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sky-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--sky-font);
+}
+.sky-nav-notif__item {
+  display: flex;
+  gap: 10px;
+  padding: var(--sky-sp3) var(--sky-sp4);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+}
+.sky-nav-notif__item--unread { background: rgba(0, 15, 245, 0.015); }
+.sky-nav-notif__body { flex: 1; }
+.sky-nav-notif__msg {
+  font-size: 13px;
+  color: var(--sky-grey60);
+  line-height: 1.4;
+}
+.sky-nav-notif__time {
+  font-size: 11px;
+  color: var(--sky-grey30);
+  margin-top: 2px;
+}
+.sky-nav-notif__empty {
+  padding: var(--sky-sp5);
+  text-align: center;
+  color: var(--sky-grey30);
+  font-size: 13px;
+}
+
+/* ─── Toast ──────────────────────────────────────────── */
+.sky-toast {
+  position: fixed;
+  bottom: var(--sky-sp5);
+  right: var(--sky-sp5);
+  display: flex;
+  align-items: center;
+  gap: var(--sky-sp3);
+  padding: var(--sky-sp3) var(--sky-sp5);
+  border-radius: var(--sky-rad-s);
+  background: var(--sky-grey90);
+  color: var(--sky-white);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 2000;
+  animation: sUp 0.3s ease-out;
+}
+
+/* ─── Toggle bar (tabs) ──────────────────────────────── */
+.sky-toggle {
+  display: flex;
+  gap: var(--sky-sp1);
+  background: rgba(0, 0, 0, 0.015);
+  border-radius: var(--sky-sp3);
+  padding: var(--sky-sp1);
+}
+.sky-toggle__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sky-sp2);
+  padding: 10px var(--sky-sp4);
+  border-radius: var(--sky-rad-s);
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--sky-font);
+  background: transparent;
+  color: var(--sky-grey40);
+  transition: all 0.15s ease;
+}
+.sky-toggle__btn--active {
+  background: var(--sky-white);
+  color: var(--sky-primary);
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* ─── Stat card ──────────────────────────────────────── */
+.sky-stat {
+  padding: var(--sky-sp4) var(--sky-sp5);
+  border-radius: var(--sky-rad-s);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+.sky-stat--with-icon {
+  display: flex;
+  align-items: center;
+  gap: var(--sky-sp4);
+}
+.sky-stat__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--sky-sp3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sky-stat__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sky-grey40);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.sky-stat__value {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-top: 2px;
+}
+
+/* ─── Utility ────────────────────────────────────────────────── */
+.sky-text-center { text-align: center; }
+.sky-flex { display: flex; }
+.sky-flex-center { display: flex; align-items: center; justify-content: center; }
+.sky-gap-1 { gap: var(--sky-sp1); }
+.sky-gap-2 { gap: var(--sky-sp2); }
+.sky-gap-3 { gap: var(--sky-sp3); }
+.sky-gap-4 { gap: var(--sky-sp4); }
+.sky-hidden { display: none; }

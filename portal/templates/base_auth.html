@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}OpenSky — Sign in{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/sky-base.css' %}">
+  {% block extra_css %}{% endblock %}
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--sky-grad-page, #f6f7fb);
+      margin: 0;
+      font-family: var(--sky-font);
+    }
+  </style>
+</head>
+<body>
+  <div class="sky-orb sky-orb--1"></div>
+  <div class="sky-orb sky-orb--2"></div>
+  <div class="sky-orb sky-orb--3"></div>
+
+  {% block content %}{% endblock %}
+
+  <script src="{% static 'icons/sky-icons.js' %}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.sky-icon[data-icon]').forEach(el => {
+        const name = el.dataset.icon;
+        const size = parseInt(el.dataset.size) || 18;
+        if (SKY_ICONS[name]) el.innerHTML = SKY_ICONS[name](size);
+      });
+    });
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

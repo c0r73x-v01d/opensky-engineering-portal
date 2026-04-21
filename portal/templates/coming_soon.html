@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — OpenSky{% endblock %}
+
+{% block content %}
+<main style="max-width: 720px; margin: var(--sky-sp8) auto; padding: var(--sky-sp6); text-align: center;">
+  <div class="sky-card--glass" style="padding: var(--sky-sp8) var(--sky-sp6); border-radius: 16px;">
+    <div style="width: 56px; height: 56px; border-radius: 16px;
+                background: var(--sky-grad-primary);
+                display: inline-flex; align-items: center; justify-content: center;
+                margin-bottom: var(--sky-sp4);">
+      <span class="sky-icon" data-icon="Clock" data-size="28" style="color: var(--sky-white);"></span>
+    </div>
+    <h1 style="font-size: 28px; font-weight: 800; color: var(--sky-grey90);
+               letter-spacing: -0.03em; margin: 0 0 var(--sky-sp2);">
+      {{ page_title }}
+    </h1>
+    <p style="color: var(--sky-grey50); margin: 0; line-height: 1.6;">
+      This section is under development.
+    </p>
+  </div>
+</main>
+{% endblock %}
