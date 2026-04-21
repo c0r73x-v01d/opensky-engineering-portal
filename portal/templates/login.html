@@ -1,0 +1,305 @@
+{% extends "base_auth.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+
+  /* ── Card (wraps sky-card--glass with auth dimensions) ── */
+  .auth-card {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    margin: var(--sky-sp8) var(--sky-sp5);
+    padding: 40px 40px 48px;
+    border-radius: 16px;
+  }
+
+  /* ── Logo lockup ── */
+  .auth-logo {
+    display: flex; align-items: center; justify-content: center;
+    gap: var(--sky-sp2); margin-bottom: var(--sky-sp6);
+  }
+  .auth-logo__icon {
+    width: 32px; height: 32px; border-radius: var(--sky-sp2);
+    background: var(--sky-grad-primary);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 15, 245, 0.12);
+    color: var(--sky-white); font-size: 15px; font-weight: 800;
+  }
+  .auth-logo__text {
+    font-size: 17px; font-weight: 800;
+    color: var(--sky-grey90); letter-spacing: -0.03em;
+  }
+
+  /* ── Heading ── */
+  .auth-heading { text-align: center; margin-bottom: var(--sky-sp5); }
+  .auth-heading h1 {
+    font-size: 26px; font-weight: 800;
+    color: var(--sky-grey90); letter-spacing: -0.03em;
+    margin: 0 0 var(--sky-sp2);
+  }
+  .auth-heading p {
+    font-size: 14px; color: var(--sky-grey40);
+    margin: 0; line-height: 1.6;
+  }
+
+  /* ── Password strength meter (register only) ── */
+  .auth-strength { margin-top: -8px; margin-bottom: var(--sky-sp4); }
+  .auth-strength__bars { display: flex; gap: 3px; margin-bottom: var(--sky-sp1); }
+  .auth-strength__bar {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: var(--sky-grey10);
+    transition: background 0.2s ease;
+  }
+  .auth-strength__label { font-size: 11px; font-weight: 700; text-align: right; }
+
+  /* ── Back-navigation button ── */
+  .auth-back {
+    display: flex; align-items: center; gap: var(--sky-sp2);
+    background: none; border: none; cursor: pointer;
+    color: var(--sky-grey40); font-size: 13px; font-weight: 600;
+    font-family: var(--sky-font);
+    margin-bottom: var(--sky-sp4);
+  }
+  .auth-back:hover { color: var(--sky-grey60); }
+
+  /* ── First/last name grid (register) ── */
+  .auth-name-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sky-sp3);
+  }
+
+  /* ── Inline footer text ("Don't have an account?") ── */
+  .auth-footer-text {
+    text-align: center;
+    margin-top: var(--sky-sp5);
+    font-size: 14px;
+    color: var(--sky-grey40);
+  }
+
+  /* ── Forgot-password link alignment ── */
+  .auth-forgot-link {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--sky-sp5);
+  }
+
+  /* ── View switcher (login / register / forgot) ── */
+  .auth-view { animation: sUp 0.4s ease-out both; }
+  .auth-view-section { display: none; }
+  .auth-view-section.active { display: block; }
+
+  /* ── Auth-card context: make primary/secondary buttons full-width ── */
+  .auth-card .sky-btn--primary,
+  .auth-card .sky-btn--secondary {
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sky-card--glass auth-card" id="authCard">
+  <div class="auth-logo">
+    <div class="auth-logo__icon">S</div>
+    <span class="auth-logo__text">OpenSky</span>
+  </div>
+
+  {% if form.errors %}
+  <div class="sky-field__error" style="margin-bottom: var(--sky-sp4); justify-content: center;">
+    <span class="sky-icon" data-icon="AlertCircle" data-size="13"></span>
+    {% for field, errors in form.errors.items %}{% for error in errors %}{{ error }}{% endfor %}{% endfor %}
+  </div>
+  {% endif %}
+
+  {# ═══════════════════════════════════════════════════════════ #}
+  {# LOGIN VIEW                                                  #}
+  {# ═══════════════════════════════════════════════════════════ #}
+  <div class="auth-view-section active" id="viewLogin">
+    <div class="auth-view">
+      <div class="auth-heading">
+        <h1 id="loginHeading">Welcome Back</h1>
+        <p id="loginSubtext">Sign in to OpenSky Engineering Portal</p>
+      </div>
+
+      <div class="sky-toggle" style="margin-bottom: var(--sky-sp5);">
+        <button type="button" class="sky-toggle__btn sky-toggle__btn--active" data-admin="false">
+          <span class="sky-icon" data-icon="User" data-size="14"></span> User Login
+        </button>
+        <button type="button" class="sky-toggle__btn" data-admin="true">
+          <span class="sky-icon" data-icon="Shield" data-size="14"></span> Admin Login
+        </button>
+      </div>
+
+      <form method="post" action="{% url 'login' %}" id="loginForm" novalidate>
+        {% csrf_token %}
+
+        <div class="sky-field">
+          <label class="sky-field__label" for="loginUser">Username</label>
+          <div class="sky-field__wrap">
+            <span class="sky-field__icon"><span class="sky-icon" data-icon="User" data-size="16"></span></span>
+            <input class="sky-field__input sky-field__input--with-icon"
+                   id="loginUser" name="username" type="text"
+                   placeholder="Enter your username" autocomplete="username">
+          </div>
+        </div>
+
+        <div class="sky-field">
+          <label class="sky-field__label" for="loginPw">Password</label>
+          <div class="sky-field__wrap">
+            <span class="sky-field__icon"><span class="sky-icon" data-icon="Lock" data-size="16"></span></span>
+            <input class="sky-field__input sky-field__input--with-icon sky-field__input--with-right"
+                   id="loginPw" name="password" type="password"
+                   placeholder="Enter your password" autocomplete="current-password">
+            <button type="button" class="sky-field__right" data-toggle-pw="loginPw">
+              <span class="sky-icon" data-icon="Eye" data-size="16"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="auth-forgot-link">
+          <button type="button" class="sky-btn--link" data-goto="forgot" style="font-size: 13px;">Forgot password?</button>
+        </div>
+
+        <button type="submit" class="sky-btn sky-btn--primary" id="loginSubmit">Sign In</button>
+      </form>
+
+      <p class="auth-footer-text">
+        Don't have an account?
+        <button type="button" class="sky-btn--link" data-goto="register"
+                style="font-size: 14px; font-weight: 700;">Create account</button>
+      </p>
+    </div>
+  </div>
+
+  {# ═══════════════════════════════════════════════════════════ #}
+  {# REGISTER VIEW                                               #}
+  {# ═══════════════════════════════════════════════════════════ #}
+  <div class="auth-view-section" id="viewRegister">
+    <div class="auth-view">
+      <button type="button" class="auth-back" data-goto="login">
+        <span class="sky-icon" data-icon="ArrowLeft" data-size="16"></span> Back to sign in
+      </button>
+      <div class="auth-heading">
+        <h1>Create Account</h1>
+        <p>Self-register for the OpenSky Engineering Portal</p>
+      </div>
+
+      <form method="post" action="{% url 'register' %}" id="registerForm" novalidate>
+        {% csrf_token %}
+
+        <div class="auth-name-row">
+          <div class="sky-field">
+            <label class="sky-field__label" for="regFName">First Name</label>
+            <div class="sky-field__wrap">
+              <input class="sky-field__input" id="regFName" name="first_name" type="text"
+                     placeholder="e.g. Sarah" autocomplete="given-name">
+            </div>
+          </div>
+          <div class="sky-field">
+            <label class="sky-field__label" for="regLName">Last Name</label>
+            <div class="sky-field__wrap">
+              <input class="sky-field__input" id="regLName" name="last_name" type="text"
+                     placeholder="e.g. Chen" autocomplete="family-name">
+            </div>
+          </div>
+        </div>
+
+        <div class="sky-field">
+          <label class="sky-field__label" for="regUser">Username</label>
+          <div class="sky-field__wrap">
+            <span class="sky-field__icon"><span class="sky-icon" data-icon="User" data-size="16"></span></span>
+            <input class="sky-field__input sky-field__input--with-icon"
+                   id="regUser" name="username" type="text"
+                   placeholder="Choose a username" autocomplete="username">
+          </div>
+          <div class="sky-field__hint">Letters, numbers, underscores. Min 3 chars.</div>
+        </div>
+
+        <div class="sky-field">
+          <label class="sky-field__label" for="regEmail">Email Address</label>
+          <div class="sky-field__wrap">
+            <span class="sky-field__icon"><span class="sky-icon" data-icon="Mail" data-size="16"></span></span>
+            <input class="sky-field__input sky-field__input--with-icon"
+                   id="regEmail" name="email" type="email"
+                   placeholder="you@sky.uk" autocomplete="email">
+          </div>
+        </div>
+
+        <div class="sky-field">
+          <label class="sky-field__label" for="regPw">Password</label>
+          <div class="sky-field__wrap">
+            <span class="sky-field__icon"><span class="sky-icon" data-icon="Lock" data-size="16"></span></span>
+            <input class="sky-field__input sky-field__input--with-icon sky-field__input--with-right"
+                   id="regPw" name="password" type="password"
+                   placeholder="Min 8 characters" autocomplete="new-password">
+            <button type="button" class="sky-field__right" data-toggle-pw="regPw">
+              <span class="sky-icon" data-icon="Eye" data-size="16"></span>
+            </button>
+          </div>
+        </div>
+
+        <div id="regStrength"></div>
+
+        <div class="sky-field">
+          <label class="sky-field__label" for="regConfirm">Confirm Password</label>
+          <div class="sky-field__wrap">
+            <span class="sky-field__icon"><span class="sky-icon" data-icon="Lock" data-size="16"></span></span>
+            <input class="sky-field__input sky-field__input--with-icon sky-field__input--with-right"
+                   id="regConfirm" name="password_confirm" type="password"
+                   placeholder="Re-enter password" autocomplete="new-password">
+            <button type="button" class="sky-field__right" data-toggle-pw="regConfirm">
+              <span class="sky-icon" data-icon="Eye" data-size="16"></span>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="sky-btn sky-btn--secondary"
+                id="regSubmit" style="margin-top: var(--sky-sp2);">Create Account</button>
+      </form>
+
+      <p class="auth-footer-text">
+        Already have an account?
+        <button type="button" class="sky-btn--link" data-goto="login"
+                style="font-size: 14px; font-weight: 700;">Sign in</button>
+      </p>
+    </div>
+  </div>
+
+  {# ═══════════════════════════════════════════════════════════ #}
+  {# FORGOT PASSWORD VIEW                                        #}
+  {# ═══════════════════════════════════════════════════════════ #}
+  <div class="auth-view-section" id="viewForgot">
+    <div class="auth-view">
+      <button type="button" class="auth-back" data-goto="login">
+        <span class="sky-icon" data-icon="ArrowLeft" data-size="16"></span> Back to sign in
+      </button>
+      <div class="auth-heading" style="margin-bottom: var(--sky-sp6);">
+        <h1>Forgot Password?</h1>
+        <p>Enter the email address associated with your account and we'll send you a reset link.</p>
+      </div>
+
+      <form method="post" action="{% url 'forgot_password' %}" id="forgotForm" novalidate>
+        {% csrf_token %}
+
+        <div class="sky-field">
+          <label class="sky-field__label" for="forgotEmail">Email Address</label>
+          <div class="sky-field__wrap">
+            <span class="sky-field__icon"><span class="sky-icon" data-icon="Mail" data-size="16"></span></span>
+            <input class="sky-field__input sky-field__input--with-icon"
+                   id="forgotEmail" name="email" type="email"
+                   placeholder="you@sky.uk" autocomplete="email">
+          </div>
+        </div>
+
+        <button type="submit" class="sky-btn sky-btn--primary"
+                id="forgotSubmit" style="margin-top: var(--sky-sp2);">Send Reset Link</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/login.js' %}"></script>
+{% endblock %}

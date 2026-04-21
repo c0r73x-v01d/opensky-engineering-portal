@@ -1,0 +1,551 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Reports{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Animations ── */
+  @keyframes barGrow { from { transform:scaleX(0) } to { transform:scaleX(1) } }
+
+  /* ── Page container ── */
+  .rpt-container { max-width: 1120px; margin: 0 auto; padding: var(--sky-sp6) var(--sky-sp8) var(--sky-sp12); }
+  .rpt-header-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: var(--sky-sp4); }
+  .rpt-header-actions { display: flex; gap: var(--sky-sp2); }
+
+  /* ── Page header ── */
+  .rpt-header { animation: sUp .5s cubic-bezier(.22,1,.36,1) both; margin-bottom: var(--sky-sp5); }
+  .rpt-title { font-size:28px; font-weight:800; color:var(--sky-grey90); letter-spacing:-0.03em; margin:0; }
+  .rpt-subtitle { font-size:13px; color:var(--sky-grey40); margin-top:2px; }
+
+  /* ── Tab bar ── */
+  .rpt-tabs { display:flex; gap:4px; border-bottom:1px solid rgba(0,0,0,.06); padding-bottom:0; }
+  .rpt-tab-btn { display:flex; align-items:center; gap:6px; padding:10px 16px; border:none; background:transparent; cursor:pointer; font-family:inherit; font-size:13px; margin-bottom:-1px; transition:all .15s; }
+  .rpt-tab-btn--active { font-weight:700; color:var(--sky-primary); border-bottom:2px solid var(--sky-primary); }
+  .rpt-tab-btn--inactive { font-weight:500; color:var(--sky-grey40); border-bottom:2px solid transparent; }
+  .rpt-tab-badge { font-size:10px; font-weight:700; padding:0 5px; border-radius:128px; background:rgba(0,15,245,.08); color:var(--sky-primary); }
+
+  /* ── Export buttons ── */
+  .rpt-export-btn { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700; font-family:inherit; }
+  .rpt-export-btn--pdf { border:1px solid rgba(221,23,23,.2); background:rgba(221,23,23,.06); color:var(--sky-negative); }
+  .rpt-export-btn--excel { border:1px solid rgba(0,126,19,.2); background:rgba(0,126,19,.06); color:var(--sky-positive-dark); }
+
+  /* ── Cards ── */
+  .rpt-card { background:rgba(255,255,255,.72); backdrop-filter:blur(24px) saturate(180%); border-radius:12px; border:1px solid rgba(0,15,245,.04); box-shadow:0 2px 8px rgba(0,0,0,.016); overflow:hidden; animation:sUp .5s cubic-bezier(.22,1,.36,1) both; }
+  .rpt-card--warn { border:1px solid rgba(241,90,34,.1); }
+  .rpt-card-header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid rgba(0,0,0,.016); }
+  .rpt-card-header__title { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700; color:var(--sky-grey80); text-transform:uppercase; letter-spacing:0.06em; }
+  .rpt-card-body { padding:16px; }
+
+  /* ── Stat cards ── */
+  .rpt-stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+  .rpt-stat-card { padding:16px; }
+  .rpt-stat-card__label { font-size:11px; font-weight:700; color:var(--sky-grey40); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
+  .rpt-stat-card__value { font-size:32px; font-weight:800; letter-spacing:-0.04em; line-height:1; }
+  .rpt-stat-card__sub { font-size:12px; color:var(--sky-grey40); margin-top:8px; }
+
+  /* ── Overview layout ── */
+  .rpt-overview-grid { display:grid; grid-template-columns:3fr 2fr; gap:16px; margin-bottom:16px; }
+  .rpt-sidebar-stack { display:flex; flex-direction:column; gap:16px; }
+
+  /* ── Alert banner ── */
+  .rpt-alert { display:flex; align-items:center; gap:12px; padding:12px 16px; margin-bottom:16px; border-radius:8px; background:rgba(241,90,34,.06); border:1px solid rgba(241,90,34,.1); animation:sUp .4s cubic-bezier(.22,1,.36,1) both; }
+  .rpt-alert__label { font-size:13px; font-weight:600; color:var(--sky-attention); }
+  .rpt-alert__teams { font-size:13px; color:var(--sky-grey60); }
+  .rpt-alert__link { margin-left:auto; font-size:11px; font-weight:700; color:var(--sky-primary); background:none; border:none; cursor:pointer; font-family:inherit; text-decoration:underline; text-underline-offset:2px; }
+
+  /* ── Department rows ── */
+  .rpt-dept { margin-bottom:24px; }
+  .rpt-dept:last-child { margin-bottom:0; }
+  .rpt-dept__header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .rpt-dept__name { font-size:13px; font-weight:700; color:var(--sky-grey90); }
+  .rpt-dept__eng { font-size:11px; color:var(--sky-grey40); }
+  .rpt-dept__bar-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .rpt-dept__bar-label { font-size:10px; font-weight:700; color:var(--sky-grey40); flex-shrink:0; white-space:nowrap; text-transform:uppercase; letter-spacing:0.04em; }
+  .rpt-dept__bar-track { flex:1; height:6px; border-radius:3px; background:rgba(0,0,0,.016); overflow:hidden; }
+  .rpt-dept__bar-fill { height:100%; border-radius:3px; transform-origin:left; animation:barGrow .6s cubic-bezier(.22,1,.36,1) forwards; }
+  .rpt-dept__bar-count { font-size:12px; font-weight:700; min-width:24px; text-align:right; }
+  .rpt-dept__chips { display:flex; gap:4px; flex-wrap:wrap; }
+  .rpt-team-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:4px; background:rgba(0,0,0,.012); border:1px solid rgba(0,0,0,.016); font-size:11px; font-weight:600; color:var(--sky-grey60); }
+  .rpt-team-chip__dot { width:5px; height:5px; border-radius:50%; }
+
+  /* ── Status breakdown ── */
+  .rpt-status-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .rpt-status-row:last-of-type { margin-bottom:0; }
+  .rpt-status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .rpt-status-label { font-size:13px; font-weight:600; color:var(--sky-grey80); flex:1; }
+  .rpt-status-pct { font-size:11px; color:var(--sky-grey30); margin-right:4px; }
+  .rpt-status-count { font-size:18px; font-weight:800; min-width:24px; text-align:right; }
+  .rpt-stacked-bar { display:flex; height:6px; border-radius:3px; overflow:hidden; margin-top:4px; }
+  .rpt-stacked-bar__seg { transition:width .4s; }
+
+  /* ── Type badge ── */
+  .rpt-type-badge { padding:1px 6px; border-radius:4px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; }
+
+  /* ── Recent activity (overview) ── */
+  .rpt-activity-row { display:flex; align-items:center; gap:12px; padding:10px 0; }
+  .rpt-activity-row:not(:last-child) { border-bottom:1px solid rgba(0,0,0,.016); }
+  .rpt-activity-icon { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; flex-shrink:0; line-height:1; }
+  .rpt-activity-entity { font-size:13px; font-weight:700; color:var(--sky-grey90); }
+  .rpt-activity-detail { font-size:12px; color:var(--sky-grey50); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rpt-activity-time { font-size:11px; color:var(--sky-grey30); flex-shrink:0; }
+
+  /* ── Table (teams) ── */
+  .rpt-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .rpt-table th { padding:10px 12px; font-size:10px; font-weight:700; color:var(--sky-grey40); text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid rgba(0,0,0,.024); background:rgba(0,0,0,.008); user-select:none; white-space:nowrap; text-align:left; }
+  .rpt-table th.sortable { cursor:pointer; }
+  .rpt-table th.sortable > span { display:inline-flex; align-items:center; gap:3px; }
+  .rpt-table td { padding:10px 12px; }
+  .rpt-table tr { border-bottom:1px solid rgba(0,0,0,.016); }
+  .rpt-table tr.rpt-row--warn { background:rgba(241,90,34,.012); }
+
+  /* ── Status dot inline ── */
+  .rpt-status-inline { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; }
+  .rpt-status-inline__dot { width:6px; height:6px; border-radius:50%; }
+
+  /* ── Unmanaged cards grid (teams tab) ── */
+  .rpt-unmanaged-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px; }
+  .rpt-unmanaged-card { padding:12px; border-radius:8px; background:rgba(241,90,34,.016); border:1px solid rgba(241,90,34,.06); display:flex; flex-direction:column; gap:4px; }
+
+  /* ── Audit trail ── */
+  .rpt-audit-filters { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .rpt-audit-filter { padding:5px 12px; border-radius:128px; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; text-transform:capitalize; }
+  .rpt-audit-filter--active { border:1px solid rgba(0,15,245,.16); background:rgba(0,15,245,.08); color:var(--sky-primary); }
+  .rpt-audit-filter--inactive { border:1px solid rgba(0,0,0,.08); background:transparent; color:var(--sky-grey50); }
+  .rpt-audit-summary { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+  .rpt-audit-chip { display:flex; align-items:center; gap:6px; padding:3px 10px; border-radius:128px; font-size:11px; font-weight:600; }
+  .rpt-audit-entry { display:grid; grid-template-columns:36px 1fr auto; gap:12px; padding:12px 0; align-items:center; }
+  .rpt-audit-entry:not(:last-child) { border-bottom:1px solid rgba(0,0,0,.016); }
+  .rpt-audit-entry__icon { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; line-height:1; }
+  .rpt-audit-entry__entity { font-size:13px; font-weight:700; color:var(--sky-grey90); }
+  .rpt-audit-entry__badge { padding:1px 6px; border-radius:4px; font-size:10px; font-weight:700; text-transform:capitalize; }
+  .rpt-audit-entry__detail { font-size:12px; color:var(--sky-grey50); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rpt-audit-entry__user { font-size:11px; color:var(--sky-grey40); font-weight:600; }
+  .rpt-audit-entry__time { font-size:11px; color:var(--sky-grey30); margin-top:1px; }
+
+  .rpt-show-more { margin-top:12px; padding:8px; border-radius:8px; border:1px solid rgba(0,0,0,.08); background:transparent; font-size:12px; font-weight:600; color:var(--sky-primary); cursor:pointer; font-family:inherit; width:100%; text-align:center; }
+
+  /* ── Tab content ── */
+  .rpt-tab-content { display:none; }
+  .rpt-tab-content--active { display:block; }
+
+  /* ── Toast ── */
+  .rpt-toast { padding:12px 24px; border-radius:8px; background:rgba(0,126,19,.08); border:1px solid rgba(0,126,19,.2); color:var(--sky-positive); font-size:13px; font-weight:600; margin-bottom:16px; display:none; align-items:center; gap:8px; animation:sUp .2s ease-out; }
+  .rpt-toast--visible { display:flex; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rpt-container">
+
+  <!-- ── Page header ── -->
+  <div class="rpt-header">
+    <div class="rpt-header-row">
+      <div>
+        <h1 class="rpt-title">Reports</h1>
+        <p class="rpt-subtitle">Engineering teams summary, analytics, and audit trail</p>
+      </div>
+      <div class="rpt-header-actions">
+        <a href="{% url 'export_pdf' %}">
+    <button class="rpt-export-btn rpt-export-btn--pdf">
+        <span class="sky-icon" data-icon="FileText" data-size="14"></span>
+        PDF
+    </button>
+  </a>
+        <a href="{% url 'export_excel' %}">
+    <button class="rpt-export-btn rpt-export-btn--excel">
+      <span class="sky-icon" data-icon="Table" data-size="14"></span>
+      Excel
+    </button>
+  </a>
+      </div>
+    </div>
+
+    <!-- ── Tab selector ── -->
+    <div class="rpt-tabs">
+      <button class="rpt-tab-btn rpt-tab-btn--active" data-tab="overview">
+        <span class="sky-icon" data-icon="BarChart" data-size="13"></span> Overview
+      </button>
+      <button class="rpt-tab-btn rpt-tab-btn--inactive" data-tab="teams">
+        <span class="sky-icon" data-icon="Grid" data-size="13"></span> Teams
+      </button>
+      <button class="rpt-tab-btn rpt-tab-btn--inactive" data-tab="audit">
+        <span class="sky-icon" data-icon="Clock" data-size="13"></span> Audit Trail
+        <span class="rpt-tab-badge">{{ audit_log|length }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Toast ── -->
+  <div id="rpt-toast" class="rpt-toast">
+    <span class="sky-icon" data-icon="Check" data-size="16"></span>
+    <span id="rpt-toast-msg"></span>
+  </div>
+
+  {# ================================================================ #}
+  {# OVERVIEW TAB                                                      #}
+  {# ================================================================ #}
+  <div class="rpt-tab-content rpt-tab-content--active" id="tab-overview">
+
+    {% if unmanaged_active %}
+    <div class="rpt-alert">
+      <span class="sky-icon" data-icon="AlertTri" data-size="16"></span>
+      <span class="rpt-alert__label">
+        {{ unmanaged_active|length }} team{{ unmanaged_active|length|pluralize }} without managers:
+      </span>
+      <span class="rpt-alert__teams">
+        {% for t in unmanaged_active %}{{ t.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+      </span>
+      <button class="rpt-alert__link" data-action="go-teams">View in Teams &rarr;</button>
+    </div>
+    {% endif %}
+
+  <form method="get" style="margin-bottom:16px;">
+    <select name="department" onchange="this.form.submit()">
+      <option value="">All Departments</option>
+      {% for d in departments %}
+        <option value="{{ d.id }}" {% if selected_department == d.id|stringformat:"s" %}selected{% endif %}>
+          {{ d.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+
+    <!-- Stat cards -->
+    <div class="rpt-stats-grid">
+      <div class="rpt-card">
+        <div class="rpt-stat-card">
+          <div class="rpt-stat-card__label">Total Teams</div>
+          <div class="rpt-stat-card__value" style="color:var(--sky-primary);">{{ total_teams }}</div>
+          <div class="rpt-stat-card__sub">{{ active_teams }} active</div>
+        </div>
+      </div>
+      <div class="rpt-card">
+        <div class="rpt-stat-card">
+          <div class="rpt-stat-card__label">Engineers</div>
+          <div class="rpt-stat-card__value" style="color:var(--sky-entertainment);">{{ total_employees }}</div>
+          <div class="rpt-stat-card__sub">{{ avg_team_size }} avg/team</div>
+        </div>
+      </div>
+      <div class="rpt-card">
+        <div class="rpt-stat-card">
+          <div class="rpt-stat-card__label">Departments</div>
+          <div class="rpt-stat-card__value" style="color:var(--sky-positive);">{{ departments|length }}</div>
+          <div class="rpt-stat-card__sub">{{ total_repos }} repos</div>
+        </div>
+      </div>
+      <div class="rpt-card">
+        <div class="rpt-stat-card">
+          <div class="rpt-stat-card__label">Unmanaged</div>
+          <div class="rpt-stat-card__value" style="color:{% if unmanaged_active %}var(--sky-attention){% else %}var(--sky-positive){% endif %};">
+            {{ teams_without_managers }}
+          </div>
+          <div class="rpt-stat-card__sub">{% if unmanaged_active %}Need attention{% else %}All assigned{% endif %}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Departments + Status/Type sidebar -->
+    <div class="rpt-overview-grid">
+
+      <!-- Department distribution card -->
+      <div class="rpt-card">
+        <div class="rpt-card-header">
+          <div class="rpt-card-header__title">
+            <span class="sky-icon" data-icon="Layers" data-size="13"></span> Departments
+          </div>
+        </div>
+        <div class="rpt-card-body">
+          {% for dept in dept_stats %}
+          <div class="rpt-dept">
+            <div class="rpt-dept__header">
+              <span class="rpt-dept__name">{{ dept.depart_name }}</span>
+              <span class="rpt-dept__eng">{{ dept.engineers }} engineers</span>
+            </div>
+            <div class="rpt-dept__bar-row">
+              <span class="rpt-dept__bar-label">Active teams</span>
+              <div class="rpt-dept__bar-track">
+                <div class="rpt-dept__bar-fill"
+                     style="width:{% if dept.team_count > 0 %}{{ dept.active_pct }}%{% else %}0%{% endif %};background:{% if dept.active == dept.team_count %}var(--sky-positive){% else %}var(--sky-attention){% endif %};"></div>
+              </div>
+              <span class="rpt-dept__bar-count" style="color:{% if dept.active == dept.team_count %}var(--sky-positive){% else %}var(--sky-attention){% endif %};">
+                {{ dept.active }}/{{ dept.team_count }}
+              </span>
+            </div>
+            <div class="rpt-dept__chips">
+              {% for team in dept.teams %}
+              <span class="rpt-team-chip">
+                <span class="rpt-team-chip__dot" style="background:{% if team.team_status == 'active' %}var(--sky-positive){% elif team.team_status == 'restructuring' %}var(--sky-attention){% else %}var(--sky-negative){% endif %};"></span>
+                {{ team.team_name }}
+              </span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="rpt-sidebar-stack">
+
+        <!-- Status breakdown card -->
+        <div class="rpt-card">
+          <div class="rpt-card-header">
+            <div class="rpt-card-header__title">
+              <span class="sky-icon" data-icon="BarChart" data-size="13"></span> By Status
+            </div>
+          </div>
+          <div class="rpt-card-body">
+            {% for s in status_breakdown %}
+            <div class="rpt-status-row">
+              <div class="rpt-status-dot" style="background:{{ s.color }};"></div>
+              <span class="rpt-status-label">{{ s.label }}</span>
+              <span class="rpt-status-pct">{{ s.pct }}%</span>
+              <span class="rpt-status-count" style="color:{{ s.color }};">{{ s.count }}</span>
+            </div>
+            {% endfor %}
+            <div class="rpt-stacked-bar">
+              {% for s in status_breakdown %}
+              <div class="rpt-stacked-bar__seg" style="width:{{ s.pct }}%;background:{{ s.color }};"></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- By Type card -->
+        <div class="rpt-card">
+          <div class="rpt-card-header">
+            <div class="rpt-card-header__title">
+              <span class="sky-icon" data-icon="BarChart" data-size="13"></span> By Type
+            </div>
+          </div>
+          <div class="rpt-card-body">
+            {% for tt in type_stats %}
+            <div style="display:flex;align-items:center;gap:12px;{% if not forloop.last %}margin-bottom:12px;{% endif %}">
+              <span class="rpt-type-badge" style="background:{{ tt.color }}10;color:{{ tt.color }};border:1px solid {{ tt.color }}18;">{{ tt.type_name }}</span>
+              <div style="flex:1;height:4px;border-radius:2px;background:rgba(0,0,0,.016);overflow:hidden;">
+                <div style="height:100%;border-radius:2px;width:{{ tt.pct }}%;background:{{ tt.color }};opacity:0.7;transform-origin:left;animation:barGrow .6s cubic-bezier(.22,1,.36,1) forwards;"></div>
+              </div>
+              <span style="font-size:16px;font-weight:800;color:{{ tt.color }};min-width:20px;text-align:right;">{{ tt.count }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Recent activity card -->
+    <div class="rpt-card">
+      <div class="rpt-card-header">
+        <div class="rpt-card-header__title">
+          <span class="sky-icon" data-icon="Clock" data-size="13"></span> Recent Activity
+        </div>
+        <button class="rpt-alert__link" data-action="go-audit">View all &rarr;</button>
+      </div>
+      <div style="padding:8px 16px;">
+        {% for a in recent_activity %}
+        <div class="rpt-activity-row">
+          <div class="rpt-activity-icon" style="background:{{ a.cfg_color }}10;color:{{ a.cfg_color }};"><span class="sky-icon" data-icon="{{ a.cfg_icon }}" data-size="14"></span></div>
+          <span class="rpt-activity-entity">{{ a.entity }}</span>
+          <span class="rpt-activity-detail">{{ a.detail }}</span>
+          <span class="rpt-activity-time">{{ a.time_relative }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  {# ================================================================ #}
+  {# TEAMS TAB                                                         #}
+  {# ================================================================ #}
+  <div class="rpt-tab-content" id="tab-teams">
+
+    {% if unmanaged_active %}
+    <div class="rpt-card rpt-card--warn" style="margin-bottom:16px;">
+      <div class="rpt-card-header">
+        <div class="rpt-card-header__title">
+          <span class="sky-icon" data-icon="AlertTri" data-size="13"></span>
+          Teams Without Managers ({{ teams_without_managers }})
+        </div>
+      </div>
+      <div class="rpt-card-body">
+        <div class="rpt-unmanaged-grid">
+          {% for t in unmanaged_active %}
+          <div class="rpt-unmanaged-card">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:14px;font-weight:700;color:var(--sky-grey90);">{{ t.team_name }}</span>
+              {% if t.type_name %}
+              <span class="rpt-type-badge" style="background:{{ t.type_color }}10;color:{{ t.type_color }};border:1px solid {{ t.type_color }}18;">{{ t.type_name }}</span>
+              {% endif %}
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;font-size:12px;color:var(--sky-grey50);">
+              <span class="rpt-status-inline">
+                <span class="rpt-status-inline__dot" style="background:{% if t.team_status == 'active' %}var(--sky-positive){% elif t.team_status == 'restructuring' %}var(--sky-attention){% else %}var(--sky-negative){% endif %};"></span>
+                {% if t.team_status == 'active' %}Active{% elif t.team_status == 'restructuring' %}Restructuring{% else %}Disbanded{% endif %}
+              </span>
+              <span>{{ t.department_name }}</span>
+              <span>{{ t.member_count }} members</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- All teams table -->
+    <div class="rpt-card">
+      <div class="rpt-card-header">
+        <div class="rpt-card-header__title">
+          <span class="sky-icon" data-icon="Users" data-size="13"></span>
+          All Teams ({{ teams|length }})
+        </div>
+      </div>
+      <div style="overflow:auto;">
+        <table class="rpt-table" id="rpt-teams-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort-key="teamName">
+                <span>
+                  Team <span class="sky-icon" data-icon="Sort" data-size="10"></span>
+                </span>
+              </th>
+              <th class="sortable" data-sort-key="dept">
+                <span>
+                  Department <span class="sky-icon" data-icon="Sort" data-size="10"></span>
+                </span>
+              </th>
+              <th class="sortable" data-sort-key="status">
+                <span>
+                  Status <span class="sky-icon" data-icon="Sort" data-size="10"></span>
+                </span>
+              </th>
+              <th class="sortable" data-sort-key="size" style="text-align:center;">
+                <span>
+                  Size <span class="sky-icon" data-icon="Sort" data-size="10"></span>
+                </span>
+              </th>
+              <th class="sortable" data-sort-key="projects" style="text-align:center;">
+                <span>
+                  Projects <span class="sky-icon" data-icon="Sort" data-size="10"></span>
+                </span>
+              </th>
+              <th>Manager</th>
+              <th>Agile</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for team in teams %}
+            <tr class="{% if not team.manager_name and team.team_status != 'disbanded' %}rpt-row--warn{% endif %}"
+                data-name="{{ team.team_name }}"
+                data-dept="{{ team.department_name }}"
+                data-status="{{ team.team_status }}"
+                data-size="{{ team.size }}"
+                data-projects="{{ team.concurrent_projs }}">
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-weight:700;color:var(--sky-grey90);">{{ team.team_name }}</span>
+                  {% if team.type_name %}
+                  <span class="rpt-type-badge" style="background:{{ team.type_color }}10;color:{{ team.type_color }};border:1px solid {{ team.type_color }}18;">{{ team.type_name }}</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td style="color:var(--sky-grey60);font-size:12px;">{{ team.department_name }}</td>
+              <td>
+                <span class="rpt-status-inline" style="color:{% if team.team_status == 'active' %}var(--sky-positive){% elif team.team_status == 'restructuring' %}var(--sky-attention){% else %}var(--sky-negative){% endif %};">
+                  <span class="rpt-status-inline__dot" style="background:{% if team.team_status == 'active' %}var(--sky-positive){% elif team.team_status == 'restructuring' %}var(--sky-attention){% else %}var(--sky-negative){% endif %};"></span>
+                  {% if team.team_status == 'active' %}Active{% elif team.team_status == 'restructuring' %}Restructuring{% else %}Disbanded{% endif %}
+                </span>
+              </td>
+              <td style="text-align:center;font-weight:700;color:var(--sky-grey80);">{{ team.size }}</td>
+              <td style="text-align:center;font-weight:600;color:var(--sky-grey60);">{{ team.concurrent_projs }}</td>
+              <td style="font-size:12px;">
+                {% if team.manager_name %}
+                  <span style="color:var(--sky-grey80);">{{ team.manager_name }}</span>
+                {% elif team.team_status != 'disbanded' %}
+                  <span style="color:var(--sky-attention);font-weight:700;font-size:11px;">&#9888; Unassigned</span>
+                {% else %}
+                  <span style="color:var(--sky-grey30);">&mdash;</span>
+                {% endif %}
+              </td>
+              <td style="font-size:11px;color:var(--sky-grey40);">{{ team.agile_practice }}</td>
+              <td style="font-size:11px;color:var(--sky-grey30);white-space:nowrap;">{{ team.updated_at }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  {# ================================================================ #}
+  {# AUDIT TRAIL TAB                                                   #}
+  {# ================================================================ #}
+  <div class="rpt-tab-content" id="tab-audit">
+    <div class="rpt-card">
+      <div class="rpt-card-header">
+        <div class="rpt-card-header__title">
+          <span class="sky-icon" data-icon="Clock" data-size="13"></span>
+          Audit Trail ({{ audit_log|length }} events)
+        </div>
+      </div>
+      <div class="rpt-card-body">
+
+        <!-- Filter buttons -->
+        <div class="rpt-audit-filters">
+          <button class="rpt-audit-filter rpt-audit-filter--active" data-audit-filter="all">All</button>
+          {% for action_type in audit_types %}
+          <button class="rpt-audit-filter rpt-audit-filter--inactive" data-audit-filter="{{ action_type }}">
+            {{ action_type|cut:"_" }}
+          </button>
+          {% endfor %}
+        </div>
+
+        <!-- Summary chips -->
+        <div class="rpt-audit-summary">
+          {% for ac in audit_counts %}
+          <div class="rpt-audit-chip" style="background:{{ ac.color }}06;color:{{ ac.color }};">
+            <span class="sky-icon" data-icon="{{ ac.icon }}" data-size="13"></span>
+            {{ ac.label }}: {{ ac.count }}
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Log entries -->
+        <div id="rpt-audit-entries">
+          {% for action in audit_log %}
+          <div class="rpt-audit-entry" data-action-type="{{ action.action }}">
+            <div class="rpt-audit-entry__icon" style="background:{{ action.cfg_color }}10;color:{{ action.cfg_color }};"><span class="sky-icon" data-icon="{{ action.cfg_icon }}" data-size="14"></span></div>
+            <div style="min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span class="rpt-audit-entry__entity">{{ action.entity }}</span>
+                <span class="rpt-audit-entry__badge" style="background:{{ action.cfg_color }}08;color:{{ action.cfg_color }};">{{ action.action_display }}</span>
+              </div>
+              <div class="rpt-audit-entry__detail">{{ action.detail }}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div class="rpt-audit-entry__user">{{ action.user }}</div>
+              <div class="rpt-audit-entry__time">{{ action.time_relative }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Show more button (JS controls visibility) -->
+        <button class="rpt-show-more" id="rpt-audit-more" style="display:none;" data-action="audit-more">
+          Show more
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/reports.js' %}"></script>
+{% endblock %}

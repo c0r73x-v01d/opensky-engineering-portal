@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Messages{% endblock %}
+
+{% block extra_css %}
+<style>
+
+  /* ── Top-level layout ── */
+  .msg-layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: var(--sky-sp5) var(--sky-sp6);
+    display: flex;
+    gap: var(--sky-sp5);
+    min-height: calc(100vh - 56px);
+  }
+
+  /* ── Sidebar ── */
+  .msg-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sky-sp3);
+    animation: sUp 0.4s cubic-bezier(.22, 1, .36, 1) both;
+  }
+  .msg-sidebar .sky-btn--primary {
+    width: 100%;
+    margin-bottom: var(--sky-sp2);
+  }
+
+  .msg-folder {
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp3);
+    padding: var(--sky-sp3) var(--sky-sp4);
+    border-radius: var(--sky-sp3);
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: var(--sky-grey50);
+    font-weight: 500;
+    font-size: 13px;
+    font-family: var(--sky-font);
+    width: 100%;
+    text-align: left;
+  }
+  .msg-folder--active {
+    background: rgba(0, 15, 245, 0.03);
+    color: var(--sky-primary);
+    font-weight: 700;
+  }
+  .msg-folder__label { flex: 1; }
+  .msg-folder__badge {
+    min-width: 20px;
+    height: 20px;
+    border-radius: var(--sky-rad-full);
+    background: var(--sky-grey20);
+    color: var(--sky-grey60);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 var(--sky-sp2);
+  }
+  .msg-folder--active .msg-folder__badge {
+    background: var(--sky-primary);
+    color: var(--sky-white);
+  }
+
+  .msg-stats {
+    margin-top: auto;
+    padding: var(--sky-sp4);
+    border-radius: var(--sky-sp3);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 15, 245, 0.03);
+  }
+  .msg-stats__title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--sky-grey40);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: var(--sky-sp3);
+  }
+  .msg-stats__row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--sky-grey50);
+    margin-bottom: var(--sky-sp2);
+  }
+  .msg-stats__row:last-child { margin-bottom: 0; }
+
+  /* ── Message list ── */
+  .msg-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px);
+    border-radius: var(--sky-sp3);
+    border: 1px solid rgba(0, 15, 245, 0.03);
+    overflow: hidden;
+    transition: flex 0.3s ease;
+    animation: sUp 0.45s cubic-bezier(.22, 1, .36, 1) 0.05s both;
+  }
+  .msg-list--narrow { flex: 0 0 380px; }
+  .msg-list__search-bar {
+    padding: var(--sky-sp3) var(--sky-sp4);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.024);
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp3);
+  }
+  .msg-list__search-bar .sky-field { margin-bottom: 0; flex: 1; }
+  .msg-list__search-count {
+    font-size: 12px;
+    color: var(--sky-grey40);
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  .msg-list__scroll { flex: 1; overflow-y: auto; }
+  .msg-list__empty {
+    text-align: center;
+    padding: var(--sky-sp8) var(--sky-sp5);
+    color: var(--sky-grey40);
+    display: none;
+  }
+  .msg-list__empty--visible { display: block; }
+  .msg-list__empty-icon { font-size: 40px; margin-bottom: var(--sky-sp4); opacity: 0.5; }
+  .msg-list__empty-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sky-grey50);
+  }
+
+  /* ── Message item ── */
+  .msg-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp3);
+    padding: var(--sky-sp3) var(--sky-sp4);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.016);
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .msg-item--active {
+    background: rgba(0, 15, 245, 0.03);
+    border-left-color: var(--sky-primary);
+  }
+  .msg-item--unread { background: rgba(0, 15, 245, 0.012); }
+  .msg-item.hidden { display: none; }
+
+  .msg-item__star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: var(--sky-grey20);
+    flex-shrink: 0;
+  }
+  .msg-item__star--on { color: var(--sky-attention); }
+
+  .msg-item__content { flex: 1; min-width: 0; }
+  .msg-item__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2px;
+  }
+  .msg-item__sender {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sky-grey60);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .msg-item__sender--unread {
+    font-weight: 700;
+    color: var(--sky-grey90);
+  }
+  .msg-item__time {
+    font-size: 11px;
+    color: var(--sky-grey40);
+    flex-shrink: 0;
+    margin-left: var(--sky-sp2);
+    font-weight: 500;
+  }
+  .msg-item__subject {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sky-grey80);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 2px;
+  }
+  .msg-item__subject--unread {
+    font-weight: 700;
+    color: var(--sky-grey90);
+  }
+  .msg-item__preview {
+    font-size: 12px;
+    color: var(--sky-grey40);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .msg-item__unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sky-primary);
+    flex-shrink: 0;
+  }
+
+  /* ── Message-list avatar (rounded square, not circle like sky-avatar) ── */
+  .msg-avatar {
+    border-radius: var(--sky-sp2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    flex-shrink: 0;
+    color: var(--sky-white);
+  }
+  .msg-avatar--sm { width: 32px; height: 32px; font-size: 11px; }
+  .msg-avatar--md { width: 40px; height: 40px; font-size: 13px; }
+
+  /* ── Detail panel (split view, not a modal slide-in) ── */
+  .msg-detail {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px);
+    border-radius: var(--sky-sp3);
+    border: 1px solid rgba(0, 15, 245, 0.03);
+    overflow: hidden;
+    animation: sUp 0.3s cubic-bezier(.22, 1, .36, 1) both;
+  }
+  .msg-detail--open { display: flex; }
+  .msg-detail__header {
+    padding: var(--sky-sp4) var(--sky-sp5);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.024);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .msg-detail__actions { display: flex; gap: var(--sky-sp2); }
+
+  /* Small icon-only button (used in detail header) */
+  .msg-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--sky-rad-s);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    background: var(--sky-white);
+    color: var(--sky-grey50);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .msg-icon-btn:hover { background: var(--sky-grey05); }
+  .msg-icon-btn--accent {
+    border-color: rgba(0, 15, 245, 0.12);
+    color: var(--sky-primary);
+  }
+  .msg-icon-btn--accent:hover { background: rgba(0, 15, 245, 0.05); }
+
+  .msg-detail__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--sky-sp5);
+  }
+  .msg-detail__subject {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--sky-grey90);
+    letter-spacing: -0.02em;
+    margin-bottom: var(--sky-sp4);
+    line-height: 1.3;
+  }
+  .msg-detail__sender-card {
+    padding: var(--sky-sp4);
+    border-radius: var(--sky-sp3);
+    background: rgba(0, 0, 0, 0.008);
+    border: 1px solid rgba(0, 0, 0, 0.016);
+    margin-bottom: var(--sky-sp5);
+  }
+  .msg-detail__sender-top {
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp3);
+    margin-bottom: var(--sky-sp2);
+  }
+  .msg-detail__sender-info { flex: 1; min-width: 0; }
+  .msg-detail__sender-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--sky-grey90);
+  }
+  .msg-detail__sender-email {
+    font-size: 12px;
+    color: var(--sky-grey40);
+  }
+  .msg-detail__date {
+    font-size: 12px;
+    color: var(--sky-grey40);
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .msg-detail__to {
+    padding-top: var(--sky-sp2);
+    border-top: 1px solid rgba(0, 0, 0, 0.016);
+    font-size: 12px;
+    color: var(--sky-grey40);
+  }
+  .msg-detail__to b { font-weight: 600; color: var(--sky-grey50); }
+  .msg-detail__text {
+    font-size: 14px;
+    line-height: 24px;
+    color: var(--sky-grey80);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg-detail__reply-bar {
+    padding: var(--sky-sp3) var(--sky-sp5) var(--sky-sp4);
+    border-top: 1px solid rgba(0, 0, 0, 0.024);
+  }
+  .msg-detail__reply-prompt {
+    width: 100%;
+    padding: var(--sky-sp3);
+    border-radius: var(--sky-rad-s);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    background: var(--sky-grey05);
+    color: var(--sky-grey40);
+    font-size: 13px;
+    font-family: var(--sky-font);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  /* ── Compose modal (uses sky-overlay + sky-modal__* from base) ── */
+  .msg-compose {
+    width: min(640px, 92vw);
+    max-height: 85vh;
+  }
+  .msg-compose__form {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="msg-layout">
+
+  {# ═══ Sidebar ═══ #}
+  <aside class="msg-sidebar">
+    <button class="sky-btn sky-btn--primary" id="btn-compose">
+      <span class="sky-icon" data-icon="Pencil" data-size="16"></span> New Message
+    </button>
+
+    <button class="msg-folder msg-folder--active" data-folder="inbox">
+      <span class="sky-icon" data-icon="Inbox" data-size="18"></span>
+      <span class="msg-folder__label">Inbox</span>
+      {% if inbox_count > 0 %}
+        <span class="msg-folder__badge">{{ inbox_count }}</span>
+      {% endif %}
+    </button>
+    <button class="msg-folder" data-folder="sent">
+      <span class="sky-icon" data-icon="Send" data-size="18"></span>
+      <span class="msg-folder__label">Sent</span>
+      {% if sent_count > 0 %}
+        <span class="msg-folder__badge">{{ sent_count }}</span>
+      {% endif %}
+    </button>
+    <button class="msg-folder" data-folder="drafts">
+      <span class="sky-icon" data-icon="FileText" data-size="18"></span>
+      <span class="msg-folder__label">Drafts</span>
+      {% if draft_count > 0 %}
+        <span class="msg-folder__badge">{{ draft_count }}</span>
+      {% endif %}
+    </button>
+
+    <div class="msg-stats">
+      <div class="msg-stats__title">Quick Stats</div>
+      <div class="msg-stats__row">
+        <span>Unread</span>
+        <span style="font-weight: 700; color: var(--sky-primary);">{{ unread_count }}</span>
+      </div>
+      <div class="msg-stats__row">
+        <span>Total inbox</span>
+        <span style="font-weight: 700; color: var(--sky-grey60);">{{ inbox_count }}</span>
+      </div>
+      <div class="msg-stats__row">
+        <span>Sent</span>
+        <span style="font-weight: 700; color: var(--sky-positive);">{{ sent_count }}</span>
+      </div>
+    </div>
+  </aside>
+
+  {# ═══ Message list ═══ #}
+  <div class="msg-list" id="msg-list">
+    <div class="msg-list__search-bar">
+      <div class="sky-field">
+        <div class="sky-field__wrap">
+          <span class="sky-field__icon"><span class="sky-icon" data-icon="Search" data-size="16"></span></span>
+          <input type="text" class="sky-field__input sky-field__input--with-icon"
+                 id="search-input" placeholder="Search inbox...">
+        </div>
+      </div>
+      <span class="msg-list__search-count" id="search-count">{{ messages|length }} message{{ messages|length|pluralize }}</span>
+    </div>
+    <div class="msg-list__scroll" id="msg-scroll">
+      {% for msg in messages %}
+        <div class="msg-item{% if not msg.is_read %} msg-item--unread{% endif %}"
+             data-msg-id="{{ msg.id }}"
+             data-folder="{{ msg.folder }}"
+             data-sender="{{ msg.sender_name }}"
+             data-subject="{{ msg.subject }}"
+             data-preview="{{ msg.preview }}">
+          <button class="msg-item__star{% if msg.starred %} msg-item__star--on{% endif %}"
+                  data-action="toggle-star"
+                  data-msg-id="{{ msg.id }}"
+                  data-url="{% url 'message_star' msg.id %}">
+            <span class="sky-icon" data-icon="{% if msg.starred %}StarFilled{% else %}Star{% endif %}" data-size="14"></span>
+          </button>
+          <div class="msg-avatar msg-avatar--sm"
+               style="background: {{ msg.avatar_bg }}; color: {{ msg.avatar_color }};">
+            {{ msg.sender_initials }}
+          </div>
+          <div class="msg-item__content">
+            <div class="msg-item__meta">
+              <span class="msg-item__sender{% if not msg.is_read %} msg-item__sender--unread{% endif %}">
+                {{ msg.display_name }}
+              </span>
+              <span class="msg-item__time">{{ msg.sent_at_short }}</span>
+            </div>
+            <div class="msg-item__subject{% if not msg.is_read %} msg-item__subject--unread{% endif %}">
+              {{ msg.subject }}
+            </div>
+            <div class="msg-item__preview">{{ msg.preview }}</div>
+          </div>
+          {% if not msg.is_read %}
+            <div class="msg-item__unread-dot"></div>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div class="msg-list__empty msg-list__empty--visible">
+          <div class="msg-list__empty-icon">&#x1F4EC;</div>
+          <p class="msg-list__empty-text">No messages in inbox</p>
+        </div>
+      {% endfor %}
+
+      {# Hidden placeholder for JS-driven search filter #}
+      <div class="msg-list__empty" id="empty-state">
+        <div class="msg-list__empty-icon">&#x1F4EC;</div>
+        <p class="msg-list__empty-text">No messages match your search</p>
+      </div>
+    </div>
+  </div>
+
+  {# ═══ Detail panel (hidden, populated via AJAX) ═══ #}
+  <div class="msg-detail" id="detail-panel">
+    <div class="msg-detail__header">
+      <button class="sky-btn sky-btn--ghost" id="btn-back">
+        <span class="sky-icon" data-icon="ArrowLeft" data-size="16"></span> Back
+      </button>
+      <div class="msg-detail__actions">
+        <button class="msg-icon-btn msg-icon-btn--accent" title="Reply" id="btn-reply">
+          <span class="sky-icon" data-icon="Reply" data-size="16"></span>
+        </button>
+        <button class="msg-icon-btn" title="Forward" id="btn-forward">
+          <span class="sky-icon" data-icon="Forward" data-size="16"></span>
+        </button>
+        <button class="msg-icon-btn" title="Delete" id="btn-delete">
+          <span class="sky-icon" data-icon="Trash" data-size="16"></span>
+        </button>
+      </div>
+    </div>
+    <div class="msg-detail__body">
+      <h2 class="msg-detail__subject" id="detail-subject"></h2>
+      <div class="msg-detail__sender-card">
+        <div class="msg-detail__sender-top">
+          <div class="msg-avatar msg-avatar--md" id="detail-avatar"></div>
+          <div class="msg-detail__sender-info">
+            <div class="msg-detail__sender-name" id="detail-sender-name"></div>
+            <div class="msg-detail__sender-email" id="detail-sender-email"></div>
+          </div>
+          <div class="msg-detail__date" id="detail-date"></div>
+        </div>
+        <div class="msg-detail__to" id="detail-to"><b>To:</b> <span id="detail-to-names"></span></div>
+      </div>
+      <div class="msg-detail__text" id="detail-text"></div>
+    </div>
+    <div class="msg-detail__reply-bar">
+      <button class="msg-detail__reply-prompt" id="btn-reply-prompt">Click to reply...</button>
+    </div>
+  </div>
+
+</div>
+
+{# ═══ Compose modal ═══ #}
+<div class="sky-overlay" id="compose-overlay">
+  <div class="sky-modal msg-compose">
+    <div class="sky-modal__header">
+      <h3 class="sky-modal__title" id="compose-title">New Message</h3>
+      <button class="sky-modal__close" id="compose-close-btn">
+        <span class="sky-icon" data-icon="X" data-size="18"></span>
+      </button>
+    </div>
+    <form id="compose-form" method="post" action="{% url 'message_send' %}" class="msg-compose__form">
+      {% csrf_token %}
+      <div class="sky-modal__body">
+        <div class="sky-field">
+          <label class="sky-field__label" for="compose-to">To</label>
+          <div class="sky-field__wrap">
+            <select class="sky-field__input" id="compose-to" name="to" required>
+              <option value="">Select recipient...</option>
+              {% for emp in employees %}
+                <option value="{{ emp.id }}">{{ emp.full_name }} ({{ emp.email }})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="sky-field">
+          <label class="sky-field__label" for="compose-subject">Subject</label>
+          <div class="sky-field__wrap">
+            <input type="text" class="sky-field__input" id="compose-subject" name="subject" placeholder="Message subject">
+          </div>
+        </div>
+        <div class="sky-field">
+          <label class="sky-field__label" for="compose-body">Message</label>
+          <div class="sky-field__wrap">
+            <textarea class="sky-field__input" id="compose-body" name="body"
+                      placeholder="Write your message..."
+                      style="min-height: 220px; resize: vertical; line-height: 1.7;"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="sky-modal__footer" style="justify-content: space-between;">
+        <button type="button" class="msg-icon-btn" title="Attach file">
+          <span class="sky-icon" data-icon="Paperclip" data-size="16"></span>
+        </button>
+        <div style="display: flex; gap: var(--sky-sp2);">
+          <button type="button" class="sky-btn sky-btn--outline" id="btn-save-draft">Save Draft</button>
+          <button type="submit" class="sky-btn sky-btn--primary">
+            <span class="sky-icon" data-icon="Send" data-size="14"></span> Send
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# Toast uses base .sky-toast (bottom-right). JS toggles display via inline style or class. #}
+<div class="sky-toast" id="toast" style="display: none;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/messages.js' %}"></script>
+{% endblock %}
