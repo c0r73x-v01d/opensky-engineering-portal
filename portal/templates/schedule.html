@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Schedule — OpenSky{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/schedule.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="sky-schedule">
+  <header class="sky-schedule__header">
+    <div class="sky-schedule__title-group">
+      <h1 class="sky-schedule__title">Schedule</h1>
+      <p class="sky-schedule__subtitle">4 meetings today &middot; 13 this week &middot; 13 upcoming</p>
+    </div>
+    <button type="button" class="sky-btn sky-btn--primary sky-schedule__cta">
+      <span aria-hidden="true" class="sky-schedule__cta-plus">+</span>
+      Schedule Meeting
+    </button>
+  </header>
+
+  <section class="sky-schedule__kpis" aria-label="Schedule summary">
+    <article class="sky-schedule__kpi sky-schedule__kpi--today">
+      <div class="sky-schedule__kpi-body">
+        <span class="sky-schedule__kpi-label">TODAY</span>
+        <span class="sky-schedule__kpi-value">4</span>
+      </div>
+      <span class="sky-schedule__kpi-icon" data-tone="today">
+        <span class="sky-icon" data-icon="Calendar" data-size="20"></span>
+      </span>
+    </article>
+
+    <article class="sky-schedule__kpi sky-schedule__kpi--week">
+      <div class="sky-schedule__kpi-body">
+        <span class="sky-schedule__kpi-label">THIS WEEK</span>
+        <span class="sky-schedule__kpi-value">13</span>
+      </div>
+      <span class="sky-schedule__kpi-icon" data-tone="week">
+        <span class="sky-icon" data-icon="Layers" data-size="20"></span>
+      </span>
+    </article>
+
+    <article class="sky-schedule__kpi sky-schedule__kpi--upcoming">
+      <div class="sky-schedule__kpi-body">
+        <span class="sky-schedule__kpi-label">UPCOMING</span>
+        <span class="sky-schedule__kpi-value">13</span>
+      </div>
+      <span class="sky-schedule__kpi-icon" data-tone="upcoming">
+        <span class="sky-icon" data-icon="Clock" data-size="20"></span>
+      </span>
+    </article>
+
+    <article class="sky-schedule__kpi sky-schedule__kpi--pending">
+      <div class="sky-schedule__kpi-body">
+        <span class="sky-schedule__kpi-label">PENDING</span>
+        <span class="sky-schedule__kpi-value">2</span>
+      </div>
+      <span class="sky-schedule__kpi-icon" data-tone="pending">
+        <span class="sky-icon" data-icon="User" data-size="20"></span>
+      </span>
+    </article>
+  </section>
+</main>
+{% endblock %}
