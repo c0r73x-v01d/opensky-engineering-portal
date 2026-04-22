@@ -1,0 +1,113 @@
+.sky-schedule {
+  max-width: 1280px;
+  margin: var(--sky-sp6) auto var(--sky-sp8);
+  padding: 0 var(--sky-sp6);
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.sky-schedule__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sky-sp5);
+  margin-bottom: var(--sky-sp6);
+}
+
+.sky-schedule__title {
+  margin: 0 0 var(--sky-sp1);
+  font-family: var(--sky-font);
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--sky-grey90);
+}
+
+.sky-schedule__subtitle {
+  margin: 0;
+  font-size: var(--sky-body-sm);
+  color: var(--sky-grey50);
+}
+
+.sky-schedule__cta {
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sky-sp2);
+}
+
+.sky-schedule__cta-plus {
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+/* ── KPI strip ───────────────────────────────────────────── */
+.sky-schedule__kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sky-sp4);
+}
+
+.sky-schedule__kpi {
+  background: var(--sky-white);
+  border: 1px solid var(--sky-grey10);
+  border-radius: 14px;
+  padding: var(--sky-sp5) var(--sky-sp5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sky-sp4);
+  min-height: 96px;
+}
+
+.sky-schedule__kpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sky-schedule__kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--sky-grey50);
+  text-transform: uppercase;
+}
+
+.sky-schedule__kpi-value {
+  font-family: var(--sky-font);
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--sky-grey90);
+  letter-spacing: -0.02em;
+}
+
+.sky-schedule__kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.sky-schedule__kpi-icon[data-tone="today"]    { background: rgba(0, 15, 245, 0.08);  color: var(--sky-primary); }
+.sky-schedule__kpi-icon[data-tone="week"]     { background: rgba(102, 38, 161, 0.08); color: var(--sky-entertainment); }
+.sky-schedule__kpi-icon[data-tone="upcoming"] { background: rgba(0, 126, 19, 0.08);  color: var(--sky-positive); }
+.sky-schedule__kpi-icon[data-tone="pending"]  { background: rgba(241, 90, 34, 0.10); color: var(--sky-attention); }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .sky-schedule__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .sky-schedule__header { flex-direction: column; align-items: stretch; }
+  .sky-schedule__kpis { grid-template-columns: 1fr; }
+}

@@ -51,7 +51,7 @@ def _coming_soon(request, active_page, title):
 
 @login_required
 def schedule(request):
-    return _coming_soon(request, 'schedule', 'Schedule')
+    return render(request, 'schedule.html', {'active_page': 'schedule'})
 
 
 @login_required
