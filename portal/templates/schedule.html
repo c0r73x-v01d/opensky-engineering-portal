@@ -335,8 +335,156 @@
     </div>
   </section>
 
-  <section class="sky-schedule__view sky-schedule__placeholder" data-view-target="monthly" aria-label="Monthly schedule">
-    <p class="sky-schedule__placeholder-text">Monthly view coming soon.</p>
+  <section class="sky-schedule__view sky-schedule__month" data-view-target="monthly" aria-label="Monthly schedule">
+    <div class="sky-schedule__month-grid" role="grid">
+
+      <div class="sky-month__weekday" role="columnheader">MON</div>
+      <div class="sky-month__weekday" role="columnheader">TUE</div>
+      <div class="sky-month__weekday" role="columnheader">WED</div>
+      <div class="sky-month__weekday" role="columnheader">THU</div>
+      <div class="sky-month__weekday" role="columnheader">FRI</div>
+      <div class="sky-month__weekday" role="columnheader">SAT</div>
+      <div class="sky-month__weekday" role="columnheader">SUN</div>
+
+      {# ── Week 1 (leading Jan 26–31, then Feb 1) ── #}
+      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">26</span></header></div>
+      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">27</span></header></div>
+      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">28</span></header></div>
+      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">29</span></header></div>
+      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">30</span></header></div>
+      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">31</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">1</span></header></div>
+
+      {# ── Week 2 (Feb 2–8) ── #}
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">2</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">3</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">4</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">5</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">6</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">7</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">8</span></header></div>
+
+      {# ── Week 3 (Feb 9–15) ── #}
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">9</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">10</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">11</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">12</span></header></div>
+      <div class="sky-month__cell" role="gridcell">
+        <header class="sky-month__cell-head"><span class="sky-month__num">13</span><span class="sky-month__count">1</span></header>
+        <ul class="sky-month__events">
+          <li class="sky-month__event" data-platform="zoom">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">11:00</span></span>
+            <span class="sky-month__title">QoS Dashboard De&hellip;</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sky-month__cell" role="gridcell">
+        <header class="sky-month__cell-head"><span class="sky-month__num">14</span><span class="sky-month__count">1</span></header>
+        <ul class="sky-month__events">
+          <li class="sky-month__event" data-platform="teams">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">14:00</span></span>
+            <span class="sky-month__title">Engineering Update</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sky-month__cell" role="gridcell">
+        <header class="sky-month__cell-head"><span class="sky-month__num">15</span><span class="sky-month__count">1</span></header>
+        <ul class="sky-month__events">
+          <li class="sky-month__event" data-platform="meet">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">14:00</span></span>
+            <span class="sky-month__title">Incident Retrospec&hellip;</span>
+          </li>
+        </ul>
+      </div>
+
+      {# ── Week 4 (Feb 16 today → 22) ── #}
+      <div class="sky-month__cell sky-month__cell--today" role="gridcell" aria-current="date">
+        <header class="sky-month__cell-head"><span class="sky-month__num sky-month__num--today">16</span><span class="sky-month__count">4</span></header>
+        <ul class="sky-month__events">
+          <li class="sky-month__event" data-platform="zoom">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">10:00</span></span>
+            <span class="sky-month__title">Q1 Roadmap Review</span>
+          </li>
+          <li class="sky-month__event" data-platform="zoom">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">14:30</span></span>
+            <span class="sky-month__title">Latency Investigation</span>
+          </li>
+        </ul>
+        <button type="button" class="sky-month__more">+2 more</button>
+      </div>
+      <div class="sky-month__cell" role="gridcell">
+        <header class="sky-month__cell-head"><span class="sky-month__num">17</span><span class="sky-month__count">2</span></header>
+        <ul class="sky-month__events">
+          <li class="sky-month__event" data-platform="slack">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">09:15</span></span>
+            <span class="sky-month__title">Phoenix Daily Standup</span>
+          </li>
+          <li class="sky-month__event" data-platform="teams">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">14:00</span></span>
+            <span class="sky-month__title">Security Review</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sky-month__cell" role="gridcell">
+        <header class="sky-month__cell-head"><span class="sky-month__num">18</span><span class="sky-month__count">2</span></header>
+        <ul class="sky-month__events">
+          <li class="sky-month__event" data-platform="slack">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">09:30</span></span>
+            <span class="sky-month__title">Edge Delivery Daily S&hellip;</span>
+          </li>
+          <li class="sky-month__event" data-platform="zoom">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">10:00</span></span>
+            <span class="sky-month__title">Sprint 22 Planning</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sky-month__cell" role="gridcell">
+        <header class="sky-month__cell-head"><span class="sky-month__num">19</span><span class="sky-month__count">2</span></header>
+        <ul class="sky-month__events">
+          <li class="sky-month__event" data-platform="slack">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">09:30</span></span>
+            <span class="sky-month__title">Alerting Triage</span>
+          </li>
+          <li class="sky-month__event" data-platform="teams">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">11:00</span></span>
+            <span class="sky-month__title">Design System Sync</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sky-month__cell" role="gridcell">
+        <header class="sky-month__cell-head"><span class="sky-month__num">20</span><span class="sky-month__count">2</span></header>
+        <ul class="sky-month__events">
+          <li class="sky-month__event" data-platform="zoom">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">11:00</span></span>
+            <span class="sky-month__title">Cross-Team Archite&hellip;</span>
+          </li>
+          <li class="sky-month__event" data-platform="meet">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">14:00</span></span>
+            <span class="sky-month__title">Senior Platform Eng&hellip;</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sky-month__cell" role="gridcell">
+        <header class="sky-month__cell-head"><span class="sky-month__num">21</span><span class="sky-month__count">1</span></header>
+        <ul class="sky-month__events">
+          <li class="sky-month__event" data-platform="meet">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">11:00</span></span>
+            <span class="sky-month__title">Raj Patel</span>
+          </li>
+        </ul>
+      </div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">22</span></header></div>
+
+      {# ── Week 5 (Feb 23–28, then trailing Mar 1) ── #}
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">23</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">24</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">25</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">26</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">27</span></header></div>
+      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">28</span></header></div>
+      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">1</span></header></div>
+
+    </div>
   </section>
 
   <section class="sky-schedule__view sky-schedule__placeholder" data-view-target="upcoming" aria-label="Upcoming meetings">
