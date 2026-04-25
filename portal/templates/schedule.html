@@ -61,5 +61,37 @@
       </span>
     </article>
   </section>
+
+  <section class="sky-schedule__toolbar" data-view="weekly" aria-label="Calendar view controls">
+    <div class="sky-schedule__views" role="tablist" aria-label="Calendar layout">
+      <button type="button" class="sky-schedule__view-pill" role="tab" data-view-pill="monthly" aria-selected="false">
+        <span class="sky-icon sky-schedule__view-icon" data-icon="Grid" data-size="14"></span>
+        Monthly
+      </button>
+      <button type="button" class="sky-schedule__view-pill is-active" role="tab" data-view-pill="weekly" aria-selected="true">
+        <span class="sky-icon sky-schedule__view-icon" data-icon="Columns" data-size="14"></span>
+        Weekly
+      </button>
+      <button type="button" class="sky-schedule__view-pill" role="tab" data-view-pill="upcoming" aria-selected="false">
+        <span class="sky-icon sky-schedule__view-icon" data-icon="List" data-size="14"></span>
+        Upcoming
+      </button>
+    </div>
+
+    <div class="sky-schedule__navigator">
+      <button type="button" class="sky-schedule__nav-btn" data-nav="prev" aria-label="Previous range">
+        <span class="sky-icon" data-icon="ChevLeft" data-size="14"></span>
+      </button>
+      <span class="sky-schedule__range" data-role="range-label">16 Feb &ndash; 22 Feb</span>
+      <button type="button" class="sky-schedule__nav-btn" data-nav="next" aria-label="Next range">
+        <span class="sky-icon" data-icon="ChevRight" data-size="14"></span>
+      </button>
+      <button type="button" class="sky-btn sky-btn--outline sky-schedule__today" data-nav="today">Today</button>
+    </div>
+  </section>
 </main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/schedule.js' %}"></script>
 {% endblock %}

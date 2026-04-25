@@ -102,9 +102,113 @@
 .sky-schedule__kpi-icon[data-tone="upcoming"] { background: rgba(0, 126, 19, 0.08);  color: var(--sky-positive); }
 .sky-schedule__kpi-icon[data-tone="pending"]  { background: rgba(241, 90, 34, 0.10); color: var(--sky-attention); }
 
+/* ── Toolbar (view toggle + navigator) ───────────────────── */
+.sky-schedule__toolbar {
+  margin-top: var(--sky-sp5);
+  padding: var(--sky-sp3) var(--sky-sp4);
+  background: var(--sky-white);
+  border: 1px solid var(--sky-grey10);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sky-sp4);
+  flex-wrap: wrap;
+}
+
+.sky-schedule__views {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sky-sp1);
+  padding: 4px;
+  background: var(--sky-grey05);
+  border-radius: 10px;
+}
+
+.sky-schedule__view-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-family: var(--sky-font);
+  font-size: var(--sky-body-sm);
+  font-weight: 600;
+  color: var(--sky-grey60);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.sky-schedule__view-pill:hover {
+  color: var(--sky-grey90);
+}
+
+.sky-schedule__view-pill.is-active {
+  background: var(--sky-white);
+  color: var(--sky-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.sky-schedule__view-icon {
+  display: inline-flex;
+  align-items: center;
+  color: currentColor;
+}
+
+.sky-schedule__navigator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sky-sp2);
+}
+
+.sky-schedule__nav-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sky-grey10);
+  background: var(--sky-white);
+  border-radius: 8px;
+  color: var(--sky-grey60);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.sky-schedule__nav-btn:hover {
+  background: var(--sky-grey05);
+  color: var(--sky-grey90);
+  border-color: var(--sky-grey20);
+}
+
+.sky-schedule__range {
+  font-family: var(--sky-font);
+  font-size: var(--sky-body-sm);
+  font-weight: 600;
+  color: var(--sky-grey90);
+  min-width: 130px;
+  text-align: center;
+}
+
+.sky-schedule__today {
+  margin-left: var(--sky-sp2);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: var(--sky-body-sm);
+  font-weight: 600;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 900px) {
   .sky-schedule__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .sky-schedule__toolbar { flex-direction: column; align-items: stretch; gap: var(--sky-sp3); }
+  .sky-schedule__views { justify-content: center; }
+  .sky-schedule__navigator { justify-content: center; flex-wrap: wrap; }
 }
 
 @media (max-width: 560px) {
