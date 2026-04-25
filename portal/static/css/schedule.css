@@ -200,6 +200,199 @@
   font-weight: 600;
 }
 
+/* ── View visibility (toolbar data-view filter) ──────────── */
+.sky-schedule__view { display: none; }
+.sky-schedule[data-view="weekly"]   .sky-schedule__view[data-view-target="weekly"]   { display: block; }
+.sky-schedule[data-view="monthly"]  .sky-schedule__view[data-view-target="monthly"]  { display: block; }
+.sky-schedule[data-view="upcoming"] .sky-schedule__view[data-view-target="upcoming"] { display: block; }
+
+.sky-schedule__placeholder {
+  margin-top: var(--sky-sp4);
+  padding: var(--sky-sp8) var(--sky-sp5);
+  background: var(--sky-white);
+  border: 1px solid var(--sky-grey10);
+  border-radius: 14px;
+  text-align: center;
+}
+
+.sky-schedule__placeholder-text {
+  margin: 0;
+  font-family: var(--sky-font);
+  font-size: var(--sky-body-sm);
+  color: var(--sky-grey50);
+}
+
+/* ── Weekly grid ─────────────────────────────────────────── */
+.sky-schedule__week {
+  margin-top: var(--sky-sp4);
+  background: var(--sky-white);
+  border: 1px solid var(--sky-grey10);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.sky-schedule__week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.sky-schedule__day {
+  border-right: 1px solid var(--sky-grey10);
+  padding: var(--sky-sp4) var(--sky-sp3);
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sky-schedule__day:last-child {
+  border-right: 0;
+}
+
+.sky-schedule__day-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: var(--sky-sp4);
+  padding-bottom: var(--sky-sp3);
+  border-bottom: 1px solid var(--sky-grey05);
+}
+
+.sky-schedule__day-name {
+  font-family: var(--sky-font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--sky-grey50);
+  text-transform: uppercase;
+}
+
+.sky-schedule__day-num {
+  font-family: var(--sky-font);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--sky-grey90);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.sky-schedule__day--today .sky-schedule__day-num {
+  color: var(--sky-primary);
+}
+
+.sky-schedule__day-tag {
+  font-family: var(--sky-font);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--sky-primary);
+  text-transform: uppercase;
+}
+
+.sky-schedule__events {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sky-sp2);
+  flex: 1;
+}
+
+/* ── Event card ──────────────────────────────────────────── */
+.sky-event {
+  position: relative;
+  padding: 10px 12px;
+  background: var(--sky-white);
+  border-radius: var(--sky-rad-xs);
+  box-shadow: 0 1px 2px rgba(15, 15, 30, 0.05), 0 1px 3px rgba(15, 15, 30, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--sky-font);
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+.sky-event:hover {
+  box-shadow: 0 2px 4px rgba(15, 15, 30, 0.06), 0 4px 12px rgba(15, 15, 30, 0.06);
+}
+
+.sky-event__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--sky-grey60);
+}
+
+.sky-event__time {
+  font-weight: 700;
+  color: var(--sky-grey90);
+}
+
+.sky-event__sep {
+  color: var(--sky-grey30);
+}
+
+.sky-event__dur {
+  color: var(--sky-grey50);
+}
+
+.sky-event__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sky-grey90);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sky-event__tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.sky-event__platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--sky-grey60);
+}
+
+.sky-event__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sky-grey40);
+}
+
+.sky-event[data-platform="slack"] .sky-event__dot { background: #6626A1; }
+.sky-event[data-platform="zoom"]  .sky-event__dot { background: var(--sky-primary); }
+.sky-event[data-platform="teams"] .sky-event__dot { background: #5B5FC7; }
+.sky-event[data-platform="meet"]  .sky-event__dot { background: var(--sky-positive); }
+
+.sky-event__status {
+  align-self: flex-start;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: capitalize;
+}
+
+.sky-event__status--accepted {
+  color: var(--sky-positive);
+}
+
+.sky-event__status--pending {
+  color: var(--sky-attention);
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 900px) {
   .sky-schedule__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -209,9 +402,14 @@
   .sky-schedule__toolbar { flex-direction: column; align-items: stretch; gap: var(--sky-sp3); }
   .sky-schedule__views { justify-content: center; }
   .sky-schedule__navigator { justify-content: center; flex-wrap: wrap; }
+  .sky-schedule__week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sky-schedule__day { border-bottom: 1px solid var(--sky-grey10); }
+  .sky-schedule__day:nth-child(2n) { border-right: 0; }
 }
 
 @media (max-width: 560px) {
   .sky-schedule__header { flex-direction: column; align-items: stretch; }
   .sky-schedule__kpis { grid-template-columns: 1fr; }
+  .sky-schedule__week-grid { grid-template-columns: 1fr; }
+  .sky-schedule__day { border-right: 0; min-height: auto; }
 }
