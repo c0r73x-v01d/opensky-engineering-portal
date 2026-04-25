@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<main class="sky-schedule">
+<main class="sky-schedule" data-view="weekly">
   <header class="sky-schedule__header">
     <div class="sky-schedule__title-group">
       <h1 class="sky-schedule__title">Schedule</h1>
@@ -88,6 +88,259 @@
       </button>
       <button type="button" class="sky-btn sky-btn--outline sky-schedule__today" data-nav="today">Today</button>
     </div>
+  </section>
+
+  <section class="sky-schedule__week sky-schedule__view" data-view-target="weekly" aria-label="Weekly schedule">
+    <div class="sky-schedule__week-grid">
+
+      <article class="sky-schedule__day sky-schedule__day--today" aria-current="date">
+        <header class="sky-schedule__day-head">
+          <span class="sky-schedule__day-name">MON</span>
+          <span class="sky-schedule__day-num">16</span>
+          <span class="sky-schedule__day-tag">TODAY</span>
+        </header>
+        <div class="sky-schedule__events">
+          <article class="sky-event" data-platform="slack">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">09:00</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">15m</span>
+            </div>
+            <div class="sky-event__title">Nebula Auth Daily Standup</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="slack"><span class="sky-event__dot"></span>Slack</span>
+            </div>
+            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
+          </article>
+
+          <article class="sky-event" data-platform="zoom">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">10:00</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">1h</span>
+            </div>
+            <div class="sky-event__title">Phoenix Platform &mdash; Q1 Roadmap...</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="zoom"><span class="sky-event__dot"></span>Zoom</span>
+            </div>
+            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
+          </article>
+
+          <article class="sky-event" data-platform="zoom">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">14:30</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">45m</span>
+            </div>
+            <div class="sky-event__title">Streaming Engine &mdash; Latency...</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="zoom"><span class="sky-event__dot"></span>Zoom</span>
+            </div>
+            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
+          </article>
+
+          <article class="sky-event" data-platform="teams">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">16:00</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">30m</span>
+            </div>
+            <div class="sky-event__title">1:1 with Sarah Chen</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="teams"><span class="sky-event__dot"></span>Teams</span>
+            </div>
+            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
+          </article>
+        </div>
+      </article>
+
+      <article class="sky-schedule__day">
+        <header class="sky-schedule__day-head">
+          <span class="sky-schedule__day-name">TUE</span>
+          <span class="sky-schedule__day-num">17</span>
+        </header>
+        <div class="sky-schedule__events">
+          <article class="sky-event" data-platform="slack">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">09:15</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">15m</span>
+            </div>
+            <div class="sky-event__title">Phoenix Daily Standup</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="slack"><span class="sky-event__dot"></span>Slack</span>
+            </div>
+            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
+          </article>
+
+          <article class="sky-event" data-platform="teams">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">14:00</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">2h</span>
+            </div>
+            <div class="sky-event__title">Nebula Auth &mdash; Security Review</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="teams"><span class="sky-event__dot"></span>Teams</span>
+            </div>
+            <div class="sky-event__status sky-event__status--pending">Pending</div>
+          </article>
+        </div>
+      </article>
+
+      <article class="sky-schedule__day">
+        <header class="sky-schedule__day-head">
+          <span class="sky-schedule__day-name">WED</span>
+          <span class="sky-schedule__day-num">18</span>
+        </header>
+        <div class="sky-schedule__events">
+          <article class="sky-event" data-platform="slack">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">09:30</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">15m</span>
+            </div>
+            <div class="sky-event__title">Edge Delivery Daily Standup</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="slack"><span class="sky-event__dot"></span>Slack</span>
+            </div>
+            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
+          </article>
+        </div>
+      </article>
+
+      <article class="sky-schedule__day">
+        <header class="sky-schedule__day-head">
+          <span class="sky-schedule__day-name">THU</span>
+          <span class="sky-schedule__day-num">19</span>
+        </header>
+        <div class="sky-schedule__events">
+          <article class="sky-event" data-platform="teams">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">11:00</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">1h</span>
+            </div>
+            <div class="sky-event__title">Horizon UI &mdash; Design System...</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="teams"><span class="sky-event__dot"></span>Teams</span>
+            </div>
+            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
+          </article>
+
+          <article class="sky-event" data-platform="slack">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">14:00</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">1h</span>
+            </div>
+            <div class="sky-event__title">Atlas Data &mdash; Sprint 22 Planning</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="slack"><span class="sky-event__dot"></span>Slack</span>
+            </div>
+            <div class="sky-event__status sky-event__status--pending">Pending</div>
+          </article>
+        </div>
+      </article>
+
+      <article class="sky-schedule__day">
+        <header class="sky-schedule__day-head">
+          <span class="sky-schedule__day-name">FRI</span>
+          <span class="sky-schedule__day-num">20</span>
+        </header>
+        <div class="sky-schedule__events">
+          <article class="sky-event" data-platform="zoom">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">10:00</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">2h</span>
+            </div>
+            <div class="sky-event__title">Cross-Team Architecture...</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="zoom"><span class="sky-event__dot"></span>Zoom</span>
+            </div>
+            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
+          </article>
+
+          <article class="sky-event" data-platform="meet">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">15:30</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">30m</span>
+            </div>
+            <div class="sky-event__title">Skyline Observability &mdash;...</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="meet"><span class="sky-event__dot"></span>Meet</span>
+            </div>
+            <div class="sky-event__status sky-event__status--pending">Pending</div>
+          </article>
+        </div>
+      </article>
+
+      <article class="sky-schedule__day">
+        <header class="sky-schedule__day-head">
+          <span class="sky-schedule__day-name">SAT</span>
+          <span class="sky-schedule__day-num">21</span>
+        </header>
+        <div class="sky-schedule__events">
+          <article class="sky-event" data-platform="zoom">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">10:00</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">30m</span>
+            </div>
+            <div class="sky-event__title">Interview &mdash; Senior Platform Engineer</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="zoom"><span class="sky-event__dot"></span>Zoom</span>
+            </div>
+            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
+          </article>
+        </div>
+      </article>
+
+      <article class="sky-schedule__day">
+        <header class="sky-schedule__day-head">
+          <span class="sky-schedule__day-name">SUN</span>
+          <span class="sky-schedule__day-num">22</span>
+        </header>
+        <div class="sky-schedule__events">
+          <article class="sky-event" data-platform="meet">
+            <div class="sky-event__meta">
+              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+              <span class="sky-event__time">11:00</span>
+              <span class="sky-event__sep">·</span>
+              <span class="sky-event__dur">1h</span>
+            </div>
+            <div class="sky-event__title">Mentoring Session &mdash; Raj Patel</div>
+            <div class="sky-event__tags">
+              <span class="sky-event__platform" data-platform="meet"><span class="sky-event__dot"></span>Meet</span>
+            </div>
+            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
+          </article>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section class="sky-schedule__view sky-schedule__placeholder" data-view-target="monthly" aria-label="Monthly schedule">
+    <p class="sky-schedule__placeholder-text">Monthly view coming soon.</p>
+  </section>
+
+  <section class="sky-schedule__view sky-schedule__placeholder" data-view-target="upcoming" aria-label="Upcoming meetings">
+    <p class="sky-schedule__placeholder-text">Upcoming list coming soon.</p>
   </section>
 </main>
 {% endblock %}

@@ -2,8 +2,9 @@
   'use strict';
 
   document.addEventListener('DOMContentLoaded', function () {
+    var schedule = document.querySelector('.sky-schedule');
     var toolbar = document.querySelector('.sky-schedule__toolbar');
-    if (!toolbar) return;
+    if (!schedule || !toolbar) return;
 
     var pills = toolbar.querySelectorAll('[data-view-pill]');
 
@@ -19,6 +20,7 @@
         });
 
         toolbar.setAttribute('data-view', view);
+        schedule.setAttribute('data-view', view);
       });
     });
   });
