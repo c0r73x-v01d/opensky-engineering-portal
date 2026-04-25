@@ -487,8 +487,315 @@
     </div>
   </section>
 
-  <section class="sky-schedule__view sky-schedule__placeholder" data-view-target="upcoming" aria-label="Upcoming meetings">
-    <p class="sky-schedule__placeholder-text">Upcoming list coming soon.</p>
+  <section class="sky-schedule__view sky-schedule__upcoming" data-view-target="upcoming" aria-label="Upcoming meetings">
+    <div class="sky-upcoming__columns">
+
+      {# ── Main column: grouped meetings ── #}
+      <div class="sky-upcoming__main">
+        <h2 class="sky-upcoming__heading">UPCOMING MEETINGS</h2>
+
+        <section class="sky-upcoming__group">
+          <header class="sky-upcoming__group-head">
+            <h3 class="sky-upcoming__group-title">Today</h3>
+            <span class="sky-upcoming__group-tag">Today</span>
+            <span class="sky-upcoming__group-count">4 meetings</span>
+          </header>
+          <div class="sky-upcoming__list">
+
+            <article class="sky-meeting" data-platform="slack">
+              <header class="sky-meeting__head">
+                <h4 class="sky-meeting__title">Nebula Auth Daily Standup</h4>
+                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
+              </header>
+              <div class="sky-meeting__meta">
+                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
+                <span class="sky-meeting__time-text">09:00 &ndash; 09:15</span>
+                <span class="sky-meeting__sep">&middot;</span>
+                <span class="sky-meeting__dur">15m</span>
+                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
+                <span class="sky-meeting__org-name">Nebula Auth</span>
+              </div>
+              <footer class="sky-meeting__foot">
+                <div class="sky-meeting__pills">
+                  <span class="sky-pill sky-pill--platform" data-platform="slack"><span class="sky-pill__dot"></span>Slack</span>
+                  <span class="sky-pill sky-pill--team">TEAM</span>
+                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>daily</span>
+                </div>
+                <ul class="sky-meeting__avatars">
+                  <li class="sky-avatar">SR</li>
+                  <li class="sky-avatar">CH</li>
+                </ul>
+              </footer>
+            </article>
+
+            <article class="sky-meeting" data-platform="teams">
+              <header class="sky-meeting__head">
+                <h4 class="sky-meeting__title">Phoenix Platform &mdash; Q1 Roadmap Review</h4>
+                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
+              </header>
+              <div class="sky-meeting__meta">
+                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
+                <span class="sky-meeting__time-text">10:00 &ndash; 11:00</span>
+                <span class="sky-meeting__sep">&middot;</span>
+                <span class="sky-meeting__dur">1h</span>
+                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
+                <span class="sky-meeting__org-name">Phoenix Platform</span>
+              </div>
+              <footer class="sky-meeting__foot">
+                <div class="sky-meeting__pills">
+                  <span class="sky-pill sky-pill--platform" data-platform="teams"><span class="sky-pill__dot"></span>Teams</span>
+                  <span class="sky-pill sky-pill--team">TEAM</span>
+                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>weekly</span>
+                </div>
+                <ul class="sky-meeting__avatars">
+                  <li class="sky-avatar">EN</li>
+                  <li class="sky-avatar">PR</li>
+                  <li class="sky-avatar">QA</li>
+                  <li class="sky-avatar sky-avatar--more">+5</li>
+                </ul>
+              </footer>
+            </article>
+
+            <article class="sky-meeting" data-platform="zoom">
+              <header class="sky-meeting__head">
+                <h4 class="sky-meeting__title">Streaming Engine &mdash; Latency Investigation</h4>
+                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
+              </header>
+              <div class="sky-meeting__meta">
+                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
+                <span class="sky-meeting__time-text">14:30 &ndash; 15:15</span>
+                <span class="sky-meeting__sep">&middot;</span>
+                <span class="sky-meeting__dur">45m</span>
+                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
+                <span class="sky-meeting__org-name">Streaming Engine</span>
+              </div>
+              <footer class="sky-meeting__foot">
+                <div class="sky-meeting__pills">
+                  <span class="sky-pill sky-pill--platform" data-platform="zoom"><span class="sky-pill__dot"></span>Zoom</span>
+                  <span class="sky-pill sky-pill--team">TEAM</span>
+                </div>
+                <ul class="sky-meeting__avatars">
+                  <li class="sky-avatar">EN</li>
+                  <li class="sky-avatar">SR</li>
+                </ul>
+              </footer>
+            </article>
+
+            <article class="sky-meeting" data-platform="teams">
+              <header class="sky-meeting__head">
+                <h4 class="sky-meeting__title">1:1 with Sarah Chen</h4>
+                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
+              </header>
+              <div class="sky-meeting__meta">
+                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
+                <span class="sky-meeting__time-text">16:00 &ndash; 16:30</span>
+                <span class="sky-meeting__sep">&middot;</span>
+                <span class="sky-meeting__dur">30m</span>
+              </div>
+              <footer class="sky-meeting__foot">
+                <div class="sky-meeting__pills">
+                  <span class="sky-pill sky-pill--platform" data-platform="teams"><span class="sky-pill__dot"></span>Teams</span>
+                  <span class="sky-pill sky-pill--personal">PERSONAL</span>
+                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>weekly</span>
+                </div>
+                <ul class="sky-meeting__avatars">
+                  <li class="sky-avatar">SC</li>
+                </ul>
+              </footer>
+            </article>
+
+          </div>
+        </section>
+
+        <section class="sky-upcoming__group">
+          <header class="sky-upcoming__group-head">
+            <h3 class="sky-upcoming__group-title">Tuesday, 17 February 2026</h3>
+            <span class="sky-upcoming__group-count">2 meetings</span>
+          </header>
+          <div class="sky-upcoming__list">
+
+            <article class="sky-meeting" data-platform="slack">
+              <header class="sky-meeting__head">
+                <h4 class="sky-meeting__title">Phoenix Daily Standup</h4>
+                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
+              </header>
+              <div class="sky-meeting__meta">
+                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
+                <span class="sky-meeting__time-text">09:15 &ndash; 09:30</span>
+                <span class="sky-meeting__sep">&middot;</span>
+                <span class="sky-meeting__dur">15m</span>
+                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
+                <span class="sky-meeting__org-name">Phoenix Platform</span>
+              </div>
+              <footer class="sky-meeting__foot">
+                <div class="sky-meeting__pills">
+                  <span class="sky-pill sky-pill--platform" data-platform="slack"><span class="sky-pill__dot"></span>Slack</span>
+                  <span class="sky-pill sky-pill--team">TEAM</span>
+                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>daily</span>
+                </div>
+                <ul class="sky-meeting__avatars">
+                  <li class="sky-avatar">EN</li>
+                  <li class="sky-avatar">SR</li>
+                </ul>
+              </footer>
+            </article>
+
+            <article class="sky-meeting" data-platform="teams">
+              <header class="sky-meeting__head">
+                <h4 class="sky-meeting__title">Nebula Auth &mdash; Security Review</h4>
+                <span class="sky-meeting__status sky-meeting__status--pending">Pending</span>
+              </header>
+              <div class="sky-meeting__meta">
+                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
+                <span class="sky-meeting__time-text">14:00 &ndash; 16:00</span>
+                <span class="sky-meeting__sep">&middot;</span>
+                <span class="sky-meeting__dur">2h</span>
+                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
+                <span class="sky-meeting__org-name">Nebula Auth</span>
+              </div>
+              <footer class="sky-meeting__foot">
+                <div class="sky-meeting__pills">
+                  <span class="sky-pill sky-pill--platform" data-platform="teams"><span class="sky-pill__dot"></span>Teams</span>
+                  <span class="sky-pill sky-pill--team">TEAM</span>
+                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>bi-weekly</span>
+                </div>
+                <ul class="sky-meeting__avatars">
+                  <li class="sky-avatar">SR</li>
+                </ul>
+              </footer>
+            </article>
+
+          </div>
+        </section>
+
+        <section class="sky-upcoming__group">
+          <header class="sky-upcoming__group-head">
+            <h3 class="sky-upcoming__group-title">Wednesday, 18 February 2026</h3>
+            <span class="sky-upcoming__group-count">2 meetings</span>
+          </header>
+          <div class="sky-upcoming__list">
+
+            <article class="sky-meeting" data-platform="slack">
+              <header class="sky-meeting__head">
+                <h4 class="sky-meeting__title">Edge Delivery Daily Standup</h4>
+                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
+              </header>
+              <div class="sky-meeting__meta">
+                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
+                <span class="sky-meeting__time-text">09:30 &ndash; 09:45</span>
+                <span class="sky-meeting__sep">&middot;</span>
+                <span class="sky-meeting__dur">15m</span>
+                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
+                <span class="sky-meeting__org-name">Edge Delivery</span>
+              </div>
+              <footer class="sky-meeting__foot">
+                <div class="sky-meeting__pills">
+                  <span class="sky-pill sky-pill--platform" data-platform="slack"><span class="sky-pill__dot"></span>Slack</span>
+                  <span class="sky-pill sky-pill--team">TEAM</span>
+                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>daily</span>
+                </div>
+                <ul class="sky-meeting__avatars">
+                  <li class="sky-avatar">EN</li>
+                </ul>
+              </footer>
+            </article>
+
+            <article class="sky-meeting" data-platform="zoom">
+              <header class="sky-meeting__head">
+                <h4 class="sky-meeting__title">Atlas Data &mdash; Sprint 22 Planning</h4>
+                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
+              </header>
+              <div class="sky-meeting__meta">
+                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
+                <span class="sky-meeting__time-text">10:00 &ndash; 11:30</span>
+                <span class="sky-meeting__sep">&middot;</span>
+                <span class="sky-meeting__dur">1h 30m</span>
+                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
+                <span class="sky-meeting__org-name">Atlas Data</span>
+              </div>
+              <footer class="sky-meeting__foot">
+                <div class="sky-meeting__pills">
+                  <span class="sky-pill sky-pill--platform" data-platform="zoom"><span class="sky-pill__dot"></span>Zoom</span>
+                  <span class="sky-pill sky-pill--team">TEAM</span>
+                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>bi-weekly</span>
+                </div>
+                <ul class="sky-meeting__avatars">
+                  <li class="sky-avatar">EN</li>
+                  <li class="sky-avatar">PR</li>
+                  <li class="sky-avatar sky-avatar--more">+3</li>
+                </ul>
+              </footer>
+            </article>
+
+          </div>
+        </section>
+      </div>
+
+      {# ── Sidebar: recent past ── #}
+      <aside class="sky-upcoming__side">
+        <h2 class="sky-upcoming__heading">RECENT PAST</h2>
+        <div class="sky-upcoming__past">
+
+          <article class="sky-past" data-platform="teams">
+            <h4 class="sky-past__title">Phoenix Platform &mdash; Incident Retrospective</h4>
+            <div class="sky-past__pills">
+              <span class="sky-pill sky-pill--platform" data-platform="teams"><span class="sky-pill__dot"></span>Teams</span>
+              <span class="sky-pill sky-pill--personal">PERSONAL</span>
+            </div>
+            <div class="sky-past__meta">
+              <span class="sky-past__row">
+                <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+                <span class="sky-past__time">14:00 &ndash; 15:00</span>
+                <span class="sky-past__sep">&middot;</span>
+                <span class="sky-past__dur">1h</span>
+              </span>
+              <span class="sky-past__row">
+                <span class="sky-icon" data-icon="FileText" data-size="11"></span>
+                <span class="sky-past__org">Phoenix Platform</span>
+              </span>
+            </div>
+          </article>
+
+          <article class="sky-past" data-platform="zoom">
+            <h4 class="sky-past__title">All Hands &mdash; Engineering Update</h4>
+            <div class="sky-past__pills">
+              <span class="sky-pill sky-pill--platform" data-platform="zoom"><span class="sky-pill__dot"></span>Zoom</span>
+              <span class="sky-pill sky-pill--personal">PERSONAL</span>
+            </div>
+            <div class="sky-past__meta">
+              <span class="sky-past__row">
+                <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+                <span class="sky-past__time">10:00 &ndash; 10:45</span>
+                <span class="sky-past__sep">&middot;</span>
+                <span class="sky-past__dur">45m</span>
+              </span>
+            </div>
+          </article>
+
+          <article class="sky-past" data-platform="meet">
+            <h4 class="sky-past__title">Streaming Engine &mdash; QoS Dashboard Demo</h4>
+            <div class="sky-past__pills">
+              <span class="sky-pill sky-pill--platform" data-platform="meet"><span class="sky-pill__dot"></span>Meet</span>
+              <span class="sky-pill sky-pill--team">TEAM</span>
+            </div>
+            <div class="sky-past__meta">
+              <span class="sky-past__row">
+                <span class="sky-icon" data-icon="Clock" data-size="11"></span>
+                <span class="sky-past__time">11:30 &ndash; 12:00</span>
+                <span class="sky-past__sep">&middot;</span>
+                <span class="sky-past__dur">30m</span>
+              </span>
+              <span class="sky-past__row">
+                <span class="sky-icon" data-icon="FileText" data-size="11"></span>
+                <span class="sky-past__org">Streaming Engine</span>
+              </span>
+            </div>
+          </article>
+
+        </div>
+      </aside>
+
+    </div>
   </section>
 </main>
 {% endblock %}
