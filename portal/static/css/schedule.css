@@ -563,9 +563,315 @@
   text-decoration: underline;
 }
 
+/* ── Upcoming list ───────────────────────────────────────── */
+.sky-schedule__upcoming {
+  margin-top: var(--sky-sp4);
+}
+
+.sky-upcoming__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
+  gap: var(--sky-sp5);
+}
+
+.sky-upcoming__heading {
+  margin: 0 0 var(--sky-sp3);
+  font-family: var(--sky-font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  color: var(--sky-grey50);
+  text-transform: uppercase;
+}
+
+/* Group (Today / Tuesday / etc.) */
+.sky-upcoming__group {
+  margin-bottom: var(--sky-sp5);
+}
+
+.sky-upcoming__group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sky-sp2);
+  margin-bottom: var(--sky-sp3);
+}
+
+.sky-upcoming__group-title {
+  margin: 0;
+  font-family: var(--sky-font);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sky-grey90);
+}
+
+.sky-upcoming__group-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: rgba(0, 15, 245, 0.10);
+  color: var(--sky-primary);
+  border-radius: var(--sky-rad-full);
+  font-family: var(--sky-font);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.sky-upcoming__group-count {
+  font-family: var(--sky-font);
+  font-size: 11.5px;
+  color: var(--sky-grey50);
+  margin-left: auto;
+}
+
+.sky-upcoming__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sky-sp3);
+}
+
+/* ── Meeting card (rich) ─────────────────────────────────── */
+.sky-meeting {
+  position: relative;
+  padding: 14px 16px 14px 18px;
+  background: var(--sky-white);
+  border: 1px solid var(--sky-grey10);
+  border-left: 3px solid var(--sky-grey20);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--sky-font);
+  box-shadow: 0 1px 2px rgba(15, 15, 30, 0.04);
+  transition: box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.sky-meeting:hover {
+  box-shadow: 0 2px 4px rgba(15, 15, 30, 0.06), 0 4px 12px rgba(15, 15, 30, 0.05);
+}
+
+.sky-meeting[data-platform="slack"] { border-left-color: #6626A1; }
+.sky-meeting[data-platform="zoom"]  { border-left-color: var(--sky-primary); }
+.sky-meeting[data-platform="teams"] { border-left-color: #5B5FC7; }
+.sky-meeting[data-platform="meet"]  { border-left-color: var(--sky-positive); }
+
+.sky-meeting__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sky-sp3);
+}
+
+.sky-meeting__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sky-grey90);
+  line-height: 1.3;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sky-meeting__status {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding-top: 2px;
+}
+
+.sky-meeting__status--accepted::before {
+  content: '\2022';
+  color: var(--sky-positive);
+  margin-right: 4px;
+  font-size: 14px;
+  line-height: 0;
+}
+.sky-meeting__status--accepted { color: var(--sky-positive); }
+
+.sky-meeting__status--pending::before {
+  content: '\2022';
+  color: var(--sky-attention);
+  margin-right: 4px;
+  font-size: 14px;
+  line-height: 0;
+}
+.sky-meeting__status--pending { color: var(--sky-attention); }
+
+.sky-meeting__meta {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--sky-grey60);
+}
+
+.sky-meeting__meta .sky-icon { color: var(--sky-grey50); display: inline-flex; align-items: center; }
+
+.sky-meeting__time-text { font-weight: 700; color: var(--sky-grey90); }
+.sky-meeting__sep      { color: var(--sky-grey30); }
+.sky-meeting__dur      { color: var(--sky-grey60); }
+.sky-meeting__org-name { color: var(--sky-grey60); }
+
+.sky-meeting__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sky-sp2);
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.sky-meeting__pills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sky-meeting__avatars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+/* ── Pills ───────────────────────────────────────────────── */
+.sky-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-family: var(--sky-font);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.sky-pill__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sky-grey40);
+}
+
+.sky-pill--platform { background: var(--sky-grey05); color: var(--sky-grey80); }
+.sky-pill--platform::before { content: '+'; color: currentColor; opacity: 0.7; margin-right: -2px; }
+.sky-pill--platform[data-platform="slack"] { color: #6626A1; }
+.sky-pill--platform[data-platform="zoom"]  { color: var(--sky-primary); }
+.sky-pill--platform[data-platform="teams"] { color: #5B5FC7; }
+.sky-pill--platform[data-platform="meet"]  { color: var(--sky-positive); }
+.sky-pill--platform[data-platform="slack"] .sky-pill__dot { background: #6626A1; }
+.sky-pill--platform[data-platform="zoom"]  .sky-pill__dot { background: var(--sky-primary); }
+.sky-pill--platform[data-platform="teams"] .sky-pill__dot { background: #5B5FC7; }
+.sky-pill--platform[data-platform="meet"]  .sky-pill__dot { background: var(--sky-positive); }
+
+.sky-pill--team     { background: rgba(0, 15, 245, 0.07);   color: var(--sky-primary); }
+.sky-pill--personal { background: rgba(102, 38, 161, 0.08); color: var(--sky-entertainment); }
+.sky-pill--cadence  { background: var(--sky-grey05); color: var(--sky-grey60); font-weight: 600; letter-spacing: 0; }
+
+/* ── Avatars ─────────────────────────────────────────────── */
+.sky-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #DD1717;
+  color: var(--sky-white);
+  font-family: var(--sky-font);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--sky-white);
+}
+
+.sky-avatar + .sky-avatar { margin-left: -7px; }
+
+.sky-avatar--more {
+  background: var(--sky-grey20);
+  color: var(--sky-grey80);
+  font-size: 9px;
+}
+
+/* ── Recent past sidebar ─────────────────────────────────── */
+.sky-upcoming__past {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sky-sp3);
+}
+
+.sky-past {
+  position: relative;
+  padding: 12px 14px;
+  background: var(--sky-white);
+  border: 1px solid var(--sky-grey10);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--sky-font);
+}
+
+.sky-past__title {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--sky-grey50);
+  line-height: 1.3;
+}
+
+.sky-past__pills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sky-past__pills .sky-pill {
+  background: var(--sky-grey05);
+  color: var(--sky-grey50);
+}
+
+.sky-past__pills .sky-pill--platform .sky-pill__dot {
+  background: var(--sky-grey40);
+}
+
+.sky-past__org {
+  margin: 0;
+  font-size: 11px;
+  color: var(--sky-grey40);
+}
+
+.sky-past__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--sky-grey40);
+}
+
+.sky-past__row {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.sky-past__meta .sky-icon { color: var(--sky-grey30); display: inline-flex; align-items: center; }
+
+.sky-past__time { font-weight: 600; color: var(--sky-grey50); }
+.sky-past__sep  { color: var(--sky-grey30); }
+.sky-past__dur  { color: var(--sky-grey40); }
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 900px) {
   .sky-schedule__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1080px) {
+  .sky-upcoming__columns { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 720px) {
@@ -577,6 +883,7 @@
   .sky-schedule__day:nth-child(2n) { border-right: 0; }
   .sky-month__cell { min-height: 84px; }
   .sky-month__title { display: none; }
+  .sky-upcoming__list { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
@@ -587,4 +894,6 @@
   .sky-month__cell { min-height: 64px; padding: 4px; }
   .sky-month__weekday { padding: 6px 4px; font-size: 9px; }
   .sky-month__num { font-size: 11px; min-width: 18px; height: 18px; padding: 0 4px; }
+  .sky-meeting__head { flex-direction: column; gap: 4px; }
+  .sky-meeting__foot { flex-direction: column; align-items: flex-start; }
 }
