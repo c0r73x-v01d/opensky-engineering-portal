@@ -14,7 +14,7 @@
       <h1 class="sky-schedule__title">Schedule</h1>
       <p class="sky-schedule__subtitle">4 meetings today &middot; 13 this week &middot; 13 upcoming</p>
     </div>
-    <button type="button" class="sky-btn sky-btn--primary sky-schedule__cta">
+    <button type="button" class="sky-btn sky-btn--primary sky-schedule__cta" data-modal-open="schedule-meeting">
       <span aria-hidden="true" class="sky-schedule__cta-plus">+</span>
       Schedule Meeting
     </button>
@@ -798,6 +798,129 @@
     </div>
   </section>
 </main>
+
+<div class="sky-modal" id="modal-schedule-meeting" data-modal="schedule-meeting" hidden role="dialog" aria-modal="true" aria-labelledby="modal-schedule-meeting-title">
+  <div class="sky-modal__backdrop" data-modal-close></div>
+  <div class="sky-modal__dialog" role="document">
+    <header class="sky-modal__head">
+      <h2 class="sky-modal__title" id="modal-schedule-meeting-title">Schedule Meeting</h2>
+      <button type="button" class="sky-modal__close" data-modal-close aria-label="Close">
+        <span class="sky-icon" data-icon="X" data-size="16"></span>
+      </button>
+    </header>
+
+    <form class="sky-meeting-form" autocomplete="off" novalidate>
+
+      <div class="sky-field">
+        <label class="sky-field__label" for="mf-title">MEETING TITLE</label>
+        <input class="sky-field__input" type="text" id="mf-title" placeholder="e.g. Sprint Planning...">
+      </div>
+
+      <div class="sky-field">
+        <span class="sky-field__label">MEETING TYPE</span>
+        <div class="sky-segmented" role="radiogroup" aria-label="Meeting type">
+          <button type="button" class="sky-segmented__option is-active" role="radio" aria-checked="true" data-meeting-type="team">Team Meeting</button>
+          <button type="button" class="sky-segmented__option" role="radio" aria-checked="false" data-meeting-type="personal">Personal Meeting</button>
+        </div>
+      </div>
+
+      <div class="sky-field">
+        <label class="sky-field__label" for="mf-host">HOST TEAM</label>
+        <div class="sky-field__select-wrap">
+          <select class="sky-field__select" id="mf-host">
+            <option>Nebula Auth</option>
+            <option>Phoenix Platform</option>
+            <option>Edge Delivery</option>
+            <option>Atlas Data</option>
+          </select>
+          <span class="sky-icon sky-field__select-chev" data-icon="ChevDown" data-size="14"></span>
+        </div>
+      </div>
+
+      <div class="sky-meeting-form__row sky-meeting-form__row--3">
+        <div class="sky-field">
+          <label class="sky-field__label" for="mf-date">DATE</label>
+          <input class="sky-field__input" type="date" id="mf-date" value="2026-02-16">
+        </div>
+        <div class="sky-field">
+          <label class="sky-field__label" for="mf-time">TIME</label>
+          <input class="sky-field__input" type="time" id="mf-time" value="10:00">
+        </div>
+        <div class="sky-field">
+          <label class="sky-field__label" for="mf-duration">DURATION</label>
+          <div class="sky-field__select-wrap">
+            <select class="sky-field__select" id="mf-duration">
+              <option>15m</option>
+              <option>30m</option>
+              <option>1h</option>
+              <option selected>2h</option>
+              <option>3h</option>
+            </select>
+            <span class="sky-icon sky-field__select-chev" data-icon="ChevDown" data-size="14"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sky-field">
+        <span class="sky-field__label">PLATFORM</span>
+        <div class="sky-platform-group" role="radiogroup" aria-label="Platform">
+          <button type="button" class="sky-platform is-active" role="radio" aria-checked="true" data-platform="teams"><span class="sky-platform__dot"></span>Teams</button>
+          <button type="button" class="sky-platform" role="radio" aria-checked="false" data-platform="zoom"><span class="sky-platform__dot"></span>Zoom</button>
+          <button type="button" class="sky-platform" role="radio" aria-checked="false" data-platform="slack"><span class="sky-platform__dot"></span>Slack</button>
+          <button type="button" class="sky-platform" role="radio" aria-checked="false" data-platform="meet"><span class="sky-platform__dot"></span>Meet</button>
+          <button type="button" class="sky-platform" role="radio" aria-checked="false" data-platform="office"><span class="sky-platform__dot"></span>Office</button>
+        </div>
+      </div>
+
+      <div class="sky-field">
+        <span class="sky-field__label">ATTENDEES</span>
+        <p class="sky-field__hint">Team members</p>
+        <ul class="sky-attendees" aria-label="Selected attendees">
+          <li class="sky-attendee" data-platform="meet">
+            <span class="sky-attendee__dot"></span>
+            <span class="sky-attendee__name">Maria Santos</span>
+            <button type="button" class="sky-attendee__remove" aria-label="Remove Maria Santos">
+              <span class="sky-icon" data-icon="X" data-size="11"></span>
+            </button>
+          </li>
+          <li class="sky-attendee" data-platform="meet">
+            <span class="sky-attendee__dot"></span>
+            <span class="sky-attendee__name">Chris Evans</span>
+            <button type="button" class="sky-attendee__remove" aria-label="Remove Chris Evans">
+              <span class="sky-icon" data-icon="X" data-size="11"></span>
+            </button>
+          </li>
+        </ul>
+        <input class="sky-field__input" type="text" id="mf-guests" placeholder="Add guests outside the team...">
+      </div>
+
+      <div class="sky-field">
+        <label class="sky-field__label" for="mf-recurring">RECURRING</label>
+        <div class="sky-field__select-wrap">
+          <select class="sky-field__select" id="mf-recurring">
+            <option>One-time</option>
+            <option>Daily</option>
+            <option>Weekly</option>
+            <option>Bi-weekly</option>
+            <option>Monthly</option>
+          </select>
+          <span class="sky-icon sky-field__select-chev" data-icon="ChevDown" data-size="14"></span>
+        </div>
+      </div>
+
+      <div class="sky-field">
+        <label class="sky-field__label" for="mf-agenda">AGENDA / MESSAGE</label>
+        <textarea class="sky-field__textarea" id="mf-agenda" rows="3" placeholder="Meeting agenda, notes for attendees..."></textarea>
+      </div>
+
+      <footer class="sky-modal__foot">
+        <button type="button" class="sky-btn sky-btn--ghost" data-modal-close>Cancel</button>
+        <button type="submit" class="sky-btn sky-btn--primary">Schedule Meeting</button>
+      </footer>
+
+    </form>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
