@@ -393,6 +393,176 @@
   color: var(--sky-attention);
 }
 
+/* ── Monthly grid ────────────────────────────────────────── */
+.sky-schedule__month {
+  margin-top: var(--sky-sp4);
+  background: var(--sky-white);
+  border: 1px solid var(--sky-grey10);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.sky-schedule__month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.sky-month__weekday {
+  padding: var(--sky-sp3) var(--sky-sp3);
+  font-family: var(--sky-font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--sky-grey50);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--sky-grey10);
+  background: var(--sky-white);
+}
+
+.sky-month__cell {
+  position: relative;
+  min-height: 110px;
+  padding: 8px 8px 6px;
+  border-right: 1px solid var(--sky-grey05);
+  border-bottom: 1px solid var(--sky-grey05);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--sky-white);
+}
+
+.sky-month__cell:nth-child(7n + 7) {
+  border-right: 0;
+}
+
+.sky-schedule__month-grid > .sky-month__cell:nth-last-child(-n + 7) {
+  border-bottom: 0;
+}
+
+.sky-month__cell-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.sky-month__num {
+  font-family: var(--sky-font);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sky-grey90);
+  line-height: 1;
+}
+
+.sky-month__cell--muted .sky-month__num {
+  color: var(--sky-grey40);
+}
+
+.sky-month__num--today {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--sky-rad-full);
+  background: rgba(0, 15, 245, 0.10);
+  color: var(--sky-primary);
+  font-weight: 700;
+}
+
+.sky-month__count {
+  font-family: var(--sky-font);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--sky-grey40);
+  line-height: 1;
+}
+
+.sky-month__events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-height: 0;
+}
+
+.sky-month__event {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 6px;
+  background: rgba(26, 26, 26, 0.035);
+  border-radius: var(--sky-rad-xs);
+  font-family: var(--sky-font);
+  line-height: 1.25;
+  color: var(--sky-grey90);
+  overflow: hidden;
+}
+
+.sky-month__row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+}
+
+.sky-month__bullet {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sky-grey40);
+  flex: 0 0 auto;
+}
+
+.sky-month__time {
+  font-weight: 700;
+  color: var(--sky-grey90);
+  flex: 0 0 auto;
+}
+
+.sky-month__title {
+  font-weight: 500;
+  font-size: 10.5px;
+  color: var(--sky-grey60);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  padding-left: 11px;
+}
+
+/* Platform-coloured bullets and time text in monthly events */
+.sky-month__event[data-platform="slack"] .sky-month__bullet { background: #6626A1; }
+.sky-month__event[data-platform="slack"] .sky-month__time   { color: #6626A1; }
+.sky-month__event[data-platform="zoom"]  .sky-month__bullet { background: var(--sky-primary); }
+.sky-month__event[data-platform="zoom"]  .sky-month__time   { color: var(--sky-primary); }
+.sky-month__event[data-platform="teams"] .sky-month__bullet { background: #5B5FC7; }
+.sky-month__event[data-platform="teams"] .sky-month__time   { color: #5B5FC7; }
+.sky-month__event[data-platform="meet"]  .sky-month__bullet { background: var(--sky-positive); }
+.sky-month__event[data-platform="meet"]  .sky-month__time   { color: var(--sky-positive); }
+
+.sky-month__more {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 0;
+  font-family: var(--sky-font);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--sky-primary);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.sky-month__more:hover {
+  text-decoration: underline;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 900px) {
   .sky-schedule__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -405,6 +575,8 @@
   .sky-schedule__week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sky-schedule__day { border-bottom: 1px solid var(--sky-grey10); }
   .sky-schedule__day:nth-child(2n) { border-right: 0; }
+  .sky-month__cell { min-height: 84px; }
+  .sky-month__title { display: none; }
 }
 
 @media (max-width: 560px) {
@@ -412,4 +584,7 @@
   .sky-schedule__kpis { grid-template-columns: 1fr; }
   .sky-schedule__week-grid { grid-template-columns: 1fr; }
   .sky-schedule__day { border-right: 0; min-height: auto; }
+  .sky-month__cell { min-height: 64px; padding: 4px; }
+  .sky-month__weekday { padding: 6px 4px; font-size: 9px; }
+  .sky-month__num { font-size: 11px; min-width: 18px; height: 18px; padding: 0 4px; }
 }
