@@ -741,7 +741,7 @@ textarea.sky-field__input {
   font-size: 14px;
   font-weight: 600;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  z-index: 2000;
+  z-index: 10001;
   animation: sUp 0.3s ease-out;
 }
 
