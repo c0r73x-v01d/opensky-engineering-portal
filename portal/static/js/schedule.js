@@ -106,10 +106,56 @@
     });
   }
 
+  function setupPanels() {
+    var panel = document.querySelector('[data-panel="meeting"]');
+    if (!panel) return;
+
+    function makeIcon(name, size) {
+      var span = document.createElement('span');
+      span.className = 'sky-icon';
+      span.setAttribute('data-icon', name);
+      span.setAttribute('data-size', String(size || 14));
+      if (typeof SKY_ICONS !== 'undefined' && SKY_ICONS[name]) {
+        span.innerHTML = SKY_ICONS[name](size || 14);
+      }
+      return span;
+    }
+
+    function openPanel(trigger) {
+      if (panel.parentNode !== document.body) {
+        document.body.appendChild(panel);
+      }
+      panel.hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closePanel() {
+      panel.hidden = true;
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('click', function (e) {
+      var trigger = e.target.closest('[data-detail-open]');
+      if (!trigger) return;
+      e.stopPropagation();
+      e.preventDefault();
+      openPanel(trigger);
+    });
+
+    panel.querySelectorAll('[data-panel-close]').forEach(function (btn) {
+      btn.addEventListener('click', closePanel);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !panel.hidden) closePanel();
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     setupViewToggle();
     setupModals();
     setupSegmented();
     setupAttendeeRemoval();
+    setupPanels();
   });
 })();
