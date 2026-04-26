@@ -921,6 +921,72 @@
     </form>
   </div>
 </div>
+
+<div class="sky-panel" id="panel-meeting" data-panel="meeting" hidden role="dialog" aria-modal="true" aria-labelledby="panel-meeting-title">
+  <div class="sky-panel__backdrop" data-panel-close></div>
+  <aside class="sky-panel__sheet" role="document">
+
+    <header class="sky-panel__head">
+      <div class="sky-panel__head-tags" data-slot="tags"></div>
+      <button type="button" class="sky-panel__close" data-panel-close aria-label="Close">
+        <span class="sky-icon" data-icon="X" data-size="16"></span>
+      </button>
+    </header>
+
+    <div class="sky-panel__body">
+
+      <h2 class="sky-panel__title" id="panel-meeting-title" data-slot="title"></h2>
+
+      <ul class="sky-panel__info">
+        <li class="sky-panel__info-row">
+          <span class="sky-panel__info-icon"><span class="sky-icon" data-icon="Calendar" data-size="14"></span></span>
+          <div class="sky-panel__info-text">
+            <span class="sky-panel__info-strong" data-slot="date"></span>
+            <span class="sky-panel__info-sub" data-slot="time"></span>
+          </div>
+        </li>
+        <li class="sky-panel__info-row" data-slot="platform-row">
+          <span class="sky-panel__info-icon" data-slot="platform-tone"><span class="sky-icon" data-slot="platform-icon" data-icon="Video" data-size="14"></span></span>
+          <div class="sky-panel__info-text">
+            <span class="sky-panel__info-strong" data-slot="platform-name"></span>
+          </div>
+        </li>
+        <li class="sky-panel__info-row" data-slot="host-row">
+          <span class="sky-panel__info-icon"><span class="sky-icon" data-icon="Building" data-size="14"></span></span>
+          <div class="sky-panel__info-text">
+            <span class="sky-panel__info-strong" data-slot="host"></span>
+            <span class="sky-panel__info-sub">Host team</span>
+          </div>
+        </li>
+      </ul>
+
+      <section class="sky-panel__section" data-slot="organizer-section">
+        <h3 class="sky-panel__section-title">ORGANIZER</h3>
+        <article class="sky-person sky-person--organizer">
+          <span class="sky-person__avatar" data-slot="organizer-initials"></span>
+          <div class="sky-person__info">
+            <span class="sky-person__name" data-slot="organizer-name"></span>
+            <span class="sky-person__role" data-slot="organizer-role"></span>
+          </div>
+        </article>
+      </section>
+
+      <section class="sky-panel__section" data-slot="agenda-section">
+        <h3 class="sky-panel__section-title">AGENDA</h3>
+        <p class="sky-panel__agenda" data-slot="agenda"></p>
+      </section>
+
+      <section class="sky-panel__section">
+        <h3 class="sky-panel__section-title"><span data-slot="attendees-label">ATTENDEES</span></h3>
+        <ul class="sky-panel__attendees" data-slot="attendees"></ul>
+      </section>
+
+      <div class="sky-panel__actions" data-slot="foot"></div>
+
+    </div>
+
+  </aside>
+</div>
 {% endblock %}
 
 {% block extra_js %}
