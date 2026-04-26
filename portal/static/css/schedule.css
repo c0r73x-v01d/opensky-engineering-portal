@@ -757,7 +757,8 @@
 }
 
 .sky-pill--platform { background: var(--sky-grey05); color: var(--sky-grey80); }
-.sky-pill--platform::before { content: '+'; color: currentColor; opacity: 0.7; margin-right: -2px; }
+.sky-meeting__pills .sky-pill--platform::before,
+.sky-past__pills .sky-pill--platform::before { content: '+'; color: currentColor; opacity: 0.7; margin-right: -2px; }
 .sky-pill--platform[data-platform="slack"] { color: #6626A1; }
 .sky-pill--platform[data-platform="zoom"]  { color: var(--sky-primary); }
 .sky-pill--platform[data-platform="teams"] { color: #5B5FC7; }
