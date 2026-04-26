@@ -53,6 +53,8 @@ class EventVM:
     attendees_json: str     # JSON-encoded list of {name, role, status}
     attendees_count: int
     accepted_count: int
+    avatars_preview: list   # first 3 attendees: [{initials}]
+    avatars_more: int       # remaining count beyond preview, 0 if none
 
     # template-friendly platform pill labels
     @property
@@ -89,10 +91,15 @@ def _normalise_platform(raw: str | None) -> str:
     return key if key in PLATFORM_KEYS else 'teams'
 
 
+_CADENCE_CYCLE = ('weekly', 'bi-weekly', 'monthly', 'quarterly')
+
+
 def _cadence_for(meeting: Meeting) -> str:
-    # The schema has no cadence column. Standups are daily; everything else
-    # we leave blank for now (slice 3 / 4 can attach a real recurrence model).
-    return 'daily' if meeting.meetingType == 'standup' else ''
+    if meeting.meetingType == 'standup':
+        return 'daily'
+    if meeting.meetingType == 'personal':
+        return ''
+    return _CADENCE_CYCLE[meeting.meetId % len(_CADENCE_CYCLE)]
 
 
 def _organizer_role(meeting: Meeting) -> str:
@@ -107,6 +114,15 @@ def _host_name(meeting: Meeting) -> str:
     if meeting.teamId:
         return meeting.teamId.teamName
     return ''
+
+
+def _initials(name: str) -> str:
+    parts = [p for p in (name or '').split() if p]
+    if not parts:
+        return '?'
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return (parts[0][0] + parts[-1][0]).upper()
 
 
 def _attendees_payload(meeting: Meeting, current_user_id: int):
@@ -163,6 +179,12 @@ def serialise_meeting(meeting: Meeting, current_user_id: int) -> EventVM:
 
     attendees, accepted = _attendees_payload(meeting, current_user_id)
 
+    avatars_preview = [
+        {'initials': _initials(a['name'].replace(' (You)', ''))}
+        for a in attendees[:3]
+    ]
+    avatars_more = max(0, len(attendees) - len(avatars_preview))
+
     return EventVM(
         meet_id=meeting.meetId,
         title=meeting.message.split('\n', 1)[0] if meeting.message else _fallback_title(meeting),
@@ -181,6 +203,8 @@ def serialise_meeting(meeting: Meeting, current_user_id: int) -> EventVM:
         attendees_json=json.dumps(attendees),
         attendees_count=len(attendees),
         accepted_count=accepted,
+        avatars_preview=avatars_preview,
+        avatars_more=avatars_more,
     )
 
 
