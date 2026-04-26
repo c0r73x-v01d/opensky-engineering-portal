@@ -110,6 +110,16 @@
     var panel = document.querySelector('[data-panel="meeting"]');
     if (!panel) return;
 
+    var PLATFORM_LABEL = { slack: 'Slack', zoom: 'Zoom', teams: 'Microsoft Teams', meet: 'Google Meet', office: 'Office' };
+    var PLATFORM_ICON  = { slack: 'Hash', zoom: 'Video', teams: 'Video', meet: 'Video', office: 'Building' };
+
+    function $(slot, root) { return (root || panel).querySelector('[data-slot="' + slot + '"]'); }
+
+    function initials(name) {
+      if (!name) return '';
+      return name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase();
+    }
+
     function makeIcon(name, size) {
       var span = document.createElement('span');
       span.className = 'sky-icon';
@@ -121,7 +131,123 @@
       return span;
     }
 
+    function buildTags(platform, type, cadence) {
+      var frag = document.createDocumentFragment();
+
+      var pill = document.createElement('span');
+      pill.className = 'sky-pill sky-pill--platform';
+      pill.setAttribute('data-platform', platform);
+      var dot = document.createElement('span'); dot.className = 'sky-pill__dot';
+      pill.appendChild(dot);
+      pill.appendChild(document.createTextNode(PLATFORM_LABEL[platform] || platform));
+      frag.appendChild(pill);
+
+      if (type) {
+        var typePill = document.createElement('span');
+        typePill.className = 'sky-pill sky-pill--' + (type === 'personal' ? 'personal' : 'team');
+        typePill.textContent = type === 'personal' ? 'PERSONAL' : 'TEAM';
+        frag.appendChild(typePill);
+      }
+
+      if (cadence) {
+        var cad = document.createElement('span');
+        cad.className = 'sky-pill sky-pill--cadence';
+        cad.appendChild(makeIcon('Repeat', 11));
+        cad.appendChild(document.createTextNode(cadence));
+        frag.appendChild(cad);
+      }
+
+      return frag;
+    }
+
+    function buildAttendee(name, role, status) {
+      var li = document.createElement('li');
+      li.className = 'sky-person';
+
+      var avatar = document.createElement('span');
+      avatar.className = 'sky-person__avatar';
+      avatar.textContent = initials(name);
+      li.appendChild(avatar);
+
+      var info = document.createElement('div');
+      info.className = 'sky-person__info';
+      var nm = document.createElement('span');
+      nm.className = 'sky-person__name';
+      nm.textContent = name;
+      info.appendChild(nm);
+      if (role) {
+        var rl = document.createElement('span');
+        rl.className = 'sky-person__role';
+        rl.textContent = role;
+        info.appendChild(rl);
+      }
+      li.appendChild(info);
+
+      if (status) {
+        var st = document.createElement('span');
+        st.className = 'sky-person__status sky-person__status--' + status;
+        st.textContent = status[0].toUpperCase() + status.slice(1);
+        li.appendChild(st);
+      }
+      return li;
+    }
+
+    function populate(trigger) {
+      var d = trigger.dataset;
+
+      $('title').textContent = d.title || '';
+      $('date').textContent = d.date || '';
+      $('time').textContent = d.time || '';
+
+      var tags = $('tags');
+      tags.innerHTML = '';
+      tags.appendChild(buildTags(d.platform, d.type, d.cadence));
+
+      var pTone = $('platform-tone');
+      pTone.setAttribute('data-tone', d.platform || '');
+      var pIcon = $('platform-icon');
+      var iconName = PLATFORM_ICON[d.platform] || 'Video';
+      pIcon.setAttribute('data-icon', iconName);
+      if (typeof SKY_ICONS !== 'undefined' && SKY_ICONS[iconName]) {
+        pIcon.innerHTML = SKY_ICONS[iconName](14);
+      }
+      $('platform-name').textContent = PLATFORM_LABEL[d.platform] || d.platform || '';
+
+      if (d.host) {
+        $('host-row').style.display = '';
+        $('host').textContent = d.host;
+      } else {
+        $('host-row').style.display = 'none';
+      }
+
+      if (d.organizer) {
+        $('organizer-section').style.display = '';
+        $('organizer-initials').textContent = initials(d.organizer);
+        $('organizer-name').textContent = d.organizer;
+        $('organizer-role').textContent = d.organizerRole || '';
+      } else {
+        $('organizer-section').style.display = 'none';
+      }
+
+      if (d.agenda) {
+        $('agenda-section').style.display = '';
+        $('agenda').textContent = d.agenda;
+      } else {
+        $('agenda-section').style.display = 'none';
+      }
+
+      var attendees = [];
+      try { attendees = d.attendees ? JSON.parse(d.attendees) : []; } catch (e) { attendees = []; }
+      $('attendees-label').textContent = 'ATTENDEES (' + attendees.length + ')';
+      var ul = $('attendees');
+      ul.innerHTML = '';
+      attendees.forEach(function (a) {
+        ul.appendChild(buildAttendee(a.name, a.role, a.status));
+      });
+    }
+
     function openPanel(trigger) {
+      populate(trigger);
       if (panel.parentNode !== document.body) {
         document.body.appendChild(panel);
       }
