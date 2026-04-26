@@ -22,43 +22,43 @@
 
   <section class="sky-schedule__kpis" aria-label="Schedule summary">
     <article class="sky-schedule__kpi sky-schedule__kpi--today">
-      <div class="sky-schedule__kpi-body">
-        <span class="sky-schedule__kpi-label">TODAY</span>
-        <span class="sky-schedule__kpi-value">{{ kpis.today }}</span>
+      <div class="sky-schedule__kpi-top">
+        <span class="sky-schedule__kpi-label">Today</span>
+        <span class="sky-schedule__kpi-icon" data-tone="today">
+          <span class="sky-icon" data-icon="Calendar" data-size="18"></span>
+        </span>
       </div>
-      <span class="sky-schedule__kpi-icon" data-tone="today">
-        <span class="sky-icon" data-icon="Calendar" data-size="20"></span>
-      </span>
+      <p class="sky-schedule__kpi-value">{{ kpis.today }}</p>
     </article>
 
     <article class="sky-schedule__kpi sky-schedule__kpi--week">
-      <div class="sky-schedule__kpi-body">
-        <span class="sky-schedule__kpi-label">THIS WEEK</span>
-        <span class="sky-schedule__kpi-value">{{ kpis.this_week }}</span>
+      <div class="sky-schedule__kpi-top">
+        <span class="sky-schedule__kpi-label">This Week</span>
+        <span class="sky-schedule__kpi-icon" data-tone="week">
+          <span class="sky-icon" data-icon="Layers" data-size="18"></span>
+        </span>
       </div>
-      <span class="sky-schedule__kpi-icon" data-tone="week">
-        <span class="sky-icon" data-icon="Layers" data-size="20"></span>
-      </span>
+      <p class="sky-schedule__kpi-value">{{ kpis.this_week }}</p>
     </article>
 
     <article class="sky-schedule__kpi sky-schedule__kpi--upcoming">
-      <div class="sky-schedule__kpi-body">
-        <span class="sky-schedule__kpi-label">UPCOMING</span>
-        <span class="sky-schedule__kpi-value">{{ kpis.upcoming }}</span>
+      <div class="sky-schedule__kpi-top">
+        <span class="sky-schedule__kpi-label">Upcoming</span>
+        <span class="sky-schedule__kpi-icon" data-tone="upcoming">
+          <span class="sky-icon" data-icon="Clock" data-size="18"></span>
+        </span>
       </div>
-      <span class="sky-schedule__kpi-icon" data-tone="upcoming">
-        <span class="sky-icon" data-icon="Clock" data-size="20"></span>
-      </span>
+      <p class="sky-schedule__kpi-value">{{ kpis.upcoming }}</p>
     </article>
 
     <article class="sky-schedule__kpi sky-schedule__kpi--pending">
-      <div class="sky-schedule__kpi-body">
-        <span class="sky-schedule__kpi-label">PENDING</span>
-        <span class="sky-schedule__kpi-value">{{ kpis.pending }}</span>
+      <div class="sky-schedule__kpi-top">
+        <span class="sky-schedule__kpi-label">Pending</span>
+        <span class="sky-schedule__kpi-icon" data-tone="pending">
+          <span class="sky-icon" data-icon="Users" data-size="18"></span>
+        </span>
       </div>
-      <span class="sky-schedule__kpi-icon" data-tone="pending">
-        <span class="sky-icon" data-icon="User" data-size="20"></span>
-      </span>
+      <p class="sky-schedule__kpi-value">{{ kpis.pending }}</p>
     </article>
   </section>
 
