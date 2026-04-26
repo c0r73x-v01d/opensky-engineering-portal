@@ -1196,3 +1196,15 @@
   transition: background 120ms ease, color 120ms ease;
 }
 .sky-attendee__remove:hover { background: var(--sky-grey10); color: var(--sky-grey90); }
+
+/* ── Event card click overlay ────────────────────────────── */
+.sky-event { position: relative; }
+.sky-event__open {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  z-index: 2;
+}
