@@ -1222,8 +1222,15 @@
 .sky-attendee__remove:hover { background: var(--sky-grey10); color: var(--sky-grey90); }
 
 /* ── Event card click overlay ────────────────────────────── */
-.sky-event { position: relative; }
-.sky-event__open {
+.sky-event,
+.sky-month__event,
+.sky-meeting,
+.sky-past { position: relative; }
+
+.sky-event__open,
+.sky-month__event-open,
+.sky-meeting__open,
+.sky-past__open {
   position: absolute;
   inset: 0;
   background: transparent;
