@@ -45,7 +45,7 @@ def register_view(request):
 # ════════════════════════════════════════════════════════════════════
 @login_required
 def home(request):
-    return redirect('schedule')
+    return _coming_soon(request, 'home', 'Home')
 
 
 def _coming_soon(request, active_page, title):
