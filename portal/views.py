@@ -8,11 +8,25 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import MeetingForm, RegisterForm
-from .models import Action, Employee, Meeting, MeetingInvitation, TeamManager
+from .models import (
+    Action,
+    Employee,
+    Meeting,
+    MeetingInvitation,
+    Message,
+    MessageRecipient,
+    Notification,
+    NotificationRecipient,
+    Team,
+    TeamManager,
+    User,
+)
 from .services.schedule import assemble_for_user
 
 
@@ -234,10 +248,180 @@ def organisation(request):
     return _coming_soon(request, 'organisation', 'Organisation')
 
 
+# ════════════════════════════════════════════════════════════════════
+# === MESSAGES ===
+# ════════════════════════════════════════════════════════════════════
+def _messages_redirect(folder='inbox'):
+    return redirect(f"{reverse('messages')}?folder={folder}")
+
+
+def _prepare_messages_for_template(messages, starred_ids):
+    prepared = []
+
+    for msg in messages:
+        recipient_link = msg.recipients.select_related('user').first()
+
+        msg.id = msg.messageId
+        msg.sender = msg.user
+        msg.recipient = recipient_link.user if recipient_link else None
+        msg.sent_at = msg.sentAt
+        msg.created_at = msg.createdAt
+        msg.is_read = recipient_link.isRead if recipient_link else True
+        msg.starred = str(msg.messageId) in starred_ids
+
+        prepared.append(msg)
+
+    return prepared
+
+
 @login_required
 def messages_view(request):
-    return _coming_soon(request, 'messages', 'Messages')
+    current_folder = request.GET.get('folder', 'inbox')
+    starred_ids = set(request.session.get('starred_messages', []))
 
+    inbox_qs = Message.objects.filter(
+        recipients__user=request.user,
+        status='sent',
+        recipients__recipMsgDeleted=False,
+    ).select_related('user').prefetch_related('recipients__user').order_by('-sentAt', '-createdAt')
+
+    sent_qs = Message.objects.filter(
+        user=request.user,
+        status='sent',
+        senderMsgDeleted=False,
+    ).select_related('user').prefetch_related('recipients__user').order_by('-sentAt', '-createdAt')
+
+    draft_qs = Message.objects.filter(
+        user=request.user,
+        status='draft',
+        senderMsgDeleted=False,
+    ).select_related('user').prefetch_related('recipients__user').order_by('-createdAt')
+
+    if current_folder == 'sent':
+        selected_qs = sent_qs
+    elif current_folder == 'drafts':
+        selected_qs = draft_qs
+    else:
+        current_folder = 'inbox'
+        selected_qs = inbox_qs
+
+    messages = _prepare_messages_for_template(selected_qs, starred_ids)
+
+    context = {
+        'active_page': 'messages',
+        'messages': messages,
+        'current_folder': current_folder,
+        'inbox_count': inbox_qs.count(),
+        'sent_count': sent_qs.count(),
+        'draft_count': draft_qs.count(),
+        'unread_count': inbox_qs.filter(recipients__isRead=False).count(),
+        'employees': User.objects.exclude(pk=request.user.pk).order_by('first_name', 'last_name', 'username'),
+    }
+
+    return render(request, 'messages.html', context)
+
+
+@login_required
+@require_POST
+def message_send(request):
+    recipient_id = request.POST.get('to')
+    subject = request.POST.get('subject', '').strip()
+    body = request.POST.get('body', '').strip()
+    action = request.POST.get('action', 'send')
+
+    if not recipient_id:
+        dj_messages.error(request, 'Please choose a recipient.')
+        return _messages_redirect('inbox')
+
+    recipient = get_object_or_404(User, pk=recipient_id)
+
+    with transaction.atomic():
+        msg = Message.objects.create(
+            user=request.user,
+            subject=subject,
+            body=body,
+            status='draft' if action == 'draft' else 'sent',
+            sentAt=None if action == 'draft' else timezone.now(),
+        )
+
+        MessageRecipient.objects.create(
+            message=msg,
+            user=recipient,
+        )
+
+        Action.objects.create(
+            user=request.user,
+            action='create',
+            entityType='Message',
+            entityId=msg.messageId,
+            actionDescr='Saved draft message.' if action == 'draft' else 'Sent message.',
+        )
+
+    if action == 'draft':
+        dj_messages.success(request, 'Draft saved.')
+        return _messages_redirect('drafts')
+
+    dj_messages.success(request, 'Message sent.')
+    return _messages_redirect('sent')
+
+
+@login_required
+@require_POST
+def message_star(request, message_id):
+    starred_ids = set(request.session.get('starred_messages', []))
+    message_id_str = str(message_id)
+
+    if message_id_str in starred_ids:
+        starred_ids.remove(message_id_str)
+    else:
+        starred_ids.add(message_id_str)
+
+    request.session['starred_messages'] = list(starred_ids)
+    request.session.modified = True
+
+    folder = request.GET.get('folder', 'inbox')
+    return _messages_redirect(folder)
+
+
+@login_required
+@require_POST
+def message_send_draft(request, message_id):
+    msg = get_object_or_404(
+        Message,
+        messageId=message_id,
+        user=request.user,
+        status='draft',
+    )
+
+    with transaction.atomic():
+        msg.status = 'sent'
+        msg.sentAt = timezone.now()
+        msg.save(update_fields=['status', 'sentAt'])
+
+        Action.objects.create(
+            user=request.user,
+            action='update',
+            entityType='Message',
+            entityId=msg.messageId,
+            fieldChanged='status',
+            oldValue='draft',
+            newValue='sent',
+            actionDescr='Sent draft message.',
+        )
+
+    dj_messages.success(request, 'Draft sent.')
+    return _messages_redirect('sent')
+
+
+@login_required
+@require_POST
+def message_mark_read(request, message_id):
+    MessageRecipient.objects.filter(
+        message_id=message_id,
+        user=request.user,
+    ).update(isRead=True)
+
+    return JsonResponse({'ok': True})
 
 @login_required
 def reports(request):
