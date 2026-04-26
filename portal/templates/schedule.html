@@ -12,7 +12,7 @@
   <header class="sky-schedule__header">
     <div class="sky-schedule__title-group">
       <h1 class="sky-schedule__title">Schedule</h1>
-      <p class="sky-schedule__subtitle">4 meetings today &middot; 13 this week &middot; 13 upcoming</p>
+      <p class="sky-schedule__subtitle">{{ kpis.today }} meeting{{ kpis.today|pluralize }} today &middot; {{ kpis.this_week }} this week &middot; {{ kpis.upcoming }} upcoming</p>
     </div>
     <button type="button" class="sky-btn sky-btn--primary sky-schedule__cta" data-modal-open="schedule-meeting">
       <span aria-hidden="true" class="sky-schedule__cta-plus">+</span>
@@ -24,7 +24,7 @@
     <article class="sky-schedule__kpi sky-schedule__kpi--today">
       <div class="sky-schedule__kpi-body">
         <span class="sky-schedule__kpi-label">TODAY</span>
-        <span class="sky-schedule__kpi-value">4</span>
+        <span class="sky-schedule__kpi-value">{{ kpis.today }}</span>
       </div>
       <span class="sky-schedule__kpi-icon" data-tone="today">
         <span class="sky-icon" data-icon="Calendar" data-size="20"></span>
@@ -34,7 +34,7 @@
     <article class="sky-schedule__kpi sky-schedule__kpi--week">
       <div class="sky-schedule__kpi-body">
         <span class="sky-schedule__kpi-label">THIS WEEK</span>
-        <span class="sky-schedule__kpi-value">13</span>
+        <span class="sky-schedule__kpi-value">{{ kpis.this_week }}</span>
       </div>
       <span class="sky-schedule__kpi-icon" data-tone="week">
         <span class="sky-icon" data-icon="Layers" data-size="20"></span>
@@ -44,7 +44,7 @@
     <article class="sky-schedule__kpi sky-schedule__kpi--upcoming">
       <div class="sky-schedule__kpi-body">
         <span class="sky-schedule__kpi-label">UPCOMING</span>
-        <span class="sky-schedule__kpi-value">13</span>
+        <span class="sky-schedule__kpi-value">{{ kpis.upcoming }}</span>
       </div>
       <span class="sky-schedule__kpi-icon" data-tone="upcoming">
         <span class="sky-icon" data-icon="Clock" data-size="20"></span>
@@ -54,7 +54,7 @@
     <article class="sky-schedule__kpi sky-schedule__kpi--pending">
       <div class="sky-schedule__kpi-body">
         <span class="sky-schedule__kpi-label">PENDING</span>
-        <span class="sky-schedule__kpi-value">2</span>
+        <span class="sky-schedule__kpi-value">{{ kpis.pending }}</span>
       </div>
       <span class="sky-schedule__kpi-icon" data-tone="pending">
         <span class="sky-icon" data-icon="User" data-size="20"></span>
@@ -82,7 +82,7 @@
       <button type="button" class="sky-schedule__nav-btn" data-nav="prev" aria-label="Previous range">
         <span class="sky-icon" data-icon="ChevLeft" data-size="14"></span>
       </button>
-      <span class="sky-schedule__range" data-role="range-label">16 Feb &ndash; 22 Feb</span>
+      <span class="sky-schedule__range" data-role="range-label">{{ weekly_range_label }}</span>
       <button type="button" class="sky-schedule__nav-btn" data-nav="next" aria-label="Next range">
         <span class="sky-icon" data-icon="ChevRight" data-size="14"></span>
       </button>
@@ -90,267 +90,56 @@
     </div>
   </section>
 
+  {# ── Weekly grid ──────────────────────────────────────────────────── #}
   <section class="sky-schedule__week sky-schedule__view" data-view-target="weekly" aria-label="Weekly schedule">
     <div class="sky-schedule__week-grid">
-
-      <article class="sky-schedule__day sky-schedule__day--today" aria-current="date">
+      {% for day in weekly_days %}
+      <article class="sky-schedule__day{% if day.is_today %} sky-schedule__day--today{% endif %}"{% if day.is_today %} aria-current="date"{% endif %}>
         <header class="sky-schedule__day-head">
-          <span class="sky-schedule__day-name">MON</span>
-          <span class="sky-schedule__day-num">16</span>
-          <span class="sky-schedule__day-tag">TODAY</span>
+          <span class="sky-schedule__day-name">{{ day.name }}</span>
+          <span class="sky-schedule__day-num">{{ day.num }}</span>
+          {% if day.is_today %}<span class="sky-schedule__day-tag">TODAY</span>{% endif %}
         </header>
         <div class="sky-schedule__events">
-          <article class="sky-event" data-platform="slack">
+          {% for e in day.events %}
+          <article class="sky-event" data-platform="{{ e.platform }}">
             <div class="sky-event__meta">
               <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">09:00</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">15m</span>
+              <span class="sky-event__time">{{ e.time_short }}</span>
+              {% if e.duration_short %}<span class="sky-event__sep">&middot;</span>
+              <span class="sky-event__dur">{{ e.duration_short }}</span>{% endif %}
             </div>
-            <div class="sky-event__title">Nebula Auth Daily Standup</div>
+            <div class="sky-event__title">{{ e.title }}</div>
             <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="slack"><span class="sky-event__dot"></span>Slack</span>
+              <span class="sky-event__platform" data-platform="{{ e.platform }}"><span class="sky-event__dot"></span>{{ e.platform_label }}</span>
             </div>
-            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Nebula Auth Daily Standup details" data-title="Nebula Auth Daily Standup" data-date="Monday, 16 February 2026" data-time="09:00 – 09:15 · 15m" data-platform="slack" data-type="team" data-cadence="daily" data-host="Nebula Auth" data-organizer="Sarah Chen" data-organizer-role="Team Manager" data-agenda="Morning standup — SAML integration progress." data-my-status="accepted" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "accepted"}, {"name": "Chris Evans", "role": "Principal Engineer", "status": "accepted"}]'></button>
+            <div class="sky-event__status sky-event__status--{{ e.my_status }}">{{ e.status_capitalised }}</div>
+            <button type="button" class="sky-event__open" data-detail-open="meeting"
+              aria-label="Open {{ e.title }} details"
+              data-meet-id="{{ e.meet_id }}"
+              data-title="{{ e.title }}"
+              data-date="{{ e.date_long }}"
+              data-time="{{ e.time_range }}"
+              data-platform="{{ e.platform }}"
+              data-type="{{ e.type }}"
+              {% if e.cadence %}data-cadence="{{ e.cadence }}"{% endif %}
+              {% if e.host %}data-host="{{ e.host }}"{% endif %}
+              {% if e.organizer %}data-organizer="{{ e.organizer }}"
+              data-organizer-role="{{ e.organizer_role }}"{% endif %}
+              {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
+              data-my-status="{{ e.my_status }}"
+              data-attendees='{{ e.attendees_json }}'></button>
           </article>
-
-          <article class="sky-event" data-platform="zoom">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">10:00</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">1h</span>
-            </div>
-            <div class="sky-event__title">Phoenix Platform &mdash; Q1 Roadmap...</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="zoom"><span class="sky-event__dot"></span>Zoom</span>
-            </div>
-            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Phoenix Platform — Q1 Roadmap... details" data-title="Phoenix Platform — Q1 Roadmap..." data-date="Monday, 16 February 2026" data-time="10:00 – 11:00 · 1h" data-platform="zoom" data-type="team" data-cadence="weekly" data-host="Phoenix Platform" data-organizer="Sarah Chen" data-organizer-role="Team Manager" data-agenda="Review Q1 priorities and migration timeline. Bring capacity estimates." data-my-status="accepted" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "accepted"}, {"name": "Alex Rivera", "role": "Senior Engineer", "status": "accepted"}, {"name": "David Park", "role": "Team Manager", "status": "pending"}]'></button>
-          </article>
-
-          <article class="sky-event" data-platform="zoom">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">14:30</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">45m</span>
-            </div>
-            <div class="sky-event__title">Streaming Engine &mdash; Latency...</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="zoom"><span class="sky-event__dot"></span>Zoom</span>
-            </div>
-            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Streaming Engine — Latency... details" data-title="Streaming Engine — Latency..." data-date="Monday, 16 February 2026" data-time="14:30 – 15:15 · 45m" data-platform="zoom" data-type="team" data-host="Streaming Engine" data-organizer="Alex Rivera" data-organizer-role="Senior Engineer" data-agenda="Investigate p99 latency regression on the ingest path." data-my-status="accepted" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "accepted"}, {"name": "Sarah Chen", "role": "Team Manager", "status": "accepted"}]'></button>
-          </article>
-
-          <article class="sky-event" data-platform="teams">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">16:00</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">30m</span>
-            </div>
-            <div class="sky-event__title">1:1 with Sarah Chen</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="teams"><span class="sky-event__dot"></span>Teams</span>
-            </div>
-            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open 1:1 with Sarah Chen details" data-title="1:1 with Sarah Chen" data-date="Monday, 16 February 2026" data-time="16:00 – 16:30 · 30m" data-platform="teams" data-type="personal" data-cadence="weekly" data-organizer="Sarah Chen" data-organizer-role="Team Manager" data-agenda="Weekly 1:1 — career goals, blockers, feedback." data-my-status="accepted" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "accepted"}, {"name": "Sarah Chen", "role": "Team Manager", "status": "accepted"}]'></button>
-          </article>
+          {% endfor %}
         </div>
       </article>
-
-      <article class="sky-schedule__day">
-        <header class="sky-schedule__day-head">
-          <span class="sky-schedule__day-name">TUE</span>
-          <span class="sky-schedule__day-num">17</span>
-        </header>
-        <div class="sky-schedule__events">
-          <article class="sky-event" data-platform="slack">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">09:15</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">15m</span>
-            </div>
-            <div class="sky-event__title">Phoenix Daily Standup</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="slack"><span class="sky-event__dot"></span>Slack</span>
-            </div>
-            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Phoenix Daily Standup details" data-title="Phoenix Daily Standup" data-date="Tuesday, 17 February 2026" data-time="09:15 – 09:30 · 15m" data-platform="slack" data-type="team" data-cadence="daily" data-host="Phoenix Platform" data-organizer="Sarah Chen" data-organizer-role="Team Manager" data-agenda="Daily standup — what shipped, what is blocked." data-my-status="accepted" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "accepted"}, {"name": "Sarah Chen", "role": "Team Manager", "status": "accepted"}]'></button>
-          </article>
-
-          <article class="sky-event" data-platform="teams">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">14:00</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">2h</span>
-            </div>
-            <div class="sky-event__title">Nebula Auth &mdash; Security Review</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="teams"><span class="sky-event__dot"></span>Teams</span>
-            </div>
-            <div class="sky-event__status sky-event__status--pending">Pending</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Nebula Auth — Security Review details" data-title="Nebula Auth — Security Review" data-date="Tuesday, 17 February 2026" data-time="14:00 – 16:00 · 2h" data-platform="teams" data-type="team" data-cadence="bi-weekly" data-host="Nebula Auth" data-organizer="Maria Santos" data-organizer-role="Team Manager" data-agenda="OAuth2 token rotation policy review. Prepare SAML federation status update." data-my-status="pending" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "pending"}, {"name": "Chris Evans", "role": "Principal Engineer", "status": "accepted"}]'></button>
-          </article>
-        </div>
-      </article>
-
-      <article class="sky-schedule__day">
-        <header class="sky-schedule__day-head">
-          <span class="sky-schedule__day-name">WED</span>
-          <span class="sky-schedule__day-num">18</span>
-        </header>
-        <div class="sky-schedule__events">
-          <article class="sky-event" data-platform="slack">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">09:30</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">15m</span>
-            </div>
-            <div class="sky-event__title">Edge Delivery Daily Standup</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="slack"><span class="sky-event__dot"></span>Slack</span>
-            </div>
-            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Edge Delivery Daily Standup details" data-title="Edge Delivery Daily Standup" data-date="Wednesday, 18 February 2026" data-time="09:30 – 09:45 · 15m" data-platform="slack" data-type="team" data-cadence="daily" data-host="Edge Delivery" data-organizer="David Park" data-organizer-role="Team Manager" data-agenda="Daily standup for Edge Delivery squad." data-my-status="accepted" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "accepted"}]'></button>
-          </article>
-        </div>
-      </article>
-
-      <article class="sky-schedule__day">
-        <header class="sky-schedule__day-head">
-          <span class="sky-schedule__day-name">THU</span>
-          <span class="sky-schedule__day-num">19</span>
-        </header>
-        <div class="sky-schedule__events">
-          <article class="sky-event" data-platform="teams">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">11:00</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">1h</span>
-            </div>
-            <div class="sky-event__title">Horizon UI &mdash; Design System...</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="teams"><span class="sky-event__dot"></span>Teams</span>
-            </div>
-            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Horizon UI — Design System... details" data-title="Horizon UI — Design System..." data-date="Thursday, 19 February 2026" data-time="11:00 – 12:00 · 1h" data-platform="teams" data-type="team" data-cadence="weekly" data-host="Horizon UI" data-organizer="David Park" data-organizer-role="Team Manager" data-agenda="Design system token review — colour and spacing scale." data-my-status="accepted" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "accepted"}, {"name": "David Park", "role": "Team Manager", "status": "accepted"}]'></button>
-          </article>
-
-          <article class="sky-event" data-platform="slack">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">14:00</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">1h</span>
-            </div>
-            <div class="sky-event__title">Atlas Data &mdash; Sprint 22 Planning</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="slack"><span class="sky-event__dot"></span>Slack</span>
-            </div>
-            <div class="sky-event__status sky-event__status--pending">Pending</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Atlas Data — Sprint 22 Planning details" data-title="Atlas Data — Sprint 22 Planning" data-date="Thursday, 19 February 2026" data-time="14:00 – 15:00 · 1h" data-platform="slack" data-type="team" data-cadence="bi-weekly" data-host="Atlas Data" data-organizer="Alex Rivera" data-organizer-role="Senior Engineer" data-agenda="Sprint 22 planning — review backlog and commit work." data-my-status="pending" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "pending"}, {"name": "Alex Rivera", "role": "Senior Engineer", "status": "accepted"}]'></button>
-          </article>
-        </div>
-      </article>
-
-      <article class="sky-schedule__day">
-        <header class="sky-schedule__day-head">
-          <span class="sky-schedule__day-name">FRI</span>
-          <span class="sky-schedule__day-num">20</span>
-        </header>
-        <div class="sky-schedule__events">
-          <article class="sky-event" data-platform="zoom">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">10:00</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">2h</span>
-            </div>
-            <div class="sky-event__title">Cross-Team Architecture...</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="zoom"><span class="sky-event__dot"></span>Zoom</span>
-            </div>
-            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Cross-Team Architecture... details" data-title="Cross-Team Architecture..." data-date="Friday, 20 February 2026" data-time="10:00 – 12:00 · 2h" data-platform="zoom" data-type="team" data-cadence="quarterly" data-host="Phoenix Platform" data-organizer="Chris Evans" data-organizer-role="Principal Engineer" data-agenda="Quarterly architecture review — microservices boundaries, API contracts, shared libraries." data-my-status="accepted" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "accepted"}, {"name": "Sarah Chen", "role": "Team Manager", "status": "accepted"}, {"name": "David Park", "role": "Team Manager", "status": "accepted"}, {"name": "Maria Santos", "role": "Team Manager", "status": "pending"}, {"name": "Chris Evans", "role": "Principal Engineer", "status": "accepted"}]'></button>
-          </article>
-
-          <article class="sky-event" data-platform="meet">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">15:30</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">30m</span>
-            </div>
-            <div class="sky-event__title">Skyline Observability &mdash;...</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="meet"><span class="sky-event__dot"></span>Meet</span>
-            </div>
-            <div class="sky-event__status sky-event__status--pending">Pending</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Skyline Observability —... details" data-title="Skyline Observability —..." data-date="Friday, 20 February 2026" data-time="15:30 – 16:00 · 30m" data-platform="meet" data-type="team" data-cadence="weekly" data-host="Skyline Observability" data-organizer="Maria Santos" data-organizer-role="Team Manager" data-agenda="Weekly observability review — alerting noise and SLO drift." data-my-status="pending" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "pending"}, {"name": "Maria Santos", "role": "Team Manager", "status": "accepted"}]'></button>
-          </article>
-        </div>
-      </article>
-
-      <article class="sky-schedule__day">
-        <header class="sky-schedule__day-head">
-          <span class="sky-schedule__day-name">SAT</span>
-          <span class="sky-schedule__day-num">21</span>
-        </header>
-        <div class="sky-schedule__events">
-          <article class="sky-event" data-platform="zoom">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">10:00</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">30m</span>
-            </div>
-            <div class="sky-event__title">Interview &mdash; Senior Platform Engineer</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="zoom"><span class="sky-event__dot"></span>Zoom</span>
-            </div>
-            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Interview — Senior Platform Engineer details" data-title="Interview — Senior Platform Engineer" data-date="Saturday, 21 February 2026" data-time="10:00 – 10:30 · 30m" data-platform="zoom" data-type="personal" data-organizer="Stan Nguyen" data-organizer-role="Software Engineer" data-agenda="Technical interview — system design." data-my-status="accepted" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "accepted"}]'></button>
-          </article>
-        </div>
-      </article>
-
-      <article class="sky-schedule__day">
-        <header class="sky-schedule__day-head">
-          <span class="sky-schedule__day-name">SUN</span>
-          <span class="sky-schedule__day-num">22</span>
-        </header>
-        <div class="sky-schedule__events">
-          <article class="sky-event" data-platform="meet">
-            <div class="sky-event__meta">
-              <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-              <span class="sky-event__time">11:00</span>
-              <span class="sky-event__sep">·</span>
-              <span class="sky-event__dur">1h</span>
-            </div>
-            <div class="sky-event__title">Mentoring Session &mdash; Raj Patel</div>
-            <div class="sky-event__tags">
-              <span class="sky-event__platform" data-platform="meet"><span class="sky-event__dot"></span>Meet</span>
-            </div>
-            <div class="sky-event__status sky-event__status--accepted">Accepted</div>
-            <button type="button" class="sky-event__open" data-detail-open="meeting" aria-label="Open Mentoring Session — Raj Patel details" data-title="Mentoring Session — Raj Patel" data-date="Sunday, 22 February 2026" data-time="11:00 – 12:00 · 1h" data-platform="meet" data-type="personal" data-cadence="bi-weekly" data-organizer="Stan Nguyen" data-organizer-role="Software Engineer" data-agenda="Mentoring catch-up — career growth and current projects." data-my-status="accepted" data-attendees='[{"name": "Stan Nguyen (You)", "role": "Software Engineer", "status": "accepted"}, {"name": "Raj Patel", "role": "Mentor", "status": "accepted"}]'></button>
-          </article>
-        </div>
-      </article>
-
+      {% endfor %}
     </div>
   </section>
 
+  {# ── Monthly grid ─────────────────────────────────────────────────── #}
   <section class="sky-schedule__view sky-schedule__month" data-view-target="monthly" aria-label="Monthly schedule">
     <div class="sky-schedule__month-grid" role="grid">
-
       <div class="sky-month__weekday" role="columnheader">MON</div>
       <div class="sky-month__weekday" role="columnheader">TUE</div>
       <div class="sky-month__weekday" role="columnheader">WED</div>
@@ -358,453 +147,142 @@
       <div class="sky-month__weekday" role="columnheader">FRI</div>
       <div class="sky-month__weekday" role="columnheader">SAT</div>
       <div class="sky-month__weekday" role="columnheader">SUN</div>
-
-      {# ── Week 1 (leading Jan 26–31, then Feb 1) ── #}
-      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">26</span></header></div>
-      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">27</span></header></div>
-      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">28</span></header></div>
-      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">29</span></header></div>
-      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">30</span></header></div>
-      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">31</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">1</span></header></div>
-
-      {# ── Week 2 (Feb 2–8) ── #}
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">2</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">3</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">4</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">5</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">6</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">7</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">8</span></header></div>
-
-      {# ── Week 3 (Feb 9–15) ── #}
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">9</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">10</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">11</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">12</span></header></div>
-      <div class="sky-month__cell" role="gridcell">
-        <header class="sky-month__cell-head"><span class="sky-month__num">13</span><span class="sky-month__count">1</span></header>
+      {% for day in monthly_days %}
+      <div class="sky-month__cell{% if day.is_other_month %} sky-month__cell--muted{% endif %}{% if day.is_today %} sky-month__cell--today{% endif %}" role="gridcell"{% if day.is_today %} aria-current="date"{% endif %}>
+        <header class="sky-month__cell-head">
+          <span class="sky-month__num{% if day.is_today %} sky-month__num--today{% endif %}">{{ day.num }}</span>
+          {% if day.events_count %}<span class="sky-month__count">{{ day.events_count }}</span>{% endif %}
+        </header>
+        {% if day.events_visible %}
         <ul class="sky-month__events">
-          <li class="sky-month__event" data-platform="zoom">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">11:00</span></span>
-            <span class="sky-month__title">QoS Dashboard De&hellip;</span>
+          {% for e in day.events_visible %}
+          <li class="sky-month__event" data-platform="{{ e.platform }}">
+            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">{{ e.time_short }}</span></span>
+            <span class="sky-month__title">{{ e.title }}</span>
+            <button type="button" class="sky-month__event-open" data-detail-open="meeting"
+              aria-label="Open {{ e.title }} details"
+              data-meet-id="{{ e.meet_id }}"
+              data-title="{{ e.title }}"
+              data-date="{{ e.date_long }}"
+              data-time="{{ e.time_range }}"
+              data-platform="{{ e.platform }}"
+              data-type="{{ e.type }}"
+              {% if e.cadence %}data-cadence="{{ e.cadence }}"{% endif %}
+              {% if e.host %}data-host="{{ e.host }}"{% endif %}
+              {% if e.organizer %}data-organizer="{{ e.organizer }}"
+              data-organizer-role="{{ e.organizer_role }}"{% endif %}
+              {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
+              data-my-status="{{ e.my_status }}"
+              data-attendees='{{ e.attendees_json }}'></button>
           </li>
+          {% endfor %}
         </ul>
+        {% endif %}
+        {% if day.events_extra %}<button type="button" class="sky-month__more">+{{ day.events_extra }} more</button>{% endif %}
       </div>
-      <div class="sky-month__cell" role="gridcell">
-        <header class="sky-month__cell-head"><span class="sky-month__num">14</span><span class="sky-month__count">1</span></header>
-        <ul class="sky-month__events">
-          <li class="sky-month__event" data-platform="teams">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">14:00</span></span>
-            <span class="sky-month__title">Engineering Update</span>
-          </li>
-        </ul>
-      </div>
-      <div class="sky-month__cell" role="gridcell">
-        <header class="sky-month__cell-head"><span class="sky-month__num">15</span><span class="sky-month__count">1</span></header>
-        <ul class="sky-month__events">
-          <li class="sky-month__event" data-platform="meet">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">14:00</span></span>
-            <span class="sky-month__title">Incident Retrospec&hellip;</span>
-          </li>
-        </ul>
-      </div>
-
-      {# ── Week 4 (Feb 16 today → 22) ── #}
-      <div class="sky-month__cell sky-month__cell--today" role="gridcell" aria-current="date">
-        <header class="sky-month__cell-head"><span class="sky-month__num sky-month__num--today">16</span><span class="sky-month__count">4</span></header>
-        <ul class="sky-month__events">
-          <li class="sky-month__event" data-platform="zoom">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">10:00</span></span>
-            <span class="sky-month__title">Q1 Roadmap Review</span>
-          </li>
-          <li class="sky-month__event" data-platform="zoom">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">14:30</span></span>
-            <span class="sky-month__title">Latency Investigation</span>
-          </li>
-        </ul>
-        <button type="button" class="sky-month__more">+2 more</button>
-      </div>
-      <div class="sky-month__cell" role="gridcell">
-        <header class="sky-month__cell-head"><span class="sky-month__num">17</span><span class="sky-month__count">2</span></header>
-        <ul class="sky-month__events">
-          <li class="sky-month__event" data-platform="slack">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">09:15</span></span>
-            <span class="sky-month__title">Phoenix Daily Standup</span>
-          </li>
-          <li class="sky-month__event" data-platform="teams">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">14:00</span></span>
-            <span class="sky-month__title">Security Review</span>
-          </li>
-        </ul>
-      </div>
-      <div class="sky-month__cell" role="gridcell">
-        <header class="sky-month__cell-head"><span class="sky-month__num">18</span><span class="sky-month__count">2</span></header>
-        <ul class="sky-month__events">
-          <li class="sky-month__event" data-platform="slack">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">09:30</span></span>
-            <span class="sky-month__title">Edge Delivery Daily S&hellip;</span>
-          </li>
-          <li class="sky-month__event" data-platform="zoom">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">10:00</span></span>
-            <span class="sky-month__title">Sprint 22 Planning</span>
-          </li>
-        </ul>
-      </div>
-      <div class="sky-month__cell" role="gridcell">
-        <header class="sky-month__cell-head"><span class="sky-month__num">19</span><span class="sky-month__count">2</span></header>
-        <ul class="sky-month__events">
-          <li class="sky-month__event" data-platform="slack">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">09:30</span></span>
-            <span class="sky-month__title">Alerting Triage</span>
-          </li>
-          <li class="sky-month__event" data-platform="teams">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">11:00</span></span>
-            <span class="sky-month__title">Design System Sync</span>
-          </li>
-        </ul>
-      </div>
-      <div class="sky-month__cell" role="gridcell">
-        <header class="sky-month__cell-head"><span class="sky-month__num">20</span><span class="sky-month__count">2</span></header>
-        <ul class="sky-month__events">
-          <li class="sky-month__event" data-platform="zoom">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">11:00</span></span>
-            <span class="sky-month__title">Cross-Team Archite&hellip;</span>
-          </li>
-          <li class="sky-month__event" data-platform="meet">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">14:00</span></span>
-            <span class="sky-month__title">Senior Platform Eng&hellip;</span>
-          </li>
-        </ul>
-      </div>
-      <div class="sky-month__cell" role="gridcell">
-        <header class="sky-month__cell-head"><span class="sky-month__num">21</span><span class="sky-month__count">1</span></header>
-        <ul class="sky-month__events">
-          <li class="sky-month__event" data-platform="meet">
-            <span class="sky-month__row"><span class="sky-month__bullet" aria-hidden="true"></span><span class="sky-month__time">11:00</span></span>
-            <span class="sky-month__title">Raj Patel</span>
-          </li>
-        </ul>
-      </div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">22</span></header></div>
-
-      {# ── Week 5 (Feb 23–28, then trailing Mar 1) ── #}
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">23</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">24</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">25</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">26</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">27</span></header></div>
-      <div class="sky-month__cell" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">28</span></header></div>
-      <div class="sky-month__cell sky-month__cell--muted" role="gridcell"><header class="sky-month__cell-head"><span class="sky-month__num">1</span></header></div>
-
+      {% endfor %}
     </div>
   </section>
 
+  {# ── Upcoming list + Recent past sidebar ──────────────────────────── #}
   <section class="sky-schedule__view sky-schedule__upcoming" data-view-target="upcoming" aria-label="Upcoming meetings">
     <div class="sky-upcoming__columns">
 
-      {# ── Main column: grouped meetings ── #}
       <div class="sky-upcoming__main">
         <h2 class="sky-upcoming__heading">UPCOMING MEETINGS</h2>
 
+        {% for group in upcoming_groups %}
         <section class="sky-upcoming__group">
           <header class="sky-upcoming__group-head">
-            <h3 class="sky-upcoming__group-title">Today</h3>
-            <span class="sky-upcoming__group-tag">Today</span>
-            <span class="sky-upcoming__group-count">4 meetings</span>
+            <h3 class="sky-upcoming__group-title">{{ group.label }}</h3>
+            {% if group.tag %}<span class="sky-upcoming__group-tag">{{ group.tag }}</span>{% endif %}
+            <span class="sky-upcoming__group-count">{{ group.count }} meeting{{ group.count|pluralize }}</span>
           </header>
           <div class="sky-upcoming__list">
-
-            <article class="sky-meeting" data-platform="slack">
+            {% for e in group.events %}
+            <article class="sky-meeting" data-platform="{{ e.platform }}">
               <header class="sky-meeting__head">
-                <h4 class="sky-meeting__title">Nebula Auth Daily Standup</h4>
-                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
+                <h4 class="sky-meeting__title">{{ e.title }}</h4>
+                <span class="sky-meeting__status sky-meeting__status--{{ e.my_status }}">{{ e.status_capitalised }}</span>
               </header>
               <div class="sky-meeting__meta">
                 <span class="sky-icon" data-icon="Clock" data-size="13"></span>
-                <span class="sky-meeting__time-text">09:00 &ndash; 09:15</span>
-                <span class="sky-meeting__sep">&middot;</span>
-                <span class="sky-meeting__dur">15m</span>
-                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
-                <span class="sky-meeting__org-name">Nebula Auth</span>
+                <span class="sky-meeting__time-text">{{ e.time_range }}</span>
+                {% if e.host %}<span class="sky-icon" data-icon="FileText" data-size="13"></span>
+                <span class="sky-meeting__org-name">{{ e.host }}</span>{% endif %}
               </div>
               <footer class="sky-meeting__foot">
                 <div class="sky-meeting__pills">
-                  <span class="sky-pill sky-pill--platform" data-platform="slack"><span class="sky-pill__dot"></span>Slack</span>
-                  <span class="sky-pill sky-pill--team">TEAM</span>
-                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>daily</span>
+                  <span class="sky-pill sky-pill--platform" data-platform="{{ e.platform }}"><span class="sky-pill__dot"></span>{{ e.platform_label }}</span>
+                  <span class="sky-pill sky-pill--{% if e.type == 'personal' %}personal{% else %}team{% endif %}">{% if e.type == 'personal' %}PERSONAL{% else %}TEAM{% endif %}</span>
+                  {% if e.cadence %}<span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>{{ e.cadence }}</span>{% endif %}
                 </div>
                 <ul class="sky-meeting__avatars">
-                  <li class="sky-avatar">SR</li>
-                  <li class="sky-avatar">CH</li>
+                  {% for a in e.attendees_json|slice:":3" %}{# avatars rendered by JS would be richer; lightweight here #}{% endfor %}
                 </ul>
               </footer>
+              <button type="button" class="sky-meeting__open" data-detail-open="meeting"
+                aria-label="Open {{ e.title }} details"
+                data-meet-id="{{ e.meet_id }}"
+                data-title="{{ e.title }}"
+                data-date="{{ e.date_long }}"
+                data-time="{{ e.time_range }}"
+                data-platform="{{ e.platform }}"
+                data-type="{{ e.type }}"
+                {% if e.cadence %}data-cadence="{{ e.cadence }}"{% endif %}
+                {% if e.host %}data-host="{{ e.host }}"{% endif %}
+                {% if e.organizer %}data-organizer="{{ e.organizer }}"
+                data-organizer-role="{{ e.organizer_role }}"{% endif %}
+                {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
+                data-my-status="{{ e.my_status }}"
+                data-attendees='{{ e.attendees_json }}'></button>
             </article>
-
-            <article class="sky-meeting" data-platform="teams">
-              <header class="sky-meeting__head">
-                <h4 class="sky-meeting__title">Phoenix Platform &mdash; Q1 Roadmap Review</h4>
-                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
-              </header>
-              <div class="sky-meeting__meta">
-                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
-                <span class="sky-meeting__time-text">10:00 &ndash; 11:00</span>
-                <span class="sky-meeting__sep">&middot;</span>
-                <span class="sky-meeting__dur">1h</span>
-                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
-                <span class="sky-meeting__org-name">Phoenix Platform</span>
-              </div>
-              <footer class="sky-meeting__foot">
-                <div class="sky-meeting__pills">
-                  <span class="sky-pill sky-pill--platform" data-platform="teams"><span class="sky-pill__dot"></span>Teams</span>
-                  <span class="sky-pill sky-pill--team">TEAM</span>
-                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>weekly</span>
-                </div>
-                <ul class="sky-meeting__avatars">
-                  <li class="sky-avatar">EN</li>
-                  <li class="sky-avatar">PR</li>
-                  <li class="sky-avatar">QA</li>
-                  <li class="sky-avatar sky-avatar--more">+5</li>
-                </ul>
-              </footer>
-            </article>
-
-            <article class="sky-meeting" data-platform="zoom">
-              <header class="sky-meeting__head">
-                <h4 class="sky-meeting__title">Streaming Engine &mdash; Latency Investigation</h4>
-                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
-              </header>
-              <div class="sky-meeting__meta">
-                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
-                <span class="sky-meeting__time-text">14:30 &ndash; 15:15</span>
-                <span class="sky-meeting__sep">&middot;</span>
-                <span class="sky-meeting__dur">45m</span>
-                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
-                <span class="sky-meeting__org-name">Streaming Engine</span>
-              </div>
-              <footer class="sky-meeting__foot">
-                <div class="sky-meeting__pills">
-                  <span class="sky-pill sky-pill--platform" data-platform="zoom"><span class="sky-pill__dot"></span>Zoom</span>
-                  <span class="sky-pill sky-pill--team">TEAM</span>
-                </div>
-                <ul class="sky-meeting__avatars">
-                  <li class="sky-avatar">EN</li>
-                  <li class="sky-avatar">SR</li>
-                </ul>
-              </footer>
-            </article>
-
-            <article class="sky-meeting" data-platform="teams">
-              <header class="sky-meeting__head">
-                <h4 class="sky-meeting__title">1:1 with Sarah Chen</h4>
-                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
-              </header>
-              <div class="sky-meeting__meta">
-                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
-                <span class="sky-meeting__time-text">16:00 &ndash; 16:30</span>
-                <span class="sky-meeting__sep">&middot;</span>
-                <span class="sky-meeting__dur">30m</span>
-              </div>
-              <footer class="sky-meeting__foot">
-                <div class="sky-meeting__pills">
-                  <span class="sky-pill sky-pill--platform" data-platform="teams"><span class="sky-pill__dot"></span>Teams</span>
-                  <span class="sky-pill sky-pill--personal">PERSONAL</span>
-                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>weekly</span>
-                </div>
-                <ul class="sky-meeting__avatars">
-                  <li class="sky-avatar">SC</li>
-                </ul>
-              </footer>
-            </article>
-
+            {% endfor %}
           </div>
         </section>
-
-        <section class="sky-upcoming__group">
-          <header class="sky-upcoming__group-head">
-            <h3 class="sky-upcoming__group-title">Tuesday, 17 February 2026</h3>
-            <span class="sky-upcoming__group-count">2 meetings</span>
-          </header>
-          <div class="sky-upcoming__list">
-
-            <article class="sky-meeting" data-platform="slack">
-              <header class="sky-meeting__head">
-                <h4 class="sky-meeting__title">Phoenix Daily Standup</h4>
-                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
-              </header>
-              <div class="sky-meeting__meta">
-                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
-                <span class="sky-meeting__time-text">09:15 &ndash; 09:30</span>
-                <span class="sky-meeting__sep">&middot;</span>
-                <span class="sky-meeting__dur">15m</span>
-                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
-                <span class="sky-meeting__org-name">Phoenix Platform</span>
-              </div>
-              <footer class="sky-meeting__foot">
-                <div class="sky-meeting__pills">
-                  <span class="sky-pill sky-pill--platform" data-platform="slack"><span class="sky-pill__dot"></span>Slack</span>
-                  <span class="sky-pill sky-pill--team">TEAM</span>
-                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>daily</span>
-                </div>
-                <ul class="sky-meeting__avatars">
-                  <li class="sky-avatar">EN</li>
-                  <li class="sky-avatar">SR</li>
-                </ul>
-              </footer>
-            </article>
-
-            <article class="sky-meeting" data-platform="teams">
-              <header class="sky-meeting__head">
-                <h4 class="sky-meeting__title">Nebula Auth &mdash; Security Review</h4>
-                <span class="sky-meeting__status sky-meeting__status--pending">Pending</span>
-              </header>
-              <div class="sky-meeting__meta">
-                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
-                <span class="sky-meeting__time-text">14:00 &ndash; 16:00</span>
-                <span class="sky-meeting__sep">&middot;</span>
-                <span class="sky-meeting__dur">2h</span>
-                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
-                <span class="sky-meeting__org-name">Nebula Auth</span>
-              </div>
-              <footer class="sky-meeting__foot">
-                <div class="sky-meeting__pills">
-                  <span class="sky-pill sky-pill--platform" data-platform="teams"><span class="sky-pill__dot"></span>Teams</span>
-                  <span class="sky-pill sky-pill--team">TEAM</span>
-                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>bi-weekly</span>
-                </div>
-                <ul class="sky-meeting__avatars">
-                  <li class="sky-avatar">SR</li>
-                </ul>
-              </footer>
-            </article>
-
-          </div>
-        </section>
-
-        <section class="sky-upcoming__group">
-          <header class="sky-upcoming__group-head">
-            <h3 class="sky-upcoming__group-title">Wednesday, 18 February 2026</h3>
-            <span class="sky-upcoming__group-count">2 meetings</span>
-          </header>
-          <div class="sky-upcoming__list">
-
-            <article class="sky-meeting" data-platform="slack">
-              <header class="sky-meeting__head">
-                <h4 class="sky-meeting__title">Edge Delivery Daily Standup</h4>
-                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
-              </header>
-              <div class="sky-meeting__meta">
-                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
-                <span class="sky-meeting__time-text">09:30 &ndash; 09:45</span>
-                <span class="sky-meeting__sep">&middot;</span>
-                <span class="sky-meeting__dur">15m</span>
-                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
-                <span class="sky-meeting__org-name">Edge Delivery</span>
-              </div>
-              <footer class="sky-meeting__foot">
-                <div class="sky-meeting__pills">
-                  <span class="sky-pill sky-pill--platform" data-platform="slack"><span class="sky-pill__dot"></span>Slack</span>
-                  <span class="sky-pill sky-pill--team">TEAM</span>
-                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>daily</span>
-                </div>
-                <ul class="sky-meeting__avatars">
-                  <li class="sky-avatar">EN</li>
-                </ul>
-              </footer>
-            </article>
-
-            <article class="sky-meeting" data-platform="zoom">
-              <header class="sky-meeting__head">
-                <h4 class="sky-meeting__title">Atlas Data &mdash; Sprint 22 Planning</h4>
-                <span class="sky-meeting__status sky-meeting__status--accepted">Accepted</span>
-              </header>
-              <div class="sky-meeting__meta">
-                <span class="sky-icon" data-icon="Clock" data-size="13"></span>
-                <span class="sky-meeting__time-text">10:00 &ndash; 11:30</span>
-                <span class="sky-meeting__sep">&middot;</span>
-                <span class="sky-meeting__dur">1h 30m</span>
-                <span class="sky-icon" data-icon="FileText" data-size="13"></span>
-                <span class="sky-meeting__org-name">Atlas Data</span>
-              </div>
-              <footer class="sky-meeting__foot">
-                <div class="sky-meeting__pills">
-                  <span class="sky-pill sky-pill--platform" data-platform="zoom"><span class="sky-pill__dot"></span>Zoom</span>
-                  <span class="sky-pill sky-pill--team">TEAM</span>
-                  <span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>bi-weekly</span>
-                </div>
-                <ul class="sky-meeting__avatars">
-                  <li class="sky-avatar">EN</li>
-                  <li class="sky-avatar">PR</li>
-                  <li class="sky-avatar sky-avatar--more">+3</li>
-                </ul>
-              </footer>
-            </article>
-
-          </div>
-        </section>
+        {% empty %}
+        <p class="sky-schedule__placeholder-text">No upcoming meetings.</p>
+        {% endfor %}
       </div>
 
-      {# ── Sidebar: recent past ── #}
       <aside class="sky-upcoming__side">
         <h2 class="sky-upcoming__heading">RECENT PAST</h2>
         <div class="sky-upcoming__past">
-
-          <article class="sky-past" data-platform="teams">
-            <h4 class="sky-past__title">Phoenix Platform &mdash; Incident Retrospective</h4>
+          {% for e in recent_past %}
+          <article class="sky-past" data-platform="{{ e.platform }}">
+            <h4 class="sky-past__title">{{ e.title }}</h4>
             <div class="sky-past__pills">
-              <span class="sky-pill sky-pill--platform" data-platform="teams"><span class="sky-pill__dot"></span>Teams</span>
-              <span class="sky-pill sky-pill--personal">PERSONAL</span>
+              <span class="sky-pill sky-pill--platform" data-platform="{{ e.platform }}"><span class="sky-pill__dot"></span>{{ e.platform_label }}</span>
+              <span class="sky-pill sky-pill--{% if e.type == 'personal' %}personal{% else %}team{% endif %}">{% if e.type == 'personal' %}PERSONAL{% else %}TEAM{% endif %}</span>
             </div>
             <div class="sky-past__meta">
               <span class="sky-past__row">
                 <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-                <span class="sky-past__time">14:00 &ndash; 15:00</span>
-                <span class="sky-past__sep">&middot;</span>
-                <span class="sky-past__dur">1h</span>
+                <span class="sky-past__time">{{ e.time_range }}</span>
               </span>
-              <span class="sky-past__row">
+              {% if e.host %}<span class="sky-past__row">
                 <span class="sky-icon" data-icon="FileText" data-size="11"></span>
-                <span class="sky-past__org">Phoenix Platform</span>
-              </span>
+                <span class="sky-past__org">{{ e.host }}</span>
+              </span>{% endif %}
             </div>
+            <button type="button" class="sky-past__open" data-detail-open="meeting"
+              aria-label="Open {{ e.title }} details"
+              data-meet-id="{{ e.meet_id }}"
+              data-title="{{ e.title }}"
+              data-date="{{ e.date_long }}"
+              data-time="{{ e.time_range }}"
+              data-platform="{{ e.platform }}"
+              data-type="{{ e.type }}"
+              {% if e.host %}data-host="{{ e.host }}"{% endif %}
+              {% if e.organizer %}data-organizer="{{ e.organizer }}"
+              data-organizer-role="{{ e.organizer_role }}"{% endif %}
+              {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
+              data-my-status="{{ e.my_status }}"
+              data-attendees='{{ e.attendees_json }}'></button>
           </article>
-
-          <article class="sky-past" data-platform="zoom">
-            <h4 class="sky-past__title">All Hands &mdash; Engineering Update</h4>
-            <div class="sky-past__pills">
-              <span class="sky-pill sky-pill--platform" data-platform="zoom"><span class="sky-pill__dot"></span>Zoom</span>
-              <span class="sky-pill sky-pill--personal">PERSONAL</span>
-            </div>
-            <div class="sky-past__meta">
-              <span class="sky-past__row">
-                <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-                <span class="sky-past__time">10:00 &ndash; 10:45</span>
-                <span class="sky-past__sep">&middot;</span>
-                <span class="sky-past__dur">45m</span>
-              </span>
-            </div>
-          </article>
-
-          <article class="sky-past" data-platform="meet">
-            <h4 class="sky-past__title">Streaming Engine &mdash; QoS Dashboard Demo</h4>
-            <div class="sky-past__pills">
-              <span class="sky-pill sky-pill--platform" data-platform="meet"><span class="sky-pill__dot"></span>Meet</span>
-              <span class="sky-pill sky-pill--team">TEAM</span>
-            </div>
-            <div class="sky-past__meta">
-              <span class="sky-past__row">
-                <span class="sky-icon" data-icon="Clock" data-size="11"></span>
-                <span class="sky-past__time">11:30 &ndash; 12:00</span>
-                <span class="sky-past__sep">&middot;</span>
-                <span class="sky-past__dur">30m</span>
-              </span>
-              <span class="sky-past__row">
-                <span class="sky-icon" data-icon="FileText" data-size="11"></span>
-                <span class="sky-past__org">Streaming Engine</span>
-              </span>
-            </div>
-          </article>
-
+          {% empty %}
+          <p class="sky-schedule__placeholder-text">No past meetings.</p>
+          {% endfor %}
         </div>
       </aside>
 
