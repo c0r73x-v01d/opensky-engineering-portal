@@ -757,7 +757,8 @@
 }
 
 .sky-pill--platform { background: var(--sky-grey05); color: var(--sky-grey80); }
-.sky-pill--platform::before { content: '+'; color: currentColor; opacity: 0.7; margin-right: -2px; }
+.sky-meeting__pills .sky-pill--platform::before,
+.sky-past__pills .sky-pill--platform::before { content: '+'; color: currentColor; opacity: 0.7; margin-right: -2px; }
 .sky-pill--platform[data-platform="slack"] { color: #6626A1; }
 .sky-pill--platform[data-platform="zoom"]  { color: var(--sky-primary); }
 .sky-pill--platform[data-platform="teams"] { color: #5B5FC7; }
@@ -1011,7 +1012,15 @@
 .sky-field {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 0;
+}
+
+.sky-field__label {
+  margin-bottom: 4px;
+}
+
+.sky-field > .sky-field__hint {
+  margin-bottom: 6px;
 }
 
 .sky-field__label {
@@ -1195,3 +1204,338 @@
   transition: background 120ms ease, color 120ms ease;
 }
 .sky-attendee__remove:hover { background: var(--sky-grey10); color: var(--sky-grey90); }
+
+/* ── Event card click overlay ────────────────────────────── */
+.sky-event { position: relative; }
+.sky-event__open {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* ── Meeting Detail panel (right slide-in) ───────────────── */
+.sky-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(255, 255, 255, 0.30);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.sky-panel *, .sky-panel *::before, .sky-panel *::after { box-sizing: border-box; }
+
+.sky-panel[hidden] { display: none; }
+
+.sky-panel__backdrop {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+}
+
+.sky-panel__sheet {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  background: var(--sky-white);
+  border-left: 1px solid var(--sky-grey10);
+  box-shadow: -24px 0 80px rgba(15, 15, 30, 0.12), -8px 0 24px rgba(15, 15, 30, 0.06);
+  font-family: var(--sky-font);
+  animation: sky-panel-slide-in 240ms ease-out;
+}
+
+@keyframes sky-panel-slide-in {
+  from { transform: translateX(100%); opacity: 0.4; }
+  to   { transform: translateX(0);    opacity: 1;   }
+}
+
+@media (max-width: 560px) {
+  .sky-panel__sheet { max-width: 100%; }
+}
+
+/* Panel head */
+.sky-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sky-sp3);
+  padding: var(--sky-sp4) var(--sky-sp5);
+  border-bottom: 1px solid var(--sky-grey10);
+}
+
+.sky-panel__head-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sky-panel__close {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--sky-grey50);
+  border-radius: 6px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.sky-panel__close:hover { background: var(--sky-grey05); color: var(--sky-grey90); }
+
+/* Panel scrollable body */
+.sky-panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sky-sp5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sky-sp5);
+}
+
+.sky-panel__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--sky-grey90);
+  line-height: 1.25;
+}
+
+/* Info rows */
+.sky-panel__info {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sky-sp3);
+}
+
+.sky-panel__info-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sky-sp3);
+}
+
+.sky-panel__info-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--sky-grey05);
+  color: var(--sky-grey60);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.sky-panel__info-icon[data-tone="zoom"]  { background: rgba(0, 15, 245, 0.08);  color: var(--sky-primary); }
+.sky-panel__info-icon[data-tone="slack"] { background: rgba(102, 38, 161, 0.08); color: #6626A1; }
+.sky-panel__info-icon[data-tone="teams"] { background: rgba(91, 95, 199, 0.10); color: #5B5FC7; }
+.sky-panel__info-icon[data-tone="meet"]  { background: rgba(0, 126, 19, 0.08); color: var(--sky-positive); }
+
+.sky-panel__info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sky-panel__info-strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sky-grey90);
+}
+
+.sky-panel__info-sub {
+  font-size: 11.5px;
+  color: var(--sky-grey50);
+}
+
+/* Sections */
+.sky-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sky-sp3);
+}
+
+.sky-panel__section-title {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  color: var(--sky-grey50);
+  text-transform: uppercase;
+}
+
+.sky-panel__agenda {
+  margin: 0;
+  padding: 12px 14px;
+  background: rgba(26, 26, 26, 0.035);
+  border-radius: var(--sky-rad-xs);
+  font-size: 13px;
+  color: var(--sky-grey80);
+  line-height: 1.5;
+}
+
+/* Person cards (organizer + attendees) */
+.sky-panel__attendees {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sky-sp2);
+}
+
+.sky-person {
+  display: flex;
+  align-items: center;
+  gap: var(--sky-sp3);
+  padding: 10px 12px;
+  background: var(--sky-white);
+  border: 1px solid var(--sky-grey10);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15, 15, 30, 0.04);
+}
+
+.sky-person--organizer {
+  background: var(--sky-white);
+}
+
+.sky-person__avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #DD1717;
+  color: var(--sky-white);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.sky-person__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sky-person__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sky-grey90);
+}
+
+.sky-person__you {
+  font-weight: 500;
+  color: var(--sky-grey50);
+}
+
+.sky-person__role {
+  font-size: 11.5px;
+  color: var(--sky-grey50);
+}
+
+.sky-person__status {
+  font-size: 11px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.sky-person__status--accepted::before {
+  content: '\2022';
+  color: var(--sky-positive);
+  margin-right: 4px;
+  font-size: 14px;
+  line-height: 0;
+}
+.sky-person__status--accepted { color: var(--sky-positive); }
+
+.sky-person__status--pending::before {
+  content: '\2022';
+  color: var(--sky-attention);
+  margin-right: 4px;
+  font-size: 14px;
+  line-height: 0;
+}
+.sky-person__status--pending { color: var(--sky-attention); }
+
+.sky-person__status--declined::before {
+  content: '\2022';
+  color: var(--sky-negative);
+  margin-right: 4px;
+  font-size: 14px;
+  line-height: 0;
+}
+.sky-person__status--declined { color: var(--sky-negative); }
+
+/* Actions block — sits in body, full inner width, equal-width side-by-side when paired */
+.sky-panel__actions {
+  display: flex;
+  gap: var(--sky-sp3);
+  margin-top: var(--sky-sp2);
+}
+
+.sky-panel__foot-btn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: var(--sky-font);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.sky-panel__foot-btn .sky-icon { display: inline-flex; align-items: center; }
+
+.sky-panel__decline,
+.sky-panel__decline-outline {
+  background: rgba(221, 23, 23, 0.04);
+  color: var(--sky-negative);
+  border-color: rgba(221, 23, 23, 0.22);
+}
+.sky-panel__decline .sky-icon,
+.sky-panel__decline-outline .sky-icon { color: var(--sky-negative); }
+
+.sky-panel__decline:hover,
+.sky-panel__decline-outline:hover {
+  background: rgba(221, 23, 23, 0.08);
+  border-color: rgba(221, 23, 23, 0.40);
+}
+
+.sky-panel__accept,
+.sky-panel__accept-full {
+  background: var(--sky-positive);
+  color: var(--sky-white);
+}
+.sky-panel__accept .sky-icon,
+.sky-panel__accept-full .sky-icon { color: var(--sky-white); }
+
+.sky-panel__accept:hover,
+.sky-panel__accept-full:hover {
+  background: var(--sky-positive-dark);
+}
