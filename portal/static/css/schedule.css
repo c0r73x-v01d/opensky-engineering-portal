@@ -57,28 +57,28 @@
   border-radius: 14px;
   padding: var(--sky-sp5) var(--sky-sp5);
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: space-between;
-  gap: var(--sky-sp4);
+  gap: var(--sky-sp3);
   min-height: 96px;
 }
 
-.sky-schedule__kpi-body {
+.sky-schedule__kpi-top {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sky-sp3);
 }
 
 .sky-schedule__kpi-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-family: var(--sky-font);
+  font-size: 12px;
+  font-weight: 600;
   color: var(--sky-grey50);
-  text-transform: uppercase;
 }
 
 .sky-schedule__kpi-value {
+  margin: 0;
   font-family: var(--sky-font);
   font-size: 36px;
   font-weight: 800;
@@ -88,9 +88,9 @@
 }
 
 .sky-schedule__kpi-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
