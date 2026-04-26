@@ -700,10 +700,12 @@
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 12px;
   font-size: 11.5px;
   color: var(--sky-grey60);
 }
+
+.sky-meeting__meta > .sky-icon + * { margin-left: -6px; }
 
 .sky-meeting__meta .sky-icon { color: var(--sky-grey50); display: inline-flex; align-items: center; }
 
@@ -1222,8 +1224,15 @@
 .sky-attendee__remove:hover { background: var(--sky-grey10); color: var(--sky-grey90); }
 
 /* ── Event card click overlay ────────────────────────────── */
-.sky-event { position: relative; }
-.sky-event__open {
+.sky-event,
+.sky-month__event,
+.sky-meeting,
+.sky-past { position: relative; }
+
+.sky-event__open,
+.sky-month__event-open,
+.sky-meeting__open,
+.sky-past__open {
   position: absolute;
   inset: 0;
   background: transparent;
