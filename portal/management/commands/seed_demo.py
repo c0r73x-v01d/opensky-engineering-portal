@@ -60,9 +60,24 @@ TEAMS = {
 class Command(BaseCommand):
     help = 'Populate the database with demo data conforming to schema minimums.'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--reset-meetings',
+            action='store_true',
+            help='Wipe existing Meeting + MeetingInvitation rows before seeding so demo meetings re-anchor on today.',
+        )
+
     @transaction.atomic
     def handle(self, *args, **opts):
         self.stdout.write(self.style.NOTICE('Seeding demo data…'))
+
+        if opts.get('reset_meetings'):
+            from portal.models import Meeting, MeetingInvitation
+            inv_n, _ = MeetingInvitation.objects.all().delete()
+            meet_n, _ = Meeting.objects.all().delete()
+            self.stdout.write(self.style.WARNING(
+                f'  reset: deleted {meet_n} meetings and {inv_n} invitations.'
+            ))
 
         depts = self._seed_departments()
         types = self._seed_team_types()

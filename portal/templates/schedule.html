@@ -62,7 +62,7 @@
     </article>
   </section>
 
-  <section class="sky-schedule__toolbar" data-view="weekly" aria-label="Calendar view controls">
+  <section class="sky-schedule__toolbar" data-view="weekly" data-anchor="{{ anchor_iso }}" aria-label="Calendar view controls">
     <div class="sky-schedule__views" role="tablist" aria-label="Calendar layout">
       <button type="button" class="sky-schedule__view-pill" role="tab" data-view-pill="monthly" aria-selected="false">
         <span class="sky-icon sky-schedule__view-icon" data-icon="Grid" data-size="14"></span>
@@ -127,7 +127,7 @@
               {% if e.organizer %}data-organizer="{{ e.organizer }}"
               data-organizer-role="{{ e.organizer_role }}"{% endif %}
               {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
-              data-my-status="{{ e.my_status }}"
+              data-my-status="{{ e.my_status }}"{% if e.is_past %} data-is-past="1"{% endif %}
               data-attendees='{{ e.attendees_json }}'></button>
           </article>
           {% endfor %}
@@ -172,7 +172,7 @@
               {% if e.organizer %}data-organizer="{{ e.organizer }}"
               data-organizer-role="{{ e.organizer_role }}"{% endif %}
               {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
-              data-my-status="{{ e.my_status }}"
+              data-my-status="{{ e.my_status }}"{% if e.is_past %} data-is-past="1"{% endif %}
               data-attendees='{{ e.attendees_json }}'></button>
           </li>
           {% endfor %}
@@ -237,7 +237,7 @@
                 {% if e.organizer %}data-organizer="{{ e.organizer }}"
                 data-organizer-role="{{ e.organizer_role }}"{% endif %}
                 {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
-                data-my-status="{{ e.my_status }}"
+                data-my-status="{{ e.my_status }}"{% if e.is_past %} data-is-past="1"{% endif %}
                 data-attendees='{{ e.attendees_json }}'></button>
             </article>
             {% endfor %}
@@ -280,7 +280,7 @@
               {% if e.organizer %}data-organizer="{{ e.organizer }}"
               data-organizer-role="{{ e.organizer_role }}"{% endif %}
               {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
-              data-my-status="{{ e.my_status }}"
+              data-my-status="{{ e.my_status }}"{% if e.is_past %} data-is-past="1"{% endif %}
               data-attendees='{{ e.attendees_json }}'></button>
           </article>
           {% empty %}

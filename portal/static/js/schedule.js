@@ -36,6 +36,42 @@
     });
   }
 
+  function setupNavigator() {
+    var toolbar = document.querySelector('.sky-schedule__toolbar');
+    if (!toolbar) return;
+
+    function shift(direction) {
+      var view = toolbar.getAttribute('data-view') || 'weekly';
+      var anchorStr = toolbar.getAttribute('data-anchor');
+      var anchor = anchorStr ? new Date(anchorStr + 'T12:00:00') : new Date();
+      if (direction === 0) {
+        anchor = new Date();
+      } else {
+        var step = view === 'monthly' ? 0 : (view === 'upcoming' ? 21 : 7);
+        if (view === 'monthly') {
+          anchor.setMonth(anchor.getMonth() + direction);
+        } else {
+          anchor.setDate(anchor.getDate() + direction * step);
+        }
+      }
+      var iso = anchor.getFullYear() + '-' +
+        String(anchor.getMonth() + 1).padStart(2, '0') + '-' +
+        String(anchor.getDate()).padStart(2, '0');
+      var url = new URL(window.location.href);
+      url.searchParams.set('anchor', iso);
+      window.location.href = url.toString();
+    }
+
+    toolbar.querySelectorAll('[data-nav]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var nav = btn.getAttribute('data-nav');
+        if (nav === 'prev') shift(-1);
+        else if (nav === 'next') shift(+1);
+        else if (nav === 'today') shift(0);
+      });
+    });
+  }
+
   function setupModals() {
     var openTriggers = document.querySelectorAll('[data-modal-open]');
     if (!openTriggers.length) return;
@@ -391,7 +427,12 @@
 
       var foot = $('foot');
       foot.innerHTML = '';
-      foot.appendChild(buildFoot(d.myStatus || 'accepted'));
+      if (d.isPast === '1' || d.isPast === 'true') {
+        foot.style.display = 'none';
+      } else {
+        foot.style.display = '';
+        foot.appendChild(buildFoot(d.myStatus || 'accepted'));
+      }
     }
 
     var current = { meetId: null, status: 'accepted' };
@@ -434,6 +475,34 @@
       }
     }
 
+    function refreshCardsForMeeting(meetId, newStatus) {
+      var label = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+
+      document.querySelectorAll('[data-meet-id="' + meetId + '"]').forEach(function (btn) {
+        btn.setAttribute('data-my-status', newStatus);
+      });
+
+      document.querySelectorAll('.sky-event > [data-meet-id="' + meetId + '"]').forEach(function (trigger) {
+        var card = trigger.closest('.sky-event');
+        if (!card) return;
+        var pill = card.querySelector('.sky-event__status');
+        if (pill) {
+          pill.className = 'sky-event__status sky-event__status--' + newStatus;
+          pill.textContent = label;
+        }
+      });
+
+      document.querySelectorAll('.sky-meeting > [data-meet-id="' + meetId + '"]').forEach(function (trigger) {
+        var card = trigger.closest('.sky-meeting');
+        if (!card) return;
+        var pill = card.querySelector('.sky-meeting__status');
+        if (pill) {
+          pill.className = 'sky-meeting__status sky-meeting__status--' + newStatus;
+          pill.textContent = label;
+        }
+      });
+    }
+
     function postRsvp(meetId, status, btn) {
       if (!meetId) return;
       btn.disabled = true;
@@ -461,6 +530,7 @@
         current.status = res.body.status;
         refreshFootForStatus(current.status);
         refreshSelfAttendeeRow(current.status);
+        refreshCardsForMeeting(current.meetId, current.status);
         if (typeof showToast === 'function') {
           showToast(current.status === 'accepted' ? 'Marked as attending.' : 'Marked as declined.', 'success');
         }
@@ -498,6 +568,7 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     setupViewToggle();
+    setupNavigator();
     setupModals();
     setupSegmented();
     setupMeetingTypeToggle();

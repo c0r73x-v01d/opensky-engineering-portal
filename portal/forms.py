@@ -129,7 +129,10 @@ class MeetingForm(forms.Form):
             tz = timezone.get_current_timezone()
             start = timezone.make_aware(naive_start, tz)
             end = start + datetime.timedelta(minutes=DURATION_MINUTES[duration])
-            cleaned['start'] = start
-            cleaned['end'] = end
+            if start < timezone.now():
+                self.add_error('date', 'Meeting start time must be in the future.')
+            else:
+                cleaned['start'] = start
+                cleaned['end'] = end
 
         return cleaned

@@ -73,8 +73,18 @@ def _coming_soon(request, active_page, title):
 
 @login_required
 def schedule(request):
-    ctx = assemble_for_user(request.user)
+    import datetime as _dt
+    anchor = None
+    raw_anchor = request.GET.get('anchor')
+    if raw_anchor:
+        try:
+            anchor = _dt.date.fromisoformat(raw_anchor)
+        except ValueError:
+            anchor = None
+
+    ctx = assemble_for_user(request.user, anchor=anchor)
     ctx['active_page'] = 'schedule'
+    ctx['anchor_iso'] = (anchor or _dt.date.today()).isoformat()
 
     # Options for the Schedule Meeting modal.
     user = request.user
