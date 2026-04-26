@@ -101,9 +101,11 @@
     var form = document.querySelector('.sky-meeting-form');
     if (!form) return;
     var guests = form.querySelector('#mf-guests');
+    var typeInput = form.querySelector('input[name="meeting_type"]');
 
     function applyType(type) {
       form.setAttribute('data-meeting-type', type);
+      if (typeInput) typeInput.value = type;
       if (guests) {
         var key = type === 'personal' ? 'personalPlaceholder' : 'teamPlaceholder';
         if (guests.dataset[key]) guests.placeholder = guests.dataset[key];
@@ -113,6 +115,107 @@
     form.querySelectorAll('[data-meeting-type]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         applyType(btn.getAttribute('data-meeting-type'));
+      });
+    });
+  }
+
+  function setupScheduleMeetingForm() {
+    var form = document.querySelector('.sky-meeting-form');
+    if (!form) return;
+
+    var hostSelect = form.querySelector('#mf-host');
+    var platformInput = form.querySelector('input[name="platform"]');
+    var attendeeIdsInput = form.querySelector('input[name="attendee_ids"]');
+    var teamSet = form.querySelector('[data-attendee-set="team"]');
+    var personalSet = form.querySelector('[data-attendee-set="personal"]');
+
+    var teamMembersByTeam = {};
+    try { teamMembersByTeam = JSON.parse(form.dataset.teamMembers || '{}'); }
+    catch (e) { teamMembersByTeam = {}; }
+
+    // Render team-attendee chips for the chosen team.
+    function renderTeamMembers() {
+      if (!teamSet || !hostSelect) return;
+      var members = teamMembersByTeam[hostSelect.value] || [];
+      teamSet.innerHTML = '';
+      members.forEach(function (m) {
+        var li = document.createElement('li');
+        li.className = 'sky-attendee';
+        li.setAttribute('data-tone', 'team');
+        li.setAttribute('data-user-id', String(m.user_id));
+        li.innerHTML =
+          '<span class="sky-attendee__dot"></span>' +
+          '<span class="sky-attendee__name"></span>' +
+          '<button type="button" class="sky-attendee__remove" aria-label="Remove">' +
+            '<span class="sky-icon" data-icon="X" data-size="11"></span>' +
+          '</button>';
+        li.querySelector('.sky-attendee__name').textContent = m.name;
+        li.querySelector('.sky-attendee__remove').addEventListener('click', function () {
+          li.remove();
+        });
+        teamSet.appendChild(li);
+      });
+    }
+
+    if (hostSelect) {
+      renderTeamMembers();
+      hostSelect.addEventListener('change', renderTeamMembers);
+    }
+
+    // Sync the platform pill into the hidden input on click.
+    form.querySelectorAll('.sky-platform[data-platform]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (platformInput) platformInput.value = btn.getAttribute('data-platform');
+      });
+    });
+
+    function collectAttendeeIds() {
+      var type = form.getAttribute('data-meeting-type');
+      var set = type === 'personal' ? personalSet : teamSet;
+      if (!set) return [];
+      var ids = [];
+      set.querySelectorAll('[data-user-id]').forEach(function (li) {
+        ids.push(li.getAttribute('data-user-id'));
+      });
+      return ids;
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (attendeeIdsInput) attendeeIdsInput.value = collectAttendeeIds().join(',');
+
+      var data = new FormData(form);
+      var token = (typeof getCsrfToken === 'function') ? getCsrfToken() : '';
+      var submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+
+      fetch(form.action, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': token, 'X-Requested-With': 'XMLHttpRequest' },
+        body: data,
+      })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        if (submitBtn) submitBtn.disabled = false;
+        if (!res.ok || !res.body || !res.body.ok) {
+          var msg = 'Could not create meeting.';
+          if (res.body && res.body.errors) {
+            var first = Object.keys(res.body.errors)[0];
+            var detail = res.body.errors[first];
+            if (Array.isArray(detail)) detail = detail[0];
+            if (typeof detail === 'object' && detail.message) detail = detail.message;
+            msg = first + ': ' + detail;
+          }
+          if (typeof showToast === 'function') showToast(msg, 'error');
+          return;
+        }
+        if (typeof showToast === 'function') showToast('Meeting scheduled.', 'success');
+        window.location.reload();
+      })
+      .catch(function () {
+        if (submitBtn) submitBtn.disabled = false;
+        if (typeof showToast === 'function') showToast('Network error — try again.', 'error');
       });
     });
   }
@@ -399,6 +502,7 @@
     setupSegmented();
     setupMeetingTypeToggle();
     setupAttendeeRemoval();
+    setupScheduleMeetingForm();
     setupPanels();
   });
 })();

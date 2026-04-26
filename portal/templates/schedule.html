@@ -217,9 +217,12 @@
                   <span class="sky-pill sky-pill--{% if e.type == 'personal' %}personal{% else %}team{% endif %}">{% if e.type == 'personal' %}PERSONAL{% else %}TEAM{% endif %}</span>
                   {% if e.cadence %}<span class="sky-pill sky-pill--cadence"><span class="sky-icon" data-icon="Repeat" data-size="11"></span>{{ e.cadence }}</span>{% endif %}
                 </div>
+                {% if e.avatars_preview %}
                 <ul class="sky-meeting__avatars">
-                  {% for a in e.attendees_json|slice:":3" %}{# avatars rendered by JS would be richer; lightweight here #}{% endfor %}
+                  {% for a in e.avatars_preview %}<li class="sky-avatar">{{ a.initials }}</li>{% endfor %}
+                  {% if e.avatars_more %}<li class="sky-avatar sky-avatar--more">+{{ e.avatars_more }}</li>{% endif %}
                 </ul>
+                {% endif %}
               </footer>
               <button type="button" class="sky-meeting__open" data-detail-open="meeting"
                 aria-label="Open {{ e.title }} details"
@@ -300,11 +303,17 @@
       </button>
     </header>
 
-    <form class="sky-meeting-form" autocomplete="off" novalidate data-meeting-type="team">
+    <form class="sky-meeting-form" autocomplete="off" novalidate data-meeting-type="team"
+          method="post" action="{% url 'meeting_create' %}"
+          data-team-members='{{ team_members_by_team_json|safe }}'>
+      {% csrf_token %}
+      <input type="hidden" name="meeting_type" value="team">
+      <input type="hidden" name="platform" value="teams">
+      <input type="hidden" name="attendee_ids" value="">
 
       <div class="sky-field">
         <label class="sky-field__label" for="mf-title">MEETING TITLE</label>
-        <input class="sky-field__input" type="text" id="mf-title" placeholder="e.g. Sprint Planning...">
+        <input class="sky-field__input" type="text" id="mf-title" name="title" placeholder="e.g. Sprint Planning..." required>
       </div>
 
       <div class="sky-field">
@@ -318,11 +327,12 @@
       <div class="sky-field" data-host-row>
         <label class="sky-field__label" for="mf-host">HOST TEAM</label>
         <div class="sky-field__select-wrap">
-          <select class="sky-field__select" id="mf-host">
-            <option>Nebula Auth</option>
-            <option>Phoenix Platform</option>
-            <option>Edge Delivery</option>
-            <option>Atlas Data</option>
+          <select class="sky-field__select" id="mf-host" name="host_team">
+            {% for t in managed_teams %}
+            <option value="{{ t.id }}">{{ t.name }}</option>
+            {% empty %}
+            <option value="" disabled>You don't manage any teams</option>
+            {% endfor %}
           </select>
           <span class="sky-icon sky-field__select-chev" data-icon="ChevDown" data-size="14"></span>
         </div>
@@ -331,21 +341,21 @@
       <div class="sky-meeting-form__row sky-meeting-form__row--3">
         <div class="sky-field">
           <label class="sky-field__label" for="mf-date">DATE</label>
-          <input class="sky-field__input" type="date" id="mf-date" value="2026-02-16">
+          <input class="sky-field__input" type="date" id="mf-date" name="date" value="2026-04-21" required>
         </div>
         <div class="sky-field">
           <label class="sky-field__label" for="mf-time">TIME</label>
-          <input class="sky-field__input" type="time" id="mf-time" value="10:00">
+          <input class="sky-field__input" type="time" id="mf-time" name="time" value="10:00" required>
         </div>
         <div class="sky-field">
           <label class="sky-field__label" for="mf-duration">DURATION</label>
           <div class="sky-field__select-wrap">
-            <select class="sky-field__select" id="mf-duration">
-              <option>15m</option>
-              <option>30m</option>
-              <option>1h</option>
-              <option selected>2h</option>
-              <option>3h</option>
+            <select class="sky-field__select" id="mf-duration" name="duration">
+              <option value="15m">15m</option>
+              <option value="30m">30m</option>
+              <option value="1h">1h</option>
+              <option value="2h" selected>2h</option>
+              <option value="3h">3h</option>
             </select>
             <span class="sky-icon sky-field__select-chev" data-icon="ChevDown" data-size="14"></span>
           </div>
@@ -404,12 +414,12 @@
       <div class="sky-field">
         <label class="sky-field__label" for="mf-recurring">RECURRING</label>
         <div class="sky-field__select-wrap">
-          <select class="sky-field__select" id="mf-recurring">
-            <option>One-time</option>
-            <option>Daily</option>
-            <option>Weekly</option>
-            <option>Bi-weekly</option>
-            <option>Monthly</option>
+          <select class="sky-field__select" id="mf-recurring" name="recurring">
+            <option value="one-time">One-time</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="bi-weekly">Bi-weekly</option>
+            <option value="monthly">Monthly</option>
           </select>
           <span class="sky-icon sky-field__select-chev" data-icon="ChevDown" data-size="14"></span>
         </div>
@@ -417,7 +427,7 @@
 
       <div class="sky-field">
         <label class="sky-field__label" for="mf-agenda">AGENDA / MESSAGE</label>
-        <textarea class="sky-field__textarea" id="mf-agenda" rows="3" placeholder="Meeting agenda, notes for attendees..."></textarea>
+        <textarea class="sky-field__textarea" id="mf-agenda" name="agenda" rows="3" placeholder="Meeting agenda, notes for attendees..."></textarea>
       </div>
 
       <footer class="sky-modal__foot">
