@@ -21,6 +21,7 @@
         <span class="sky-nav__title">OpenSky</span>
       </div>
       <div class="sky-nav__links">
+        <a href="{% url 'home' %}" class="sky-nav__link {% if active_page == 'home' %}sky-nav__link--active{% endif %}">Home</a>
         <a href="{% url 'schedule' %}" class="sky-nav__link {% if active_page == 'schedule' %}sky-nav__link--active{% endif %}">Schedule</a>
         <a href="{% url 'teams' %}" class="sky-nav__link {% if active_page == 'teams' %}sky-nav__link--active{% endif %}">Teams</a>
         <a href="{% url 'messages' %}" class="sky-nav__link {% if active_page == 'messages' %}sky-nav__link--active{% endif %}">Messages</a>
