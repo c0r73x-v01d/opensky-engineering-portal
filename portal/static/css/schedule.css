@@ -1478,3 +1478,56 @@
   line-height: 0;
 }
 .sky-person__status--declined { color: var(--sky-negative); }
+
+/* Actions block — sits in body, full inner width, equal-width side-by-side when paired */
+.sky-panel__actions {
+  display: flex;
+  gap: var(--sky-sp3);
+  margin-top: var(--sky-sp2);
+}
+
+.sky-panel__foot-btn {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: var(--sky-font);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.sky-panel__foot-btn .sky-icon { display: inline-flex; align-items: center; }
+
+.sky-panel__decline,
+.sky-panel__decline-outline {
+  background: rgba(221, 23, 23, 0.04);
+  color: var(--sky-negative);
+  border-color: rgba(221, 23, 23, 0.22);
+}
+.sky-panel__decline .sky-icon,
+.sky-panel__decline-outline .sky-icon { color: var(--sky-negative); }
+
+.sky-panel__decline:hover,
+.sky-panel__decline-outline:hover {
+  background: rgba(221, 23, 23, 0.08);
+  border-color: rgba(221, 23, 23, 0.40);
+}
+
+.sky-panel__accept,
+.sky-panel__accept-full {
+  background: var(--sky-positive);
+  color: var(--sky-white);
+}
+.sky-panel__accept .sky-icon,
+.sky-panel__accept-full .sky-icon { color: var(--sky-white); }
+
+.sky-panel__accept:hover,
+.sky-panel__accept-full:hover {
+  background: var(--sky-positive-dark);
+}
