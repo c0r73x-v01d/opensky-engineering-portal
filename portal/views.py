@@ -8,6 +8,7 @@ from django.shortcuts import redirect, render
 
 from .forms import RegisterForm
 from .models import Action
+from .services.schedule import assemble_for_user
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -51,7 +52,9 @@ def _coming_soon(request, active_page, title):
 
 @login_required
 def schedule(request):
-    return render(request, 'schedule.html', {'active_page': 'schedule'})
+    ctx = assemble_for_user(request.user)
+    ctx['active_page'] = 'schedule'
+    return render(request, 'schedule.html', ctx)
 
 
 @login_required
