@@ -105,6 +105,12 @@ class Skill(models.Model):
 #  Team
 # ────────────────────────────────────────────────────────────────────
 class Team(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('restructuring', 'Restructuring'),
+        ('disbanded', 'Disbanded'),
+    ]
+
     teamId = models.AutoField(primary_key=True, db_column='teamId')
     department = models.ForeignKey(Department, on_delete=models.PROTECT,
                                    db_column='departmentId')
@@ -123,7 +129,8 @@ class Team(models.Model):
     commChann = models.CharField(max_length=100, null=True, blank=True, db_column='commChann')
     teamWiki = models.CharField(max_length=255, null=True, blank=True, db_column='teamWiki')
     agilePractice = models.CharField(max_length=50, null=True, blank=True, db_column='agilePractice')
-    teamStatus = models.CharField(max_length=20, db_column='teamStatus')
+    teamStatus = models.CharField(max_length=20, choices=STATUS_CHOICES,
+                                  db_column='teamStatus')
     createdAt = models.DateTimeField(auto_now_add=True, db_column='createdAt')
     updatedAt = models.DateTimeField(auto_now=True, db_column='updatedAt')
     disbandedAt = models.DateTimeField(null=True, blank=True, db_column='disbandedAt')
@@ -134,6 +141,10 @@ class Team(models.Model):
             models.UniqueConstraint(
                 fields=['department', 'teamName'],
                 name='team_unique_dept_name',
+            ),
+            models.CheckConstraint(
+                check=Q(teamStatus__in=['active', 'restructuring', 'disbanded']),
+                name='team_status_valid',
             ),
         ]
 

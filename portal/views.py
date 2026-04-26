@@ -16,6 +16,7 @@ from django.views.decorators.http import require_POST
 from .forms import MeetingForm, RegisterForm
 from .models import (
     Action,
+    Department,
     Employee,
     Meeting,
     MeetingInvitation,
@@ -23,8 +24,10 @@ from .models import (
     MessageRecipient,
     Notification,
     NotificationRecipient,
+    Skill,
     Team,
     TeamManager,
+    TeamType,
     User,
 )
 from .services.schedule import assemble_for_user
@@ -251,6 +254,133 @@ def meeting_create(request):
 @login_required
 def teams(request):
     return _coming_soon(request, 'teams', 'Teams')
+
+
+# ════════════════════════════════════════════════════════════════════
+# === TEAMS ===
+# ════════════════════════════════════════════════════════════════════
+def _serialize_team(t):
+    """
+    Flatten one Team row into the dict shape the template loop and the
+    JSON payload (for JS) both consume.
+
+    Assumes the queryset has been prefetched so every relation accessed
+    here is O(1) and triggers no extra queries.
+    """
+    skills = [a.skill.skillName for a in t.teamskillalloc_set.all()]
+    managers = list(t.managers.all())
+    manager_emp_ids = {m.emp_id for m in managers}
+    manager_names = [str(m.emp.user) for m in managers]
+
+    members = [
+        {
+            'name': str(e.user),
+            'position': e.position or 'Engineer',
+            'is_manager': e.empId in manager_emp_ids,
+        }
+        for e in t.employees.all()
+    ]
+    repos = [
+        {
+            'name': p.repoName,
+            'url': p.repoUrl or '',
+            'is_main': p.isMainProj,
+        }
+        for p in t.projects.all()
+    ]
+    upstream = [
+        {
+            'id': d.upstream.teamId,
+            'name': d.upstream.teamName,
+            'type': d.upstream.type.typeName if d.upstream.type else '',
+            'dep_type': d.dependencyType or '',
+        }
+        for d in t.upstream_links.all()
+    ]
+    downstream = [
+        {
+            'id': d.downstream.teamId,
+            'name': d.downstream.teamName,
+            'type': d.downstream.type.typeName if d.downstream.type else '',
+            'dep_type': d.dependencyType or '',
+        }
+        for d in t.downstream_links.all()
+    ]
+
+    return {
+        'id': t.teamId,
+        'team_name': t.teamName,
+        'department_id': t.department_id,
+        'department_name': t.department.departName,
+        'type_id': t.type_id or 0,
+        'type_name': t.type.typeName if t.type else '',
+        'status': t.teamStatus,
+        'manager_name': manager_names[0] if manager_names else 'Unassigned',
+        'manager_names': manager_names,
+        'description': t.descrip or '',
+        'responsibilities': t.responsib or '',
+        'focus': t.focusArea or '',
+        'workstream': t.workstreamMf or '',
+        'agile_practice': t.agilePractice or '',
+        'concurrent_projs': t.concurrentProjs,
+        'skills': skills,
+        'skills_text': ' '.join(skills),
+        'extra_skills_count': max(0, len(skills) - 3),
+        'members': members,
+        'member_count': len(members),
+        'repos': repos,
+        'repo_count': len(repos),
+        'upstream': upstream,
+        'downstream': downstream,
+        'dep_count': len(upstream) + len(downstream),
+        'jira_project': t.jiraProjName or '',
+        'jira_link': t.jiraBoardLink or '',
+        'standup_time': t.standupTime.strftime('%H:%M') if t.standupTime else '',
+        'standup_link': t.standupLink or '',
+        'comm_channel': t.commChann or '',
+        'team_wiki': t.teamWiki or '',
+        'created_at': t.createdAt.strftime('%d %b %Y') if t.createdAt else '',
+        'updated_at': t.updatedAt.strftime('%d %b %Y') if t.updatedAt else '',
+        'disbanded_at': t.disbandedAt.strftime('%d %b %Y') if t.disbandedAt else '',
+    }
+
+
+@login_required
+def teams(request):
+    teams_qs = (
+        Team.objects
+        .select_related('department', 'type')
+        .prefetch_related(
+            'employees__user',
+            'managers__emp__user',
+            'teamskillalloc_set__skill',
+            'projects',
+            'upstream_links__upstream__type',
+            'downstream_links__downstream__type',
+        )
+        .order_by('teamName')
+    )
+    teams_data = [_serialize_team(t) for t in teams_qs]
+
+    departments = [
+        {'id': d.departmentId, 'name': d.departName}
+        for d in Department.objects.order_by('departName')
+    ]
+    team_types = [
+        {'id': tt.typeId, 'name': tt.typeName}
+        for tt in TeamType.objects.order_by('typeName')
+    ]
+
+    return render(request, 'teams.html', {
+        'active_page': 'teams',
+        'teams': teams_data,
+        'total_teams': len(teams_data),
+        'active_teams': sum(1 for t in teams_data if t['status'] == 'active'),
+        'total_engineers': Employee.objects.filter(teamId__isnull=False).count(),
+        'total_skills': Skill.objects.count(),
+        'departments': departments,
+        'team_types': team_types,
+    })
 
 
 @login_required

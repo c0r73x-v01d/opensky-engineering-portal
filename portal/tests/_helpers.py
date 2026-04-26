@@ -26,10 +26,11 @@ def make_department(name='Platform'):
     return Department.objects.create(departName=name)
 
 
-def make_team(department=None, name='Core Infra'):
+def make_team(department=None, name='Core Infra', status='active'):
     return Team.objects.create(
         teamName=name,
         department=department or make_department(),
+        teamStatus=status,
     )
 
 

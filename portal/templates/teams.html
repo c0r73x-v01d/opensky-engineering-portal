@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Engineering Teams Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+
+  /* ── Page header ── */
+  .dash-header { margin-bottom: var(--sky-sp6); }
+  .dash-header h1 {
+    font-size: 30px; font-weight: 800; color: var(--sky-grey90);
+    letter-spacing: -0.03em; margin: 0 0 var(--sky-sp2);
+  }
+  .dash-header p { font-size: 14px; color: var(--sky-grey50); margin: 0; }
+
+  /* ── Stats grid ── */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: var(--sky-sp4); margin-bottom: var(--sky-sp6);
+  }
+
+  /* ── Toolbar ── */
+  .dash-toolbar {
+    display: flex; align-items: center; gap: var(--sky-sp3);
+    margin-bottom: var(--sky-sp5);
+  }
+  .dash-toolbar .sky-field { margin-bottom: 0; flex: 1; }
+
+  /* ── View toggle (icon-only — distinct from text-tab sky-toggle) ── */
+  .view-toggle-group {
+    display: flex; border-radius: var(--sky-rad-s);
+    border: 1px solid rgba(0, 0, 0, 0.04); overflow: hidden;
+    background: rgba(255, 255, 255, 0.72);
+  }
+  .view-toggle-btn {
+    padding: 8px var(--sky-sp3); border: none; cursor: pointer;
+    background: transparent; color: var(--sky-grey30);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .view-toggle-btn--active {
+    background: rgba(0, 15, 245, 0.05); color: var(--sky-primary);
+  }
+
+  /* ── Filter panel ── */
+  .filter-panel {
+    display: none; gap: var(--sky-sp3); margin-bottom: var(--sky-sp5);
+    padding: var(--sky-sp4) var(--sky-sp5); border-radius: var(--sky-rad-s);
+    background: rgba(255, 255, 255, 0.56);
+    border: 1px solid rgba(0, 15, 245, 0.05);
+    animation: sUp 0.25s ease-out; flex-wrap: wrap;
+  }
+  .filter-panel--open { display: flex; }
+  .filter-panel__group label {
+    font-size: 11px; font-weight: 700; color: var(--sky-grey40);
+    text-transform: uppercase; letter-spacing: 0.04em;
+    display: block; margin-bottom: var(--sky-sp1);
+  }
+  .filter-panel__select {
+    padding: 8px var(--sky-sp3); border-radius: var(--sky-rad-s);
+    border: 1px solid rgba(0, 0, 0, 0.05); background: #fff;
+    font-size: 13px; color: var(--sky-grey80); outline: none;
+    cursor: pointer; font-family: var(--sky-font);
+  }
+
+  .result-count {
+    font-size: 12px; color: var(--sky-grey40);
+    margin-bottom: var(--sky-sp4); font-weight: 600;
+  }
+
+  /* ── Teams container: grid vs list mode ── */
+  .teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: var(--sky-sp4);
+  }
+  .teams-grid .team-row { display: none; }
+
+  .teams-list {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: var(--sky-rad-s);
+    overflow: hidden;
+  }
+  .teams-list .team-card { display: none; }
+  .teams-list .team-row { display: flex; }
+
+  /* ── Team card (extends .sky-card with hover override and internal layout) ── */
+  .team-card { cursor: pointer; transition: all 0.25s cubic-bezier(.22,1,.36,1); }
+  .team-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0, 15, 245, 0.1);
+    box-shadow: 0 16px 48px rgba(0, 15, 245, 0.06),
+                0 4px 12px rgba(0, 0, 0, 0.024);
+  }
+
+  .team-card__header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: var(--sky-sp2);
+  }
+  .team-card__title-block { flex: 1; min-width: 0; }
+  .team-card__title-row {
+    display: flex; align-items: center; gap: var(--sky-sp2);
+    margin-bottom: var(--sky-sp1);
+  }
+  .team-card__title {
+    font-size: 16px; font-weight: 700; color: var(--sky-grey90);
+    margin: 0; letter-spacing: -0.01em;
+  }
+  .team-card__meta { font-size: 13px; color: var(--sky-grey50); margin: 0; }
+  .team-card__description {
+    font-size: 13px; line-height: 1.6; color: var(--sky-grey80);
+    margin: 0 0 var(--sky-sp4);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .team-card__skills {
+    display: flex; flex-wrap: wrap;
+    gap: var(--sky-sp1);
+    margin-bottom: var(--sky-sp4);
+  }
+  .team-card__footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: var(--sky-sp3);
+    border-top: 1px solid rgba(0, 0, 0, 0.04);
+    font-size: 12px; color: var(--sky-grey50);
+  }
+  .team-card__members {
+    display: flex; align-items: center;
+    gap: var(--sky-sp2); color: var(--sky-grey50);
+  }
+  .team-card__counts { display: flex; gap: var(--sky-sp3); font-size: 11px; color: var(--sky-grey40); }
+  .team-card__counts > span { display: flex; align-items: center; gap: 3px; }
+
+  /* ── Team row (list mode) ── */
+  .team-row {
+    display: none; align-items: center; gap: var(--sky-sp4);
+    padding: var(--sky-sp3) var(--sky-sp5);
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    cursor: pointer; transition: background 0.15s ease;
+  }
+  .team-row:hover { background: rgba(0, 15, 245, 0.024); }
+  .team-row__main { flex: 2 1 0; min-width: 0; }
+  .team-row__title-line {
+    display: flex; align-items: center;
+    gap: var(--sky-sp2); margin-bottom: 3px;
+  }
+  .team-row__title { font-size: 14px; font-weight: 700; color: var(--sky-grey90); }
+  .team-row__dept { font-size: 12px; color: var(--sky-grey40); }
+  .team-row__col { flex: 1 1 0; min-width: 80px; }
+  .team-row__col-label {
+    font-size: 12px; font-weight: 600;
+    color: var(--sky-grey50); margin-bottom: 1px;
+  }
+  .team-row__col-value { font-size: 13px; color: var(--sky-grey80); font-weight: 500; }
+  .team-row__skills { display: flex; gap: var(--sky-sp1); flex-wrap: wrap; }
+  .team-row__eng { width: 50px; text-align: center; }
+  .team-row__eng-num { font-size: 13px; color: var(--sky-grey90); font-weight: 700; }
+  .team-row__chev { color: var(--sky-grey30); flex-shrink: 0; }
+
+  /* ── Type badge (inline on title) ── */
+  .type-badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: var(--sky-rad-xs);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.03em; text-transform: uppercase;
+    background: rgba(0, 15, 245, 0.05); color: var(--sky-primary);
+  }
+
+  /* ── Skill pill ── */
+  .skill-pill {
+    display: inline-block; padding: 4px 10px;
+    border-radius: var(--sky-rad-xs);
+    font-size: 11px; font-weight: 600;
+    background: rgba(0, 15, 245, 0.05);
+    color: var(--sky-primary);
+    border: 1px solid rgba(0, 15, 245, 0.08);
+  }
+  .skill-pill--more {
+    background: none; border: none;
+    color: var(--sky-grey40); padding: 4px 0;
+  }
+  .skill-pill--manager {
+    background: rgba(241, 90, 34, 0.05);
+    color: var(--sky-attention);
+    border-color: rgba(241, 90, 34, 0.12);
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    display: none; text-align: center;
+    padding: 128px var(--sky-sp5);
+    color: var(--sky-grey40); grid-column: 1 / -1;
+  }
+  .empty-state__title {
+    font-size: 16px; font-weight: 700;
+    color: var(--sky-grey50); margin-bottom: var(--sky-sp2);
+  }
+  .empty-state__sub { font-size: 13px; }
+
+  /* ── Detail panel content ── */
+  .panel-section { margin-bottom: var(--sky-sp5); }
+  .panel-section__title {
+    font-size: 11px; font-weight: 700;
+    color: var(--sky-grey40); text-transform: uppercase;
+    letter-spacing: 0.06em; margin: 0 0 var(--sky-sp2);
+  }
+  .panel-section__text {
+    font-size: 13px; line-height: 1.6;
+    color: var(--sky-grey80); margin: 0;
+  }
+  .panel-section__empty {
+    font-size: 13px; color: var(--sky-grey40);
+    font-style: italic; margin: 0;
+  }
+  .panel-list { list-style: none; padding: 0; margin: 0; }
+  .panel-list li {
+    padding: var(--sky-sp2) 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    font-size: 13px; color: var(--sky-grey80);
+    display: flex; justify-content: space-between;
+    align-items: center; gap: var(--sky-sp2);
+  }
+  .panel-list li:last-child { border-bottom: none; }
+  .panel-list a { color: var(--sky-primary); text-decoration: none; }
+  .panel-list a:hover { text-decoration: underline; }
+  .panel-meta {
+    display: grid; grid-template-columns: 1fr 2fr;
+    gap: var(--sky-sp1) var(--sky-sp4); font-size: 13px;
+  }
+  .panel-meta dt {
+    color: var(--sky-grey50); font-weight: 600;
+    text-transform: uppercase; font-size: 11px;
+    letter-spacing: 0.04em; align-self: center;
+  }
+  .panel-meta dd {
+    color: var(--sky-grey80); margin: 0;
+    word-break: break-word;
+  }
+  .panel-actions {
+    display: flex; gap: var(--sky-sp3);
+    margin-top: var(--sky-sp5);
+    padding-top: var(--sky-sp4);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+  .panel-deps__heading {
+    font-size: 12px; font-weight: 700;
+    color: var(--sky-grey60); margin: var(--sky-sp3) 0 var(--sky-sp1);
+  }
+  .panel-deps__heading:first-child { margin-top: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main style="max-width: 1220px; margin: 0 auto; padding: var(--sky-sp6);">
+
+  <div class="dash-header">
+    <h1>Engineering Teams</h1>
+    <p>Central registry of all Sky engineering teams — search, explore, and connect.</p>
+  </div>
+
+  {# ═══ Stat cards ═══ #}
+  <div class="stats-grid">
+    <div class="sky-stat sky-stat--with-icon" style="animation: sUp 0.5s cubic-bezier(.22,1,.36,1) 0s both;">
+      <div class="sky-stat__icon" style="background: rgba(0, 15, 245, 0.05); color: var(--sky-primary);">
+        <span class="sky-icon" data-icon="Users" data-size="22"></span>
+      </div>
+      <div>
+        <div class="sky-stat__label">Total Teams</div>
+        <div class="sky-stat__value" style="color: var(--sky-primary);">{{ total_teams }}</div>
+      </div>
+    </div>
+
+    <div class="sky-stat sky-stat--with-icon" style="animation: sUp 0.5s cubic-bezier(.22,1,.36,1) 0.06s both;">
+      <div class="sky-stat__icon" style="background: rgba(0, 126, 19, 0.05); color: var(--sky-positive);">
+        <span class="sky-icon" data-icon="Activity" data-size="20"></span>
+      </div>
+      <div>
+        <div class="sky-stat__label">Active</div>
+        <div class="sky-stat__value" style="color: var(--sky-positive);">{{ active_teams }}</div>
+      </div>
+    </div>
+
+    <div class="sky-stat sky-stat--with-icon" style="animation: sUp 0.5s cubic-bezier(.22,1,.36,1) 0.12s both;">
+      <div class="sky-stat__icon" style="background: rgba(102, 38, 161, 0.05); color: var(--sky-entertainment);">
+        <span class="sky-icon" data-icon="Target" data-size="20"></span>
+      </div>
+      <div>
+        <div class="sky-stat__label">Engineers</div>
+        <div class="sky-stat__value" style="color: var(--sky-entertainment);">{{ total_engineers }}</div>
+      </div>
+    </div>
+
+    <div class="sky-stat sky-stat--with-icon" style="animation: sUp 0.5s cubic-bezier(.22,1,.36,1) 0.18s both;">
+      <div class="sky-stat__icon" style="background: rgba(241, 90, 34, 0.05); color: var(--sky-attention);">
+        <span class="sky-icon" data-icon="Zap" data-size="20"></span>
+      </div>
+      <div>
+        <div class="sky-stat__label">Skills</div>
+        <div class="sky-stat__value" style="color: var(--sky-attention);">{{ total_skills }}</div>
+      </div>
+    </div>
+  </div>
+
+  {# ═══ Toolbar: search + filters + view toggle ═══ #}
+  <div class="dash-toolbar">
+    <div class="sky-field">
+      <div class="sky-field__wrap">
+        <span class="sky-field__icon"><span class="sky-icon" data-icon="Search" data-size="18"></span></span>
+        <input class="sky-field__input sky-field__input--with-icon"
+               id="team-search" type="text"
+               placeholder="Search teams, departments, managers, skills, Jira..." />
+      </div>
+    </div>
+    <button id="toggle-filters" class="sky-btn sky-btn--ghost">
+      <span class="sky-icon" data-icon="Filter" data-size="16"></span> Filters
+    </button>
+    <div class="view-toggle-group">
+      <button class="view-toggle-btn view-toggle-btn--active" data-view="grid">
+        <span class="sky-icon" data-icon="Grid" data-size="18"></span>
+      </button>
+      <button class="view-toggle-btn" data-view="list">
+        <span class="sky-icon" data-icon="List" data-size="18"></span>
+      </button>
+    </div>
+  </div>
+
+  {# ═══ Filter panel (collapsed by default) ═══ #}
+  <div id="filter-panel" class="filter-panel">
+    <div class="filter-panel__group">
+      <label>Department</label>
+      <select id="filter-dept" class="filter-panel__select">
+        <option value="all">All Departments</option>
+        {% for dept in departments %}
+          <option value="{{ dept.id }}">{{ dept.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-panel__group">
+      <label>Status</label>
+      <select id="filter-status" class="filter-panel__select">
+        <option value="all">All Statuses</option>
+        <option value="active">Active</option>
+        <option value="restructuring">Restructuring</option>
+        <option value="disbanded">Disbanded</option>
+      </select>
+    </div>
+    <div class="filter-panel__group">
+      <label>Team Type</label>
+      <select id="filter-type" class="filter-panel__select">
+        <option value="all">All Types</option>
+        {% for tt in team_types %}
+          <option value="{{ tt.id }}">{{ tt.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button id="filter-clear" class="sky-btn sky-btn--ghost"
+            style="align-self: flex-end; color: var(--sky-negative);">Clear</button>
+  </div>
+
+  <p id="result-count" class="result-count">Showing {{ teams|length }} of {{ total_teams }} teams</p>
+
+  {# ═══ Team cards container (grid by default, list on toggle) ═══ #}
+  <div id="teams-container" class="teams-grid">
+    {% for team in teams %}
+      {# Grid card #}
+      <div class="sky-card team-card team-item"
+           data-team-id="{{ team.id }}"
+           data-dept="{{ team.department_id }}"
+           data-status="{{ team.status }}"
+           data-type="{{ team.type_id }}">
+        <div class="team-card__header">
+          <div class="team-card__title-block">
+            <div class="team-card__title-row">
+              <h3 class="team-card__title">{{ team.team_name }}</h3>
+              {% if team.type_name %}<span class="type-badge">{{ team.type_name }}</span>{% endif %}
+            </div>
+            <p class="team-card__meta">{{ team.department_name }} · {{ team.manager_name }}</p>
+          </div>
+          <span class="sky-badge {% if team.status == 'active' %}sky-badge--positive{% elif team.status == 'restructuring' %}sky-badge--attention{% else %}sky-badge--grey{% endif %}">{{ team.status|capfirst }}</span>
+        </div>
+
+        <p class="team-card__description">{{ team.description }}</p>
+
+        <div class="team-card__skills">
+          {% for skill in team.skills|slice:":3" %}
+            <span class="skill-pill">{{ skill }}</span>
+          {% endfor %}
+          {% if team.extra_skills_count %}
+            <span class="skill-pill skill-pill--more">+{{ team.extra_skills_count }}</span>
+          {% endif %}
+        </div>
+
+        <div class="team-card__footer">
+          <div class="team-card__members">
+            <span class="sky-icon" data-icon="Users" data-size="14"></span> {{ team.member_count }} members
+          </div>
+          <div class="team-card__counts">
+            <span><span class="sky-icon" data-icon="Folder" data-size="12"></span>{{ team.repo_count }}</span>
+            <span><span class="sky-icon" data-icon="Layers" data-size="12"></span>{{ team.dep_count }}</span>
+          </div>
+        </div>
+      </div>
+
+      {# List row (shown only in list mode) #}
+      <div class="team-row team-item"
+           data-team-id="{{ team.id }}"
+           data-dept="{{ team.department_id }}"
+           data-status="{{ team.status }}"
+           data-type="{{ team.type_id }}">
+        <div class="team-row__main">
+          <div class="team-row__title-line">
+            <span class="team-row__title">{{ team.team_name }}</span>
+            {% if team.type_name %}<span class="type-badge">{{ team.type_name }}</span>{% endif %}
+            <span class="sky-badge {% if team.status == 'active' %}sky-badge--positive{% elif team.status == 'restructuring' %}sky-badge--attention{% else %}sky-badge--grey{% endif %}">{{ team.status|capfirst }}</span>
+          </div>
+          <div class="team-row__dept">{{ team.department_name }}</div>
+        </div>
+        <div class="team-row__col">
+          <div class="team-row__col-label">Manager</div>
+          <div class="team-row__col-value">{{ team.manager_name }}</div>
+        </div>
+        <div class="team-row__col team-row__skills">
+          {% for skill in team.skills|slice:":2" %}
+            <span class="skill-pill">{{ skill }}</span>
+          {% endfor %}
+          {% if team.skills|length > 2 %}
+            <span class="skill-pill skill-pill--more">+{{ team.skills|length|add:"-2" }}</span>
+          {% endif %}
+        </div>
+        <div class="team-row__eng">
+          <div class="team-row__col-label">Eng.</div>
+          <div class="team-row__eng-num">{{ team.member_count }}</div>
+        </div>
+        <span class="team-row__chev"><span class="sky-icon" data-icon="ChevRight" data-size="16"></span></span>
+      </div>
+    {% endfor %}
+
+    <div id="no-results" class="empty-state">
+      <p class="empty-state__title">No teams found</p>
+      <p class="empty-state__sub">Try adjusting your search or filter criteria</p>
+    </div>
+  </div>
+</main>
+
+{# ═══ Detail panel (slide-in, hidden by default) ═══ #}
+<div id="detail-panel" class="sky-slide-panel">
+  <div id="panel-overlay-bg" class="sky-slide-panel__backdrop"></div>
+  <div id="panel-content" class="sky-slide-panel__content">
+    <div class="sky-slide-panel__header">
+      <div>
+        <h2 id="panel-team-name" class="sky-slide-panel__title"></h2>
+        <p id="panel-subtitle" class="sky-slide-panel__subtitle"></p>
+      </div>
+      <button id="panel-close-btn" class="sky-slide-panel__close">
+        <span class="sky-icon" data-icon="X" data-size="18"></span>
+      </button>
+    </div>
+    <div id="panel-body" class="sky-slide-panel__body">
+      <p style="color: var(--sky-grey40); font-size: 13px;">Select a team to see details.</p>
+    </div>
+  </div>
+</div>
+
+{{ teams|json_script:"teams-data" }}
+<script src="{% static 'js/teams.js' %}"></script>
+{% endblock %}
