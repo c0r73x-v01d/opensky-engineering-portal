@@ -1,0 +1,879 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Messages{% endblock %}
+
+{% block extra_css %}
+<style>
+  .msg-layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: var(--sky-sp5) var(--sky-sp6);
+    display: flex;
+    gap: var(--sky-sp5);
+    min-height: calc(100vh - 56px);
+  }
+
+  .msg-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sky-sp3);
+    animation: sUp 0.4s cubic-bezier(.22, 1, .36, 1) both;
+  }
+
+  .msg-sidebar .sky-btn--primary {
+    width: 100%;
+    margin-bottom: var(--sky-sp2);
+  }
+
+  .msg-folder {
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp3);
+    padding: var(--sky-sp3) var(--sky-sp4);
+    border-radius: var(--sky-sp3);
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: var(--sky-grey50);
+    font-weight: 500;
+    font-size: 13px;
+    font-family: var(--sky-font);
+    width: 100%;
+    text-align: left;
+    text-decoration: none;
+  }
+
+  .msg-folder--active {
+    background: rgba(0, 15, 245, 0.03);
+    color: var(--sky-primary);
+    font-weight: 700;
+  }
+
+  .msg-folder__label { flex: 1; }
+
+  .msg-folder__badge {
+    min-width: 20px;
+    height: 20px;
+    border-radius: var(--sky-rad-full);
+    background: var(--sky-grey20);
+    color: var(--sky-grey60);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 var(--sky-sp2);
+  }
+
+  .msg-folder--active .msg-folder__badge {
+    background: var(--sky-primary);
+    color: var(--sky-white);
+  }
+
+  .msg-stats {
+    margin-top: auto;
+    padding: var(--sky-sp4);
+    border-radius: var(--sky-sp3);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 15, 245, 0.03);
+  }
+
+  .msg-stats__title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--sky-grey40);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: var(--sky-sp3);
+  }
+
+  .msg-stats__row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--sky-grey50);
+    margin-bottom: var(--sky-sp2);
+  }
+
+  .msg-stats__row:last-child { margin-bottom: 0; }
+
+  .msg-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px);
+    border-radius: var(--sky-sp3);
+    border: 1px solid rgba(0, 15, 245, 0.03);
+    overflow: hidden;
+    transition: flex 0.3s ease;
+    animation: sUp 0.45s cubic-bezier(.22, 1, .36, 1) 0.05s both;
+  }
+
+  .msg-list--narrow { flex: 0 0 380px; }
+
+  .msg-list__search-bar {
+    padding: var(--sky-sp3) var(--sky-sp4);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.024);
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp3);
+  }
+
+  .msg-list__search-bar .sky-field { margin-bottom: 0; flex: 1; }
+
+  .msg-list__search-count {
+    font-size: 12px;
+    color: var(--sky-grey40);
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  .msg-list__scroll { flex: 1; overflow-y: auto; }
+
+  .msg-list__empty {
+    text-align: center;
+    padding: var(--sky-sp8) var(--sky-sp5);
+    color: var(--sky-grey40);
+  }
+
+  .msg-list__empty-icon {
+    font-size: 40px;
+    margin-bottom: var(--sky-sp4);
+    opacity: 0.5;
+  }
+
+  .msg-list__empty-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sky-grey50);
+  }
+
+  .msg-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp3);
+    padding: var(--sky-sp3) var(--sky-sp4);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.016);
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .msg-item:hover {
+    background: rgba(0, 15, 245, 0.02);
+  }
+
+  .msg-item--active {
+    background: rgba(0, 15, 245, 0.03);
+    border-left-color: var(--sky-primary);
+  }
+
+  .msg-item--unread { background: rgba(0, 15, 245, 0.012); }
+
+  .msg-item__star-form {
+    margin: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .msg-item__star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: var(--sky-grey20);
+    flex-shrink: 0;
+  }
+
+  .msg-item__star--on { color: var(--sky-attention); }
+
+  .msg-item__content { flex: 1; min-width: 0; }
+
+  .msg-item__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2px;
+  }
+
+  .msg-item__sender {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sky-grey60);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .msg-item__sender--unread {
+    font-weight: 700;
+    color: var(--sky-grey90);
+  }
+
+  .msg-item__time {
+    font-size: 11px;
+    color: var(--sky-grey40);
+    flex-shrink: 0;
+    margin-left: var(--sky-sp2);
+    font-weight: 500;
+  }
+
+  .msg-item__subject {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sky-grey80);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 2px;
+  }
+
+  .msg-item__subject--unread {
+    font-weight: 700;
+    color: var(--sky-grey90);
+  }
+
+  .msg-item__preview {
+    font-size: 12px;
+    color: var(--sky-grey40);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .msg-item__unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sky-primary);
+    flex-shrink: 0;
+  }
+
+  .msg-avatar {
+    border-radius: var(--sky-sp2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    flex-shrink: 0;
+    color: var(--sky-white);
+    background: var(--sky-primary);
+  }
+
+  .msg-avatar--sm { width: 32px; height: 32px; font-size: 11px; }
+  .msg-avatar--md { width: 40px; height: 40px; font-size: 13px; }
+
+  .msg-detail {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px);
+    border-radius: var(--sky-sp3);
+    border: 1px solid rgba(0, 15, 245, 0.03);
+    overflow: hidden;
+    animation: sUp 0.3s cubic-bezier(.22, 1, .36, 1) both;
+  }
+
+  .msg-detail--open { display: flex; }
+
+  .msg-detail__header {
+    padding: var(--sky-sp4) var(--sky-sp5);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.024);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .msg-detail__actions { display: flex; gap: var(--sky-sp2); }
+
+  .msg-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--sky-rad-s);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    background: var(--sky-white);
+    color: var(--sky-grey50);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .msg-icon-btn:hover { background: var(--sky-grey05); }
+
+  .msg-icon-btn--accent {
+    border-color: rgba(0, 15, 245, 0.12);
+    color: var(--sky-primary);
+  }
+
+  .msg-icon-btn--accent:hover { background: rgba(0, 15, 245, 0.05); }
+
+  .msg-detail__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--sky-sp5);
+  }
+
+  .msg-detail__subject {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--sky-grey90);
+    letter-spacing: -0.02em;
+    margin-bottom: var(--sky-sp4);
+    line-height: 1.3;
+  }
+
+  .msg-detail__sender-card {
+    padding: var(--sky-sp4);
+    border-radius: var(--sky-sp3);
+    background: rgba(0, 0, 0, 0.008);
+    border: 1px solid rgba(0, 0, 0, 0.016);
+    margin-bottom: var(--sky-sp5);
+  }
+
+  .msg-detail__sender-top {
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp3);
+    margin-bottom: var(--sky-sp2);
+  }
+
+  .msg-detail__sender-info { flex: 1; min-width: 0; }
+
+  .msg-detail__sender-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--sky-grey90);
+  }
+
+  .msg-detail__sender-email {
+    font-size: 12px;
+    color: var(--sky-grey40);
+  }
+
+  .msg-detail__date {
+    font-size: 12px;
+    color: var(--sky-grey40);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .msg-detail__to {
+    padding-top: var(--sky-sp2);
+    border-top: 1px solid rgba(0, 0, 0, 0.016);
+    font-size: 12px;
+    color: var(--sky-grey40);
+  }
+
+  .msg-detail__to b { font-weight: 600; color: var(--sky-grey50); }
+
+  .msg-detail__text {
+    font-size: 14px;
+    line-height: 24px;
+    color: var(--sky-grey80);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg-detail__reply-bar {
+    padding: var(--sky-sp3) var(--sky-sp5) var(--sky-sp4);
+    border-top: 1px solid rgba(0, 0, 0, 0.024);
+  }
+
+  .msg-detail__reply-prompt {
+    width: 100%;
+    padding: var(--sky-sp3);
+    border-radius: var(--sky-rad-s);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    background: var(--sky-grey05);
+    color: var(--sky-grey40);
+    font-size: 13px;
+    font-family: var(--sky-font);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .msg-compose {
+    width: min(640px, 92vw);
+    max-height: 85vh;
+  }
+
+  .msg-compose__form {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="msg-layout">
+
+  <aside class="msg-sidebar">
+    <button class="sky-btn sky-btn--primary" id="btn-compose" type="button">
+      <span class="sky-icon" data-icon="Pencil" data-size="16"></span> New Message
+    </button>
+
+    <a href="?folder=inbox" class="msg-folder{% if current_folder == 'inbox' %} msg-folder--active{% endif %}">
+      <span class="sky-icon" data-icon="Inbox" data-size="18"></span>
+      <span class="msg-folder__label">Inbox</span>
+      {% if inbox_count > 0 %}
+        <span class="msg-folder__badge">{{ inbox_count }}</span>
+      {% endif %}
+    </a>
+
+    <a href="?folder=sent" class="msg-folder{% if current_folder == 'sent' %} msg-folder--active{% endif %}">
+      <span class="sky-icon" data-icon="Send" data-size="18"></span>
+      <span class="msg-folder__label">Sent</span>
+      {% if sent_count > 0 %}
+        <span class="msg-folder__badge">{{ sent_count }}</span>
+      {% endif %}
+    </a>
+
+    <a href="?folder=drafts" class="msg-folder{% if current_folder == 'drafts' %} msg-folder--active{% endif %}">
+      <span class="sky-icon" data-icon="FileText" data-size="18"></span>
+      <span class="msg-folder__label">Drafts</span>
+      {% if draft_count > 0 %}
+        <span class="msg-folder__badge">{{ draft_count }}</span>
+      {% endif %}
+    </a>
+
+    <div class="msg-stats">
+      <div class="msg-stats__title">Quick Stats</div>
+      <div class="msg-stats__row">
+        <span>Unread</span>
+        <span style="font-weight: 700; color: var(--sky-primary);">{{ unread_count }}</span>
+      </div>
+      <div class="msg-stats__row">
+        <span>Total inbox</span>
+        <span style="font-weight: 700; color: var(--sky-grey60);">{{ inbox_count }}</span>
+      </div>
+      <div class="msg-stats__row">
+        <span>Sent</span>
+        <span style="font-weight: 700; color: var(--sky-positive);">{{ sent_count }}</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="msg-list" id="msg-list">
+    <div class="msg-list__search-bar">
+      <div class="sky-field">
+        <div class="sky-field__wrap">
+          <span class="sky-field__icon"><span class="sky-icon" data-icon="Search" data-size="16"></span></span>
+          <input type="text" class="sky-field__input sky-field__input--with-icon"
+                 id="search-input" placeholder="Search messages...">
+        </div>
+      </div>
+      <span class="msg-list__search-count" id="search-count">{{ messages|length }} message{{ messages|length|pluralize }}</span>
+    </div>
+
+    <div class="msg-list__scroll" id="msg-scroll">
+      {% for msg in messages %}
+        <div class="msg-item{% if not msg.is_read and current_folder == 'inbox' %} msg-item--unread{% endif %}"
+             data-id="{{ msg.id }}"
+             data-read-url="{% url 'message_mark_read' msg.id %}"
+             data-folder="{{ current_folder }}"
+             data-subject="{{ msg.subject|default:'No Subject'|escapejs }}"
+             data-sender="{{ msg.sender.username }}"
+             data-sender-email="{{ msg.sender.email }}"
+             data-to="{% if msg.recipient %}{{ msg.recipient.username }}{% endif %}"
+             data-recipient-id="{% if msg.sender %}{{ msg.sender.pk }}{% endif %}"
+             data-body="{{ msg.body|default:''|escapejs }}"
+             data-date="{% if msg.sent_at %}{{ msg.sent_at|date:'d M Y H:i' }}{% else %}{{ msg.created_at|date:'d M Y H:i' }}{% endif %}">
+
+          <form method="post" action="{% url 'message_star' msg.id %}?folder={{ current_folder }}" class="msg-item__star-form">
+            {% csrf_token %}
+            <button type="submit" class="msg-item__star{% if msg.starred %} msg-item__star--on{% endif %}">
+              <span class="sky-icon" data-icon="{% if msg.starred %}StarFilled{% else %}Star{% endif %}" data-size="14"></span>
+            </button>
+          </form>
+
+          <div class="msg-avatar msg-avatar--sm">
+            {{ msg.sender.username|slice:":1"|upper }}
+          </div>
+
+          <div class="msg-item__content">
+            <div class="msg-item__meta">
+              <span class="msg-item__sender{% if not msg.is_read and current_folder == 'inbox' %} msg-item__sender--unread{% endif %}">
+                {{ msg.sender.username }}
+              </span>
+              <span class="msg-item__time">
+                {% if msg.sent_at %}
+                  {{ msg.sent_at|date:"d M H:i" }}
+                {% else %}
+                  {{ msg.created_at|date:"d M H:i" }}
+                {% endif %}
+              </span>
+            </div>
+            <div class="msg-item__subject{% if not msg.is_read and current_folder == 'inbox' %} msg-item__subject--unread{% endif %}">
+              {{ msg.subject|default:"No Subject" }}
+            </div>
+            <div class="msg-item__preview">{{ msg.body|truncatechars:60 }}</div>
+          </div>
+
+          {% if not msg.is_read and current_folder == 'inbox' %}
+            <div class="msg-item__unread-dot"></div>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div class="msg-list__empty">
+          <div class="msg-list__empty-icon">&#x1F4EC;</div>
+          <p class="msg-list__empty-text">No messages in this folder</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="msg-detail" id="detail-panel">
+    <div class="msg-detail__header">
+      <button class="sky-btn sky-btn--ghost" id="btn-back" type="button">
+        <span class="sky-icon" data-icon="ArrowLeft" data-size="16"></span> Back
+      </button>
+      <div class="msg-detail__actions">
+        <button class="msg-icon-btn msg-icon-btn--accent" title="Reply" type="button" id="btn-reply">
+          <span class="sky-icon" data-icon="Reply" data-size="16"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="msg-detail__body">
+      <h2 class="msg-detail__subject" id="detail-subject"></h2>
+      <div class="msg-detail__sender-card">
+        <div class="msg-detail__sender-top">
+          <div class="msg-avatar msg-avatar--md" id="detail-avatar"></div>
+          <div class="msg-detail__sender-info">
+            <div class="msg-detail__sender-name" id="detail-sender-name"></div>
+            <div class="msg-detail__sender-email" id="detail-sender-email"></div>
+          </div>
+          <div class="msg-detail__date" id="detail-date"></div>
+        </div>
+        <div class="msg-detail__to"><b>To:</b> <span id="detail-to-names"></span></div>
+      </div>
+      <div class="msg-detail__text" id="detail-text"></div>
+    </div>
+
+    <div class="msg-detail__reply-bar">
+      <form method="post" id="send-draft-form" style="display:none;">
+        {% csrf_token %}
+        <button class="sky-btn sky-btn--primary" type="submit">Send Draft</button>
+      </form>
+      <button class="msg-detail__reply-prompt" type="button" id="btn-reply-prompt">Click to reply...</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="sky-overlay" id="compose-overlay">
+  <div class="sky-modal msg-compose">
+    <div class="sky-modal__header">
+      <h3 class="sky-modal__title" id="compose-title">New Message</h3>
+      <button class="sky-modal__close" id="compose-close-btn" type="button">
+        <span class="sky-icon" data-icon="X" data-size="18"></span>
+      </button>
+    </div>
+
+    <form id="compose-form" method="post" action="{% url 'message_send' %}" class="msg-compose__form">
+      {% csrf_token %}
+      <div class="sky-modal__body">
+        <div class="sky-field">
+          <label class="sky-field__label" for="compose-to">To</label>
+          <div class="sky-field__wrap">
+            <select class="sky-field__input" id="compose-to" name="to" required>
+              <option value="">Select recipient...</option>
+              {% for emp in employees %}
+              <option value="{{ emp.pk }}">
+                  {% if emp.first_name or emp.last_name %}
+                    {{ emp.first_name }} {{ emp.last_name }} ({{ emp.username }})
+                  {% else %}
+                    {{ emp.username }}
+                  {% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="sky-field">
+          <label class="sky-field__label" for="compose-subject">Subject</label>
+          <div class="sky-field__wrap">
+            <input type="text" class="sky-field__input" id="compose-subject" name="subject" placeholder="Message subject">
+          </div>
+        </div>
+
+        <div class="sky-field">
+          <label class="sky-field__label" for="compose-body">Message</label>
+          <div class="sky-field__wrap">
+            <textarea class="sky-field__input" id="compose-body" name="body"
+                      placeholder="Write your message..."
+                      style="min-height: 220px; resize: vertical; line-height: 1.7;"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="sky-modal__footer" style="justify-content: space-between;">
+        <button type="button" class="msg-icon-btn" title="Attach file" id="btn-attach">
+            <span class="sky-icon" data-icon="Paperclip" data-size="16"></span>
+          </button>
+          
+          <input type="file" id="message-attachment" name="attachment" accept="image/*,.pdf,.doc,.docx,.txt" style="display: none;">
+          <span id="attachment-name" style="font-size: 12px; color: var(--sky-grey50); margin-left: 8px;"></span>
+        <div style="display: flex; gap: var(--sky-sp2);">
+          <button type="submit" class="sky-btn sky-btn--outline" name="action" value="draft" id="btn-save-draft">Save Draft</button>
+          <button type="submit" class="sky-btn sky-btn--primary" name="action" value="send">
+            <span class="sky-icon" data-icon="Send" data-size="14"></span> Send
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="sky-toast" id="toast" style="display: none;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const composeBtn = document.getElementById("btn-compose");
+    const composeOverlay = document.getElementById("compose-overlay");
+    const composeCloseBtn = document.getElementById("compose-close-btn");
+
+    const detailPanel = document.getElementById("detail-panel");
+    const msgList = document.getElementById("msg-list");
+    const backBtn = document.getElementById("btn-back");
+
+    const detailSubject = document.getElementById("detail-subject");
+    const detailSenderName = document.getElementById("detail-sender-name");
+    const detailSenderEmail = document.getElementById("detail-sender-email");
+    const detailToNames = document.getElementById("detail-to-names");
+    const detailDate = document.getElementById("detail-date");
+    const detailText = document.getElementById("detail-text");
+    const detailAvatar = document.getElementById("detail-avatar");
+
+    const sendDraftForm = document.getElementById("send-draft-form");
+    const replyPrompt = document.getElementById("btn-reply-prompt");
+    const replyBtn = document.getElementById("btn-reply");
+    const searchInput = document.getElementById("search-input");
+    const searchCount = document.getElementById("search-count");
+    const composeTo = document.getElementById("compose-to");
+    const composeSubject = document.getElementById("compose-subject");
+    const composeBody = document.getElementById("compose-body");
+    const attachBtn = document.getElementById("btn-attach");
+    const attachmentInput = document.getElementById("message-attachment");
+    const attachmentName = document.getElementById("attachment-name");
+
+    let currentSender = "";
+    let currentSubject = "";
+    let currentRecipientId = "";
+
+    if (composeOverlay) {
+        composeOverlay.style.display = "none";
+    }
+
+    if (composeBtn && composeOverlay) {
+        composeBtn.addEventListener("click", function () {
+            composeOverlay.style.display = "flex";
+        });
+    }
+
+    if (composeCloseBtn && composeOverlay) {
+        composeCloseBtn.addEventListener("click", function () {
+            composeOverlay.style.display = "none";
+        });
+    }
+
+    if (composeOverlay) {
+        composeOverlay.addEventListener("click", function (e) {
+            if (e.target === composeOverlay) {
+                composeOverlay.style.display = "none";
+            }
+        });
+    }
+
+    function openReplyModal() {
+        if (!composeOverlay) return;
+
+        composeOverlay.style.display = "flex";
+
+        if (composeSubject) {
+            if (currentSubject && currentSubject.startsWith("Re:")) {
+                composeSubject.value = currentSubject;
+            } else if (currentSubject) {
+                composeSubject.value = "Re: " + currentSubject;
+            } else {
+                composeSubject.value = "Re:";
+            }
+        }
+
+        if (composeBody) {
+            composeBody.value = "";
+        }
+
+        if (composeTo && currentRecipientId) {
+            composeTo.value = currentRecipientId;
+        }
+    }
+
+    const messageItems = document.querySelectorAll(".msg-item");
+
+    messageItems.forEach(function (item) {
+        item.addEventListener("click", function (e) {
+            if (e.target.closest(".msg-item__star-form")) return;
+
+            const messageId = item.dataset.id;
+            const folder = item.dataset.folder;
+            const sender = item.dataset.sender || "";
+            const subject = item.dataset.subject || "No Subject";
+            const senderEmail = item.dataset.senderEmail || "";
+            const toNames = item.dataset.to || "";
+            const recipientId = item.dataset.recipientId || "";
+            const body = item.dataset.body || "";
+            const date = item.dataset.date || "";
+
+            currentSender = sender;
+            currentSubject = subject;
+            currentRecipientId = recipientId;
+
+            detailSubject.textContent = subject;
+            detailSenderName.textContent = sender;
+            detailSenderEmail.textContent = senderEmail;
+            detailToNames.textContent = toNames;
+            detailDate.textContent = date;
+            detailText.textContent = body;
+            detailAvatar.textContent = sender ? sender.charAt(0).toUpperCase() : "?";
+
+            detailPanel.classList.add("msg-detail--open");
+            msgList.classList.add("msg-list--narrow");
+
+            document.querySelectorAll(".msg-item").forEach(function (msg) {
+                msg.classList.remove("msg-item--active");
+            });
+            item.classList.add("msg-item--active");
+
+            const readUrl = item.dataset.readUrl;
+
+            if (readUrl && item.classList.contains("msg-item--unread")) {
+                fetch(readUrl, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+                    }
+                }).then(function () {
+                    item.classList.remove("msg-item--unread");
+
+                    const dot = item.querySelector(".msg-item__unread-dot");
+                    if (dot) dot.remove();
+
+                    const senderText = item.querySelector(".msg-item__sender--unread");
+                    if (senderText) senderText.classList.remove("msg-item__sender--unread");
+
+                    const subjectText = item.querySelector(".msg-item__subject--unread");
+                    if (subjectText) subjectText.classList.remove("msg-item__subject--unread");
+                });
+            }
+
+            if (folder === "drafts") {
+                if (sendDraftForm) {
+                    sendDraftForm.style.display = "block";
+                    sendDraftForm.action = `/messages/send-draft/${messageId}/`;
+                }
+                if (replyPrompt) {
+                    replyPrompt.style.display = "none";
+                }
+                if (replyBtn) {
+                    replyBtn.style.display = "none";
+                }
+            } else {
+                if (sendDraftForm) {
+                    sendDraftForm.style.display = "none";
+                }
+                if (replyPrompt) {
+                    replyPrompt.style.display = "block";
+                }
+                if (replyBtn) {
+                    replyBtn.style.display = "inline-flex";
+                }
+            }
+        });
+    });
+
+    if (replyBtn) {
+        replyBtn.addEventListener("click", function () {
+            openReplyModal();
+        });
+    }
+
+    if (replyPrompt) {
+        replyPrompt.addEventListener("click", function () {
+            openReplyModal();
+        });
+    }
+
+    if (backBtn) {
+        backBtn.addEventListener("click", function () {
+            detailPanel.classList.remove("msg-detail--open");
+            msgList.classList.remove("msg-list--narrow");
+
+            document.querySelectorAll(".msg-item").forEach(function (msg) {
+                msg.classList.remove("msg-item--active");
+            });
+
+            if (sendDraftForm) {
+                sendDraftForm.style.display = "none";
+            }
+            if (replyPrompt) {
+                replyPrompt.style.display = "block";
+            }
+            if (replyBtn) {
+                replyBtn.style.display = "inline-flex";
+            }
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener("input", function () {
+            const term = searchInput.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            messageItems.forEach(function (item) {
+                const text = item.innerText.toLowerCase();
+                if (text.includes(term)) {
+                    item.style.display = "flex";
+                    visibleCount++;
+                } else {
+                    item.style.display = "none";
+                }
+            });
+
+            if (searchCount) {
+                searchCount.textContent = `${visibleCount} message${visibleCount !== 1 ? 's' : ''}`;
+            }
+        });
+    }
+
+    if (attachBtn && attachmentInput) {
+        attachBtn.addEventListener("click", function () {
+            attachmentInput.click();
+        });
+    }
+    
+    if (attachmentInput && attachmentName) {
+        attachmentInput.addEventListener("change", function () {
+            if (attachmentInput.files.length > 0) {
+                attachmentName.textContent = attachmentInput.files[0].name;
+            } else {
+                attachmentName.textContent = "";
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -10,7 +10,11 @@ urlpatterns = [
     path('schedule/',     views.schedule,      name='schedule'),
     path('schedule/meeting/new/', views.meeting_create, name='meeting_create'),
     path('schedule/meeting/<int:meet_id>/rsvp/', views.meeting_rsvp, name='meeting_rsvp'),
-    path('messages/',     views.messages_view, name='messages'),
+    path('messages/', views.messages_view, name='messages'),
+    path('messages/send/', views.message_send, name='message_send'),
+    path('messages/star/<int:message_id>/', views.message_star, name='message_star'),
+    path('messages/send-draft/<int:message_id>/', views.message_send_draft, name='message_send_draft'),
+    path('messages/read/<int:message_id>/', views.message_mark_read, name='message_mark_read'),
     path('organisation/', views.organisation,  name='organisation'),
     path('reports/',      views.reports,       name='reports'),
 
