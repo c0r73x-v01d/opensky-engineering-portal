@@ -887,16 +887,16 @@
 
       <div class="sky-field">
         <span class="sky-field__label">ATTENDEES</span>
-        <p class="sky-field__hint">Team members</p>
-        <ul class="sky-attendees" aria-label="Selected attendees">
-          <li class="sky-attendee" data-platform="meet">
+        <p class="sky-field__hint" data-hint-for="team">Team members</p>
+        <ul class="sky-attendees" aria-label="Selected attendees" data-attendee-set="team">
+          <li class="sky-attendee" data-tone="team">
             <span class="sky-attendee__dot"></span>
             <span class="sky-attendee__name">Maria Santos</span>
             <button type="button" class="sky-attendee__remove" aria-label="Remove Maria Santos">
               <span class="sky-icon" data-icon="X" data-size="11"></span>
             </button>
           </li>
-          <li class="sky-attendee" data-platform="meet">
+          <li class="sky-attendee" data-tone="team">
             <span class="sky-attendee__dot"></span>
             <span class="sky-attendee__name">Chris Evans</span>
             <button type="button" class="sky-attendee__remove" aria-label="Remove Chris Evans">
@@ -904,7 +904,23 @@
             </button>
           </li>
         </ul>
-        <input class="sky-field__input" type="text" id="mf-guests" placeholder="Add guests outside the team...">
+        <ul class="sky-attendees" aria-label="Selected attendees" data-attendee-set="personal">
+          <li class="sky-attendee" data-tone="red">
+            <span class="sky-attendee__dot"></span>
+            <span class="sky-attendee__name">Sarah Chen</span>
+            <button type="button" class="sky-attendee__remove" aria-label="Remove Sarah Chen">
+              <span class="sky-icon" data-icon="X" data-size="11"></span>
+            </button>
+          </li>
+          <li class="sky-attendee" data-tone="purple">
+            <span class="sky-attendee__dot"></span>
+            <span class="sky-attendee__name">Maria Santos</span>
+            <button type="button" class="sky-attendee__remove" aria-label="Remove Maria Santos">
+              <span class="sky-icon" data-icon="X" data-size="11"></span>
+            </button>
+          </li>
+        </ul>
+        <input class="sky-field__input" type="text" id="mf-guests" data-team-placeholder="Add guests outside the team..." data-personal-placeholder="Search by name or email..." placeholder="Add guests outside the team...">
       </div>
 
       <div class="sky-field">
