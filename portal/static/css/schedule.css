@@ -1381,3 +1381,100 @@
   color: var(--sky-grey80);
   line-height: 1.5;
 }
+
+/* Person cards (organizer + attendees) */
+.sky-panel__attendees {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sky-sp2);
+}
+
+.sky-person {
+  display: flex;
+  align-items: center;
+  gap: var(--sky-sp3);
+  padding: 10px 12px;
+  background: var(--sky-white);
+  border: 1px solid var(--sky-grey10);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15, 15, 30, 0.04);
+}
+
+.sky-person--organizer {
+  background: var(--sky-white);
+}
+
+.sky-person__avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #DD1717;
+  color: var(--sky-white);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.sky-person__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sky-person__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sky-grey90);
+}
+
+.sky-person__you {
+  font-weight: 500;
+  color: var(--sky-grey50);
+}
+
+.sky-person__role {
+  font-size: 11.5px;
+  color: var(--sky-grey50);
+}
+
+.sky-person__status {
+  font-size: 11px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.sky-person__status--accepted::before {
+  content: '\2022';
+  color: var(--sky-positive);
+  margin-right: 4px;
+  font-size: 14px;
+  line-height: 0;
+}
+.sky-person__status--accepted { color: var(--sky-positive); }
+
+.sky-person__status--pending::before {
+  content: '\2022';
+  color: var(--sky-attention);
+  margin-right: 4px;
+  font-size: 14px;
+  line-height: 0;
+}
+.sky-person__status--pending { color: var(--sky-attention); }
+
+.sky-person__status--declined::before {
+  content: '\2022';
+  color: var(--sky-negative);
+  margin-right: 4px;
+  font-size: 14px;
+  line-height: 0;
+}
+.sky-person__status--declined { color: var(--sky-negative); }
