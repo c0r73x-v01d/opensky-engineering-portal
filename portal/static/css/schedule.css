@@ -1012,7 +1012,15 @@
 .sky-field {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 0;
+}
+
+.sky-field__label {
+  margin-bottom: 4px;
+}
+
+.sky-field > .sky-field__hint {
+  margin-bottom: 6px;
 }
 
 .sky-field__label {
