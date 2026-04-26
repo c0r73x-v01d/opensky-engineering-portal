@@ -1188,6 +1188,13 @@
   background: var(--sky-positive);
 }
 
+/* Per-attendee dot tones for the personal-meeting variant */
+.sky-attendee[data-tone="team"]   .sky-attendee__dot { background: var(--sky-positive); }
+.sky-attendee[data-tone="red"]    .sky-attendee__dot { background: var(--sky-negative); }
+.sky-attendee[data-tone="purple"] .sky-attendee__dot { background: var(--sky-entertainment); }
+.sky-attendee[data-tone="blue"]   .sky-attendee__dot { background: var(--sky-primary); }
+.sky-attendee[data-tone="orange"] .sky-attendee__dot { background: var(--sky-attention); }
+
 .sky-attendee__name { font-weight: 600; }
 
 .sky-attendee__remove {
