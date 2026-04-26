@@ -1371,3 +1371,13 @@
   color: var(--sky-grey50);
   text-transform: uppercase;
 }
+
+.sky-panel__agenda {
+  margin: 0;
+  padding: 12px 14px;
+  background: rgba(26, 26, 26, 0.035);
+  border-radius: var(--sky-rad-xs);
+  font-size: 13px;
+  color: var(--sky-grey80);
+  line-height: 1.5;
+}
