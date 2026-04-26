@@ -291,8 +291,12 @@
       foot.appendChild(buildFoot(d.myStatus || 'accepted'));
     }
 
+    var current = { meetId: null, status: 'accepted' };
+
     function openPanel(trigger) {
       populate(trigger);
+      current.meetId = trigger.getAttribute('data-meet-id');
+      current.status = trigger.getAttribute('data-my-status') || 'accepted';
       if (panel.parentNode !== document.body) {
         document.body.appendChild(panel);
       }
@@ -304,6 +308,73 @@
       panel.hidden = true;
       document.body.style.overflow = '';
     }
+
+    function refreshFootForStatus(newStatus) {
+      var foot = $('foot');
+      foot.innerHTML = '';
+      foot.appendChild(buildFoot(newStatus));
+    }
+
+    function refreshSelfAttendeeRow(newStatus) {
+      var ul = $('attendees');
+      var rows = ul.querySelectorAll('.sky-person');
+      for (var i = 0; i < rows.length; i++) {
+        var nameEl = rows[i].querySelector('.sky-person__name');
+        if (nameEl && /\(You\)/.test(nameEl.textContent)) {
+          var stEl = rows[i].querySelector('.sky-person__status');
+          if (stEl) {
+            stEl.className = 'sky-person__status sky-person__status--' + newStatus;
+            stEl.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+          }
+          break;
+        }
+      }
+    }
+
+    function postRsvp(meetId, status, btn) {
+      if (!meetId) return;
+      btn.disabled = true;
+      var url = '/schedule/meeting/' + encodeURIComponent(meetId) + '/rsvp/';
+      var token = (typeof getCsrfToken === 'function') ? getCsrfToken() : '';
+      fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': token,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ status: status }),
+      })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        btn.disabled = false;
+        if (!res.ok || !res.body || !res.body.ok) {
+          if (typeof showToast === 'function') {
+            showToast((res.body && res.body.error) || 'Could not update RSVP.', 'error');
+          }
+          return;
+        }
+        current.status = res.body.status;
+        refreshFootForStatus(current.status);
+        refreshSelfAttendeeRow(current.status);
+        if (typeof showToast === 'function') {
+          showToast(current.status === 'accepted' ? 'Marked as attending.' : 'Marked as declined.', 'success');
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        if (typeof showToast === 'function') showToast('Network error — try again.', 'error');
+      });
+    }
+
+    panel.addEventListener('click', function (e) {
+      var btn = e.target.closest('.sky-panel__accept, .sky-panel__accept-full, .sky-panel__decline, .sky-panel__decline-outline');
+      if (!btn) return;
+      var status = btn.classList.contains('sky-panel__decline') || btn.classList.contains('sky-panel__decline-outline')
+        ? 'declined' : 'accepted';
+      postRsvp(current.meetId, status, btn);
+    });
 
     document.addEventListener('click', function (e) {
       var trigger = e.target.closest('[data-detail-open]');
