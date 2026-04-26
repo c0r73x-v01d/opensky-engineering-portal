@@ -192,6 +192,27 @@
       return li;
     }
 
+    function buildFoot(myStatus) {
+      var foot = document.createDocumentFragment();
+      function btn(variant, label, icon) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'sky-btn ' + variant + ' sky-panel__foot-btn';
+        if (icon) b.appendChild(makeIcon(icon, 14));
+        b.appendChild(document.createTextNode(label));
+        return b;
+      }
+      if (myStatus === 'pending') {
+        foot.appendChild(btn('sky-panel__accept', 'Accept', 'Check'));
+        foot.appendChild(btn('sky-panel__decline-outline', 'Decline', 'XCircle'));
+      } else if (myStatus === 'declined') {
+        foot.appendChild(btn('sky-panel__accept-full', 'Accept', 'Check'));
+      } else {
+        foot.appendChild(btn('sky-panel__decline', 'Decline', 'XCircle'));
+      }
+      return foot;
+    }
+
     function populate(trigger) {
       var d = trigger.dataset;
 
@@ -244,6 +265,10 @@
       attendees.forEach(function (a) {
         ul.appendChild(buildAttendee(a.name, a.role, a.status));
       });
+
+      var foot = $('foot');
+      foot.innerHTML = '';
+      foot.appendChild(buildFoot(d.myStatus || 'accepted'));
     }
 
     function openPanel(trigger) {
