@@ -18,10 +18,10 @@ from django.utils import timezone
 from portal.models import Meeting, MeetingInvitation
 
 
-# Pinned to the Monday of the week with the most seeded meetings so the page
-# matches the design's data density. Slice 4 / a follow-up can switch this to
-# timezone.localdate() once live data flows.
-WEEK_ANCHOR = datetime.date(2026, 4, 20)
+# Live: the schedule view anchors on real today. Pass an explicit `anchor`
+# kwarg to assemble_for_user(...) when you need to render a fixed window
+# (e.g. tests, demos, or a future "jump to date" UI).
+WEEK_ANCHOR = None
 
 DAY_NAMES = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 DAY_NAMES_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
@@ -55,6 +55,7 @@ class EventVM:
     accepted_count: int
     avatars_preview: list   # first 3 attendees: [{initials}]
     avatars_more: int       # remaining count beyond preview, 0 if none
+    is_past: bool           # meeting end is before now
 
     # template-friendly platform pill labels
     @property
@@ -156,7 +157,8 @@ def _my_status(meeting: Meeting, current_user_id: int) -> str:
     return inv.status if inv else 'accepted'
 
 
-def serialise_meeting(meeting: Meeting, current_user_id: int) -> EventVM:
+def serialise_meeting(meeting: Meeting, current_user_id: int,
+                      now: datetime.datetime | None = None) -> EventVM:
     start = timezone.localtime(meeting.startedAt)
     end = timezone.localtime(meeting.endedAt) if meeting.endedAt else None
     duration = _format_duration(start, end)
@@ -185,6 +187,9 @@ def serialise_meeting(meeting: Meeting, current_user_id: int) -> EventVM:
     ]
     avatars_more = max(0, len(attendees) - len(avatars_preview))
 
+    now = now or timezone.now()
+    is_past = (end and end < now) or (not end and start < now)
+
     return EventVM(
         meet_id=meeting.meetId,
         title=meeting.message.split('\n', 1)[0] if meeting.message else _fallback_title(meeting),
@@ -205,6 +210,7 @@ def serialise_meeting(meeting: Meeting, current_user_id: int) -> EventVM:
         accepted_count=accepted,
         avatars_preview=avatars_preview,
         avatars_more=avatars_more,
+        is_past=bool(is_past),
     )
 
 
@@ -269,7 +275,12 @@ def assemble_for_user(user, anchor: datetime.date | None = None) -> dict:
         recent_past          [event, ...]
         kpis                 {today, this_week, upcoming, pending}
     """
-    anchor = anchor or WEEK_ANCHOR
+    anchor = anchor or WEEK_ANCHOR or timezone.localdate()
+
+    # The demo "now" is pinned to the anchor at midday so meetings in the
+    # anchor week behave as upcoming/current, not past.
+    tz = timezone.get_current_timezone()
+    now_demo = datetime.datetime.combine(anchor, datetime.time(12, 0), tzinfo=tz)
 
     week_start = anchor - datetime.timedelta(days=anchor.weekday())
     week_end = week_start + datetime.timedelta(days=6)
@@ -293,7 +304,7 @@ def assemble_for_user(user, anchor: datetime.date | None = None) -> dict:
     weekly_days = []
     for i in range(7):
         d = week_start + datetime.timedelta(days=i)
-        events = [serialise_meeting(m, user.userId) for m in week_meetings if timezone.localtime(m.startedAt).date() == d]
+        events = [serialise_meeting(m, user.userId, now=now_demo) for m in week_meetings if timezone.localtime(m.startedAt).date() == d]
         weekly_days.append({
             'name': DAY_NAMES[i],
             'num': d.day,
@@ -305,7 +316,7 @@ def assemble_for_user(user, anchor: datetime.date | None = None) -> dict:
     monthly_days = []
     for i in range(35):
         d = grid_start + datetime.timedelta(days=i)
-        events = [serialise_meeting(m, user.userId) for m in month_meetings if timezone.localtime(m.startedAt).date() == d]
+        events = [serialise_meeting(m, user.userId, now=now_demo) for m in month_meetings if timezone.localtime(m.startedAt).date() == d]
         monthly_days.append({
             'num': d.day,
             'is_today': d == today,
@@ -322,7 +333,7 @@ def assemble_for_user(user, anchor: datetime.date | None = None) -> dict:
         by_date.setdefault(d, []).append(m)
     upcoming_groups = []
     for d in sorted(by_date):
-        evs = [serialise_meeting(m, user.userId) for m in by_date[d]]
+        evs = [serialise_meeting(m, user.userId, now=now_demo) for m in by_date[d]]
         if d == today:
             label = 'Today'
             tag = 'Today'
@@ -337,7 +348,7 @@ def assemble_for_user(user, anchor: datetime.date | None = None) -> dict:
         })
 
     # ── recent_past ────────────────────────────────────────────────
-    recent_past = [serialise_meeting(m, user.userId) for m in past_meetings]
+    recent_past = [serialise_meeting(m, user.userId, now=now_demo) for m in past_meetings]
 
     # ── kpis ───────────────────────────────────────────────────────
     today_count = sum(1 for d in weekly_days if d['is_today'] for _ in d['events'])
