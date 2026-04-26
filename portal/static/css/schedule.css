@@ -1188,6 +1188,22 @@
   background: var(--sky-positive);
 }
 
+/* Per-attendee dot tones for the personal-meeting variant */
+.sky-attendee[data-tone="team"]   .sky-attendee__dot { background: var(--sky-positive); }
+.sky-attendee[data-tone="red"]    .sky-attendee__dot { background: var(--sky-negative); }
+.sky-attendee[data-tone="purple"] .sky-attendee__dot { background: var(--sky-entertainment); }
+.sky-attendee[data-tone="blue"]   .sky-attendee__dot { background: var(--sky-primary); }
+.sky-attendee[data-tone="orange"] .sky-attendee__dot { background: var(--sky-attention); }
+
+/* Type-driven visibility: show host row + team-attendee set on team meetings,
+   show personal-attendee set on personal meetings, swap the input placeholder. */
+.sky-meeting-form[data-meeting-type="personal"] [data-host-row],
+.sky-meeting-form[data-meeting-type="personal"] [data-hint-for="team"],
+.sky-meeting-form[data-meeting-type="personal"] [data-attendee-set="team"],
+.sky-meeting-form[data-meeting-type="team"]     [data-attendee-set="personal"] {
+  display: none;
+}
+
 .sky-attendee__name { font-weight: 600; }
 
 .sky-attendee__remove {

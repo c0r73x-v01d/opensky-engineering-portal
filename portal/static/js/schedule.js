@@ -97,6 +97,26 @@
     });
   }
 
+  function setupMeetingTypeToggle() {
+    var form = document.querySelector('.sky-meeting-form');
+    if (!form) return;
+    var guests = form.querySelector('#mf-guests');
+
+    function applyType(type) {
+      form.setAttribute('data-meeting-type', type);
+      if (guests) {
+        var key = type === 'personal' ? 'personalPlaceholder' : 'teamPlaceholder';
+        if (guests.dataset[key]) guests.placeholder = guests.dataset[key];
+      }
+    }
+
+    form.querySelectorAll('[data-meeting-type]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        applyType(btn.getAttribute('data-meeting-type'));
+      });
+    });
+  }
+
   function setupAttendeeRemoval() {
     document.querySelectorAll('.sky-attendee__remove').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -306,6 +326,7 @@
     setupViewToggle();
     setupModals();
     setupSegmented();
+    setupMeetingTypeToggle();
     setupAttendeeRemoval();
     setupPanels();
   });
