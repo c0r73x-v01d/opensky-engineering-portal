@@ -487,6 +487,9 @@
              data-to="{% if msg.recipient %}{{ msg.recipient.username }}{% endif %}"
              data-recipient-id="{% if msg.sender %}{{ msg.sender.pk }}{% endif %}"
              data-body="{{ msg.body|default:''|escapejs }}"
+             data-attachments="{{ msg.attachments_display|default:''|escapejs }}"
+             data-attachment-url="{% if msg.attachments_list %}{{ msg.attachments_list.0.file.url }}{% endif %}"
+
              data-date="{% if msg.sent_at %}{{ msg.sent_at|date:'d M Y H:i' }}{% else %}{{ msg.created_at|date:'d M Y H:i' }}{% endif %}">
 
           <form method="post" action="{% url 'message_star' msg.id %}?folder={{ current_folder }}" class="msg-item__star-form">
@@ -518,6 +521,9 @@
             </div>
             <div class="msg-item__preview">{{ msg.body|truncatechars:60 }}</div>
           </div>
+          {% if msg.attachments_list %}
+  <div class="msg-item__preview">📎 {{ msg.attachments_display }}</div>
+{% endif %}
 
           {% if not msg.is_read and current_folder == 'inbox' %}
             <div class="msg-item__unread-dot"></div>
@@ -559,6 +565,8 @@
       </div>
       <div class="msg-detail__text" id="detail-text"></div>
     </div>
+    <div class="msg-detail__text" id="detail-text"></div>
+<div id="detail-attachments" style="margin-top:16px; font-size:13px; color:var(--sky-grey60);"></div>
 
     <div class="msg-detail__reply-bar">
       <form method="post" id="send-draft-form" style="display:none;">
@@ -580,34 +588,52 @@
       </button>
     </div>
 
-    <form id="compose-form" method="post" action="{% url 'message_send' %}" class="msg-compose__form">
+    <form id="compose-form" method="post" action="{% url 'message_send' %}" class="msg-compose__form" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="sky-modal__body">
         <div class="sky-field">
-          <label class="sky-field__label" for="compose-to">To</label>
-          <div class="sky-field__wrap">
-            <select class="sky-field__input" id="compose-to" name="to" required>
-              <option value="">Select recipient...</option>
-              {% for emp in employees %}
-              <option value="{{ emp.pk }}">
-                  {% if emp.first_name or emp.last_name %}
-                    {{ emp.first_name }} {{ emp.last_name }} ({{ emp.username }})
-                  {% else %}
-                    {{ emp.username }}
-                  {% endif %}
-                </option>
-              {% endfor %}
-            </select>
+          <label class="sky-field__label" for="compose-to-select">To</label>
+        
+          <div style="display:flex; gap:8px;">
+            <div class="sky-field__wrap" style="flex:1;">
+              <select class="sky-field__input" id="compose-to-select">
+                <option value="">Select recipient...</option>
+                {% for emp in employees %}
+                  <option value="{{ emp.pk }}"
+                    data-name="{% if emp.first_name or emp.last_name %}{{ emp.first_name }} {{ emp.last_name }} ({{ emp.username }}){% else %}{{ emp.username }}{% endif %}">
+                    
+                    {% if emp.pk == request.user.pk %}Me - {% endif %}
+                    {% if emp.first_name or emp.last_name %}
+                      {{ emp.first_name }} {{ emp.last_name }} ({{ emp.username }})
+                    {% else %}
+                      {{ emp.username }}
+                    {% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+        
+            <button type="button" class="sky-btn sky-btn--outline" id="btn-add-recipient">
+              Add
+            </button>
           </div>
+        
+          <div id="selected-recipients"
+               style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+          </div>
+        
+          <small style="font-size: 11px; color: var(--sky-grey40);">
+            Select a user then click Add. You can add multiple recipients.
+          </small>
         </div>
-
+    
         <div class="sky-field">
           <label class="sky-field__label" for="compose-subject">Subject</label>
           <div class="sky-field__wrap">
             <input type="text" class="sky-field__input" id="compose-subject" name="subject" placeholder="Message subject">
           </div>
         </div>
-
+    
         <div class="sky-field">
           <label class="sky-field__label" for="compose-body">Message</label>
           <div class="sky-field__wrap">
@@ -617,14 +643,16 @@
           </div>
         </div>
       </div>
-
+    
       <div class="sky-modal__footer" style="justify-content: space-between;">
-        <button type="button" class="msg-icon-btn" title="Attach file" id="btn-attach">
+        <div>
+          <button type="button" class="msg-icon-btn" title="Attach file" id="btn-attach">
             <span class="sky-icon" data-icon="Paperclip" data-size="16"></span>
           </button>
-          
           <input type="file" id="message-attachment" name="attachment" accept="image/*,.pdf,.doc,.docx,.txt" style="display: none;">
           <span id="attachment-name" style="font-size: 12px; color: var(--sky-grey50); margin-left: 8px;"></span>
+        </div>
+    
         <div style="display: flex; gap: var(--sky-sp2);">
           <button type="submit" class="sky-btn sky-btn--outline" name="action" value="draft" id="btn-save-draft">Save Draft</button>
           <button type="submit" class="sky-btn sky-btn--primary" name="action" value="send">
@@ -656,8 +684,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const detailToNames = document.getElementById("detail-to-names");
     const detailDate = document.getElementById("detail-date");
     const detailText = document.getElementById("detail-text");
+    const detailAttachments = document.getElementById("detail-attachments");
     const detailAvatar = document.getElementById("detail-avatar");
-
     const sendDraftForm = document.getElementById("send-draft-form");
     const replyPrompt = document.getElementById("btn-reply-prompt");
     const replyBtn = document.getElementById("btn-reply");
@@ -669,6 +697,40 @@ document.addEventListener("DOMContentLoaded", function () {
     const attachBtn = document.getElementById("btn-attach");
     const attachmentInput = document.getElementById("message-attachment");
     const attachmentName = document.getElementById("attachment-name");
+    const recipientSelect = document.getElementById("compose-to-select");
+const addRecipientBtn = document.getElementById("btn-add-recipient");
+const selectedRecipients = document.getElementById("selected-recipients");
+
+const selectedRecipientIds = new Set();
+
+function addRecipient() {
+    const option = recipientSelect.options[recipientSelect.selectedIndex];
+    const id = recipientSelect.value;
+
+    if (!id || selectedRecipientIds.has(id)) return;
+
+    const name = option.dataset.name || option.textContent.trim();
+    selectedRecipientIds.add(id);
+
+    const chip = document.createElement("span");
+    chip.style.cssText = "display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:rgba(0,15,245,0.06); color:var(--sky-primary); font-size:12px; font-weight:700;";
+    
+    chip.innerHTML = `
+        ${name}
+        <button type="button" style="border:none;background:transparent;cursor:pointer;font-weight:900;">×</button>
+        <input type="hidden" name="to" value="${id}">
+    `;
+
+    chip.querySelector("button").onclick = () => {
+        selectedRecipientIds.delete(id);
+        chip.remove();
+    };
+
+    selectedRecipients.appendChild(chip);
+    recipientSelect.value = "";
+}
+
+addRecipientBtn.addEventListener("click", addRecipient);
 
     let currentSender = "";
     let currentSubject = "";
@@ -736,6 +798,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const toNames = item.dataset.to || "";
             const recipientId = item.dataset.recipientId || "";
             const body = item.dataset.body || "";
+            const attachments = item.dataset.attachments || "";
+            const attachmentUrl = item.dataset.attachmentUrl || "";
             const date = item.dataset.date || "";
 
             currentSender = sender;
@@ -748,6 +812,15 @@ document.addEventListener("DOMContentLoaded", function () {
             detailToNames.textContent = toNames;
             detailDate.textContent = date;
             detailText.textContent = body;
+            if (detailAttachments) {
+              detailAttachments.innerHTML = "";
+          
+              if (attachments && attachmentUrl) {
+                  detailAttachments.innerHTML = `📎 <a href="${attachmentUrl}" target="_blank">${attachments}</a>`;
+              } else if (attachments) {
+                  detailAttachments.textContent = "📎 " + attachments;
+              }
+          }
             detailAvatar.textContent = sender ? sender.charAt(0).toUpperCase() : "?";
 
             detailPanel.classList.add("msg-detail--open");
