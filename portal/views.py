@@ -21,11 +21,13 @@ from .models import (
     Meeting,
     MeetingInvitation,
     Message,
+    MessageAttachment,
     MessageRecipient,
     Notification,
     NotificationRecipient,
     Skill,
     Team,
+    TeamDependency,
     TeamManager,
     TeamType,
     User,
@@ -385,7 +387,142 @@ def teams(request):
 
 @login_required
 def organisation(request):
-    return _coming_soon(request, 'organisation', 'Organisation')
+    type_colours = {
+        "Platform": "#0010f5",
+        "Product": "#6626a1",
+        "Infrastructure": "#f15a22",
+        "Data": "#0a7cff",
+        "Security": "#007e13",
+        "Engineering": "#0010f5",
+        "Design": "#6626a1",
+        "Operations": "#f15a22",
+    }
+
+    teams_qs = (
+        Team.objects
+        .select_related("department", "type")
+        .prefetch_related("employees__user", "managers__emp__user", "projects")
+        .order_by("department__departName", "teamName")
+    )
+
+    all_teams = []
+
+    for team in teams_qs:
+        manager = team.managers.first()
+        main_project = team.projects.filter(isMainProj=True).first()
+        projects = list(team.projects.all())
+        type_name = team.type.typeName if team.type else "Unassigned"
+
+        members = []
+        for emp in team.employees.all():
+            full_name = f"{emp.user.first_name} {emp.user.last_name}".strip()
+            members.append({
+                "name": full_name or emp.user.username,
+                "username": emp.user.username,
+                "email": emp.user.email,
+                "position": emp.position or "Engineer",
+                "initials": "".join(part[0] for part in full_name.split()[:2]).upper()
+                            or emp.user.username[:2].upper(),
+            })
+
+        all_teams.append({
+            "team_id": team.teamId,
+            "name": team.teamName,
+            "department_id": team.department.departmentId,
+            "department_name": team.department.departName,
+            "type_name": type_name,
+            "type_colour": type_colours.get(type_name, "#0010f5"),
+            "description": team.descrip or "No team description available.",
+            "responsibilities": team.responsib or "Responsibilities not yet recorded.",
+            "focus_area": team.focusArea or "Not specified",
+            "status": team.teamStatus,
+            "status_display": team.teamStatus.replace("_", " ").title(),
+            "manager_name": str(manager.emp.user) if manager else "No manager assigned",
+            "manager_email": manager.emp.user.email if manager else "",
+            "member_count": team.employees.count(),
+            "members": members,
+            "agile_practice": team.agilePractice or "Not specified",
+            "contact_channel": team.commChann or "Not specified",
+            "team_wiki": team.teamWiki or "",
+            "standup_link": team.standupLink or "",
+            "jira_board": team.jiraBoardLink or "",
+            "repo_count": len(projects),
+            "main_repo": main_project.repoName if main_project else "",
+            "repositories": [
+                {
+                    "name": project.repoName,
+                    "url": project.repoUrl or "",
+                    "is_main": project.isMainProj,
+                }
+                for project in projects
+            ],
+        })
+
+    dependencies = []
+    for dep in TeamDependency.objects.select_related("upstream", "downstream").all():
+        dependencies.append({
+            "from": dep.upstream.teamId,
+            "to": dep.downstream.teamId,
+            "from_name": dep.upstream.teamName,
+            "to_name": dep.downstream.teamName,
+            "type": dep.dependencyType or "dependency",
+        })
+
+    for team in all_teams:
+        team["depends_on"] = [dep for dep in dependencies if dep["from"] == team["team_id"]]
+        team["depended_on_by"] = [dep for dep in dependencies if dep["to"] == team["team_id"]]
+
+    departments = []
+    for dept in Department.objects.all().order_by("departName"):
+        dept_teams = [team for team in all_teams if team["department_id"] == dept.departmentId]
+        leader_obj = getattr(dept, "leader", None)
+
+        leader = None
+        if leader_obj:
+            user = leader_obj.emp.user
+            full_name = f"{user.first_name} {user.last_name}".strip()
+            leader = {
+                "full_name": full_name or user.username,
+                "email": user.email,
+                "position": leader_obj.emp.position or "Department Leader",
+                "initials": "".join(part[0] for part in full_name.split()[:2]).upper()
+                            or user.username[:2].upper(),
+            }
+
+        departments.append({
+            "department_id": dept.departmentId,
+            "name": dept.departName,
+            "specialization": dept.specialization or "No specialisation recorded",
+            "leader": leader,
+            "teams": dept_teams,
+            "engineer_count": sum(team["member_count"] for team in dept_teams),
+        })
+
+    team_types = []
+    for team_type in TeamType.objects.all().order_by("typeName"):
+        type_teams = [team for team in all_teams if team["type_name"] == team_type.typeName]
+        team_types.append({
+            "name": team_type.typeName,
+            "color": type_colours.get(team_type.typeName, "#0010f5"),
+            "teams": type_teams,
+        })
+
+    stats = {
+        "departments": Department.objects.count(),
+        "teams": Team.objects.count(),
+        "engineers": Employee.objects.count(),
+        "dependencies": TeamDependency.objects.count(),
+    }
+
+    return render(request, "organisation.html", {
+        "active_page": "organisation",
+        "stats": stats,
+        "departments": departments,
+        "team_types": team_types,
+        "teams_json": all_teams,
+        "deps_json": dependencies,
+    })
+
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -399,15 +536,23 @@ def _prepare_messages_for_template(messages, starred_ids):
     prepared = []
 
     for msg in messages:
-        recipient_link = msg.recipients.select_related('user').first()
+        recipient_links = list(msg.recipients.select_related('user').all())
+        recipient_link = recipient_links[0] if recipient_links else None
+        attachments = list(msg.attachments.all())
 
         msg.id = msg.messageId
         msg.sender = msg.user
         msg.recipient = recipient_link.user if recipient_link else None
+        msg.recipients_list = [r.user for r in recipient_links]
+        msg.recipients_display = ', '.join([r.user.username for r in recipient_links])
         msg.sent_at = msg.sentAt
         msg.created_at = msg.createdAt
         msg.is_read = recipient_link.isRead if recipient_link else True
         msg.starred = str(msg.messageId) in starred_ids
+        msg.attachments_list = attachments
+        msg.attachments_display = ', '.join([
+            a.file.name.split('/')[-1] for a in attachments
+        ])
 
         prepared.append(msg)
 
@@ -423,19 +568,28 @@ def messages_view(request):
         recipients__user=request.user,
         status='sent',
         recipients__recipMsgDeleted=False,
-    ).select_related('user').prefetch_related('recipients__user').order_by('-sentAt', '-createdAt')
+    ).select_related('user').prefetch_related(
+        'recipients__user',
+        'attachments',
+    ).order_by('-sentAt', '-createdAt')
 
     sent_qs = Message.objects.filter(
         user=request.user,
         status='sent',
         senderMsgDeleted=False,
-    ).select_related('user').prefetch_related('recipients__user').order_by('-sentAt', '-createdAt')
+    ).select_related('user').prefetch_related(
+        'recipients__user',
+        'attachments',
+    ).order_by('-sentAt', '-createdAt')
 
     draft_qs = Message.objects.filter(
         user=request.user,
         status='draft',
         senderMsgDeleted=False,
-    ).select_related('user').prefetch_related('recipients__user').order_by('-createdAt')
+    ).select_related('user').prefetch_related(
+        'recipients__user',
+        'attachments',
+    ).order_by('-createdAt')
 
     if current_folder == 'sent':
         selected_qs = sent_qs
@@ -455,7 +609,7 @@ def messages_view(request):
         'sent_count': sent_qs.count(),
         'draft_count': draft_qs.count(),
         'unread_count': inbox_qs.filter(recipients__isRead=False).count(),
-        'employees': User.objects.exclude(pk=request.user.pk).order_by('first_name', 'last_name', 'username'),
+        'employees': User.objects.all().order_by('first_name', 'last_name', 'username'),
     }
 
     return render(request, 'messages.html', context)
@@ -464,16 +618,21 @@ def messages_view(request):
 @login_required
 @require_POST
 def message_send(request):
-    recipient_id = request.POST.get('to')
+    recipient_ids = request.POST.getlist('to')
     subject = request.POST.get('subject', '').strip()
     body = request.POST.get('body', '').strip()
     action = request.POST.get('action', 'send')
+    attachment = request.FILES.get('attachment')
 
-    if not recipient_id:
-        dj_messages.error(request, 'Please choose a recipient.')
+    if not recipient_ids:
+        dj_messages.error(request, 'Please choose at least one recipient.')
         return _messages_redirect('inbox')
 
-    recipient = get_object_or_404(User, pk=recipient_id)
+    recipients = User.objects.filter(pk__in=recipient_ids)
+
+    if not recipients.exists():
+        dj_messages.error(request, 'Selected recipients were not found.')
+        return _messages_redirect('inbox')
 
     with transaction.atomic():
         msg = Message.objects.create(
@@ -484,10 +643,17 @@ def message_send(request):
             sentAt=None if action == 'draft' else timezone.now(),
         )
 
-        MessageRecipient.objects.create(
-            message=msg,
-            user=recipient,
-        )
+        for recipient in recipients:
+            MessageRecipient.objects.get_or_create(
+                message=msg,
+                user=recipient,
+            )
+
+        if attachment:
+            MessageAttachment.objects.create(
+                message=msg,
+                file=attachment,
+            )
 
         Action.objects.create(
             user=request.user,
@@ -503,7 +669,6 @@ def message_send(request):
 
     dj_messages.success(request, 'Message sent.')
     return _messages_redirect('sent')
-
 
 @login_required
 @require_POST
