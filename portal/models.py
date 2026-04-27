@@ -567,8 +567,12 @@ class Message(models.Model):
 # ────────────────────────────────────────────────────────────────────
 class MessageRecipient(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, db_column='userId')
-    message = models.ForeignKey(Message, on_delete=models.CASCADE,
-                                db_column='messageId', related_name='recipients')
+    message = models.ForeignKey(
+        Message,
+        on_delete=models.CASCADE,
+        db_column='messageId',
+        related_name='recipients'
+    )
     isRead = models.BooleanField(default=False, db_column='isRead')
     recipMsgDeleted = models.BooleanField(default=False, db_column='recipMsgDeleted')
 
@@ -580,6 +584,26 @@ class MessageRecipient(models.Model):
                 name='message_recipient_unique',
             ),
         ]
+
+
+# ────────────────────────────────────────────────────────────────────
+#  Message_Attachment
+# ────────────────────────────────────────────────────────────────────
+class MessageAttachment(models.Model):
+    message = models.ForeignKey(
+        Message,
+        on_delete=models.CASCADE,
+        db_column='messageId',
+        related_name='attachments'
+    )
+    file = models.FileField(upload_to='message_attachments/', db_column='file')
+    uploadedAt = models.DateTimeField(auto_now_add=True, db_column='uploadedAt')
+
+    class Meta:
+        db_table = 'Message_Attachment'
+
+    def __str__(self):
+        return self.file.name
 
 
 # ────────────────────────────────────────────────────────────────────

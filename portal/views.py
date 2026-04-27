@@ -21,6 +21,7 @@ from .models import (
     Meeting,
     MeetingInvitation,
     Message,
+    MessageAttachment,
     MessageRecipient,
     Notification,
     NotificationRecipient,
@@ -399,15 +400,23 @@ def _prepare_messages_for_template(messages, starred_ids):
     prepared = []
 
     for msg in messages:
-        recipient_link = msg.recipients.select_related('user').first()
+        recipient_links = list(msg.recipients.select_related('user').all())
+        recipient_link = recipient_links[0] if recipient_links else None
+        attachments = list(msg.attachments.all())
 
         msg.id = msg.messageId
         msg.sender = msg.user
         msg.recipient = recipient_link.user if recipient_link else None
+        msg.recipients_list = [r.user for r in recipient_links]
+        msg.recipients_display = ', '.join([r.user.username for r in recipient_links])
         msg.sent_at = msg.sentAt
         msg.created_at = msg.createdAt
         msg.is_read = recipient_link.isRead if recipient_link else True
         msg.starred = str(msg.messageId) in starred_ids
+        msg.attachments_list = attachments
+        msg.attachments_display = ', '.join([
+            a.file.name.split('/')[-1] for a in attachments
+        ])
 
         prepared.append(msg)
 
@@ -423,19 +432,28 @@ def messages_view(request):
         recipients__user=request.user,
         status='sent',
         recipients__recipMsgDeleted=False,
-    ).select_related('user').prefetch_related('recipients__user').order_by('-sentAt', '-createdAt')
+    ).select_related('user').prefetch_related(
+        'recipients__user',
+        'attachments',
+    ).order_by('-sentAt', '-createdAt')
 
     sent_qs = Message.objects.filter(
         user=request.user,
         status='sent',
         senderMsgDeleted=False,
-    ).select_related('user').prefetch_related('recipients__user').order_by('-sentAt', '-createdAt')
+    ).select_related('user').prefetch_related(
+        'recipients__user',
+        'attachments',
+    ).order_by('-sentAt', '-createdAt')
 
     draft_qs = Message.objects.filter(
         user=request.user,
         status='draft',
         senderMsgDeleted=False,
-    ).select_related('user').prefetch_related('recipients__user').order_by('-createdAt')
+    ).select_related('user').prefetch_related(
+        'recipients__user',
+        'attachments',
+    ).order_by('-createdAt')
 
     if current_folder == 'sent':
         selected_qs = sent_qs
@@ -455,7 +473,7 @@ def messages_view(request):
         'sent_count': sent_qs.count(),
         'draft_count': draft_qs.count(),
         'unread_count': inbox_qs.filter(recipients__isRead=False).count(),
-        'employees': User.objects.exclude(pk=request.user.pk).order_by('first_name', 'last_name', 'username'),
+        'employees': User.objects.all().order_by('first_name', 'last_name', 'username'),
     }
 
     return render(request, 'messages.html', context)
@@ -464,16 +482,21 @@ def messages_view(request):
 @login_required
 @require_POST
 def message_send(request):
-    recipient_id = request.POST.get('to')
+    recipient_ids = request.POST.getlist('to')
     subject = request.POST.get('subject', '').strip()
     body = request.POST.get('body', '').strip()
     action = request.POST.get('action', 'send')
+    attachment = request.FILES.get('attachment')
 
-    if not recipient_id:
-        dj_messages.error(request, 'Please choose a recipient.')
+    if not recipient_ids:
+        dj_messages.error(request, 'Please choose at least one recipient.')
         return _messages_redirect('inbox')
 
-    recipient = get_object_or_404(User, pk=recipient_id)
+    recipients = User.objects.filter(pk__in=recipient_ids)
+
+    if not recipients.exists():
+        dj_messages.error(request, 'Selected recipients were not found.')
+        return _messages_redirect('inbox')
 
     with transaction.atomic():
         msg = Message.objects.create(
@@ -484,10 +507,17 @@ def message_send(request):
             sentAt=None if action == 'draft' else timezone.now(),
         )
 
-        MessageRecipient.objects.create(
-            message=msg,
-            user=recipient,
-        )
+        for recipient in recipients:
+            MessageRecipient.objects.get_or_create(
+                message=msg,
+                user=recipient,
+            )
+
+        if attachment:
+            MessageAttachment.objects.create(
+                message=msg,
+                file=attachment,
+            )
 
         Action.objects.create(
             user=request.user,
@@ -503,7 +533,6 @@ def message_send(request):
 
     dj_messages.success(request, 'Message sent.')
     return _messages_redirect('sent')
-
 
 @login_required
 @require_POST
