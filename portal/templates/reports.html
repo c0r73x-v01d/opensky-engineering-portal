@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Reports{% endblock %}
+
+{% block extra_css %}
+<style>
+  .reports-page { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  .reports-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  .reports-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .reports-actions a { text-decoration: none; }
+  .reports-button { border: 1px solid #d6dae6; border-radius: 8px; padding: 10px 14px; font-weight: 600; background: #fff; color: #18212f; }
+  .reports-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .reports-card { background: #fff; border: 1px solid #e5e9f2; border-radius: 12px; padding: 18px; }
+  .reports-card h2, .reports-card h3 { margin-top: 0; }
+  .reports-number { font-size: 2rem; font-weight: 700; margin: 8px 0; }
+  .reports-filter { margin-bottom: 24px; }
+  .reports-filter select { min-width: 240px; padding: 8px 10px; border-radius: 8px; border: 1px solid #cfd6e4; }
+  .reports-alert { margin-bottom: 24px; border: 1px solid #f1c27d; background: #fff5e6; border-radius: 12px; padding: 16px 18px; }
+  .reports-alert ul { margin: 12px 0 0; padding-left: 20px; }
+  .reports-table-wrap { overflow-x: auto; }
+  .reports-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e5e9f2; border-radius: 12px; overflow: hidden; }
+  .reports-table th, .reports-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #eef1f6; vertical-align: top; }
+  .reports-table th { background: #f7f9fc; font-size: 0.9rem; }
+  .reports-muted { color: #637086; }
+  .reports-manager-list { margin: 0; padding-left: 18px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reports-page">
+  <div class="reports-header">
+    <div>
+      <h1>Reports</h1>
+      <p class="reports-muted">Team and manager coverage across the engineering portal.</p>
+    </div>
+    <div class="reports-actions">
+      <a href="{% url 'export_pdf' %}"><span class="reports-button">Export PDF</span></a>
+      <a href="{% url 'export_excel' %}"><span class="reports-button">Export Excel</span></a>
+    </div>
+  </div>
+
+  <div class="reports-grid">
+    <section class="reports-card">
+      <h2>Total Teams</h2>
+      <div class="reports-number">{{ total_teams }}</div>
+      <div class="reports-muted">Filtered active teams</div>
+    </section>
+    <section class="reports-card">
+      <h2>Teams Without Managers</h2>
+      <div class="reports-number">{{ teams_without_managers }}</div>
+      <div class="reports-muted">Teams needing manager assignment</div>
+    </section>
+    <section class="reports-card">
+      <h2>Departments</h2>
+      <div class="reports-number">{{ departments|length }}</div>
+      <div class="reports-muted">Available department filters</div>
+    </section>
+  </div>
+
+  <form method="get" class="reports-filter">
+    <label for="department">Filter by department</label>
+    <div>
+      <select id="department" name="department" onchange="this.form.submit()">
+        <option value="">All Departments</option>
+        {% for department in departments %}
+        <option value="{{ department.departmentId }}" {% if selected_department == department.departmentId|stringformat:"s" %}selected{% endif %}>
+          {{ department.departName }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+
+  {% if unmanaged_active %}
+  <section class="reports-alert">
+    <h3>Teams without managers</h3>
+    <ul>
+      {% for team in unmanaged_active %}
+      <li>{{ team.teamName }}{% if team.department %} ({{ team.department.departName }}){% endif %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <div class="reports-table-wrap">
+    <table class="reports-table">
+      <thead>
+        <tr>
+          <th>Team Name</th>
+          <th>Department</th>
+          <th>Manager</th>
+          <th>Status</th>
+          <th>Agile Practice</th>
+          <th>Projects</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for team in teams %}
+        <tr>
+          <td>{{ team.teamName }}</td>
+          <td>{% if team.department %}{{ team.department.departName }}{% else %}<span class="reports-muted">Unassigned</span>{% endif %}</td>
+          <td>
+            {% if team.managers.all %}
+            <ul class="reports-manager-list">
+              {% for manager in team.managers.all %}
+              <li>{{ manager.emp.user }}</li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <span class="reports-muted">No Manager</span>
+            {% endif %}
+          </td>
+          <td>{{ team.teamStatus }}</td>
+          <td>{{ team.agilePractice|default:"-" }}</td>
+          <td>{{ team.concurrentProjs|default:"0" }}</td>
+          <td>{{ team.updatedAt|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="reports-muted">No teams match the selected filter.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

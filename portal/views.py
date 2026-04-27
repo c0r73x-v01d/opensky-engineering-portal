@@ -565,4 +565,107 @@ def message_mark_read(request, message_id):
 
 @login_required
 def reports(request):
-    return _coming_soon(request, 'reports', 'Reports')
+    teams = Team.objects.select_related('department').prefetch_related('managers__emp__user').all()
+    departments = Department.objects.all()
+
+    dept_id = request.GET.get('department')
+    if dept_id:
+        teams = teams.filter(department_id=dept_id)
+
+    unmanaged_active = teams.filter(managers__isnull=True).distinct()
+
+    total_teams = teams.count()
+    teams_without_managers = unmanaged_active.count()
+
+    context = {
+        'active_page': 'reports',
+        'teams': teams,
+        'departments': departments,
+        'selected_department': dept_id,
+        'total_teams': total_teams,
+        'teams_without_managers': teams_without_managers,
+        'unmanaged_active': unmanaged_active,
+        'active_teams': total_teams,
+        'total_employees': 0,
+        'avg_team_size': 0,
+        'total_repos': 0,
+        'dept_stats': [],
+        'status_breakdown': [],
+        'type_stats': [],
+        'recent_activity': [],
+        'audit_log': [],
+        'audit_types': [],
+        'audit_counts': [],
+    }
+
+    return render(request, 'reports.html', context)
+
+
+@login_required
+def export_pdf(request):
+    from django.http import HttpResponse
+    from reportlab.pdfgen import canvas
+
+    teams = Team.objects.select_related('department').prefetch_related('managers__emp__user').all()
+    total_teams = teams.count()
+    unmanaged = teams.filter(managers__isnull=True).distinct().count()
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="reports.pdf"'
+
+    p = canvas.Canvas(response)
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(100, 800, "OpenSky Reports")
+
+    p.setFont("Helvetica", 12)
+    p.drawString(100, 760, f"Total Teams: {total_teams}")
+    p.drawString(100, 740, f"Unmanaged Teams: {unmanaged}")
+
+    y = 700
+    p.drawString(100, y, "Teams List:")
+    y -= 20
+
+    for team in teams:
+        team_name = team.teamName
+        dept_name = team.department.departName if team.department else ""
+
+        managers = list(team.managers.all())
+        manager_name = str(managers[0].emp.user) if managers else "No Manager"
+
+        p.drawString(120, y, f"{team_name} - {dept_name} - {manager_name}")
+        y -= 20
+
+    p.showPage()
+    p.save()
+    return response
+
+
+@login_required
+def export_excel(request):
+    from django.http import HttpResponse
+    from openpyxl import Workbook
+
+    teams = Team.objects.select_related('department').prefetch_related('managers__emp__user').all()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Reports"
+
+    ws.append(["Team Name", "Department", "Manager"])
+
+    for team in teams:
+        team_name = team.teamName
+        dept_name = team.department.departName if team.department else ""
+
+        managers = list(team.managers.all())
+        manager_name = str(managers[0].emp.user) if managers else "Unassigned"
+
+        ws.append([team_name, dept_name, manager_name])
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="reports.xlsx"'
+
+    wb.save(response)
+    return response

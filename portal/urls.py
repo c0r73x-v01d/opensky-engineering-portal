@@ -17,6 +17,8 @@ urlpatterns = [
     path('messages/read/<int:message_id>/', views.message_mark_read, name='message_mark_read'),
     path('organisation/', views.organisation,  name='organisation'),
     path('reports/',      views.reports,       name='reports'),
+    path('reports/pdf/',  views.export_pdf,    name='export_pdf'),
+    path('reports/excel/', views.export_excel, name='export_excel'),
 
     # Auth
     path('login/',           auth_views.LoginView.as_view(
