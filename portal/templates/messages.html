@@ -590,40 +590,29 @@
 
     <form id="compose-form" method="post" action="{% url 'message_send' %}" class="msg-compose__form" enctype="multipart/form-data">
       {% csrf_token %}
+    
       <div class="sky-modal__body">
+    
         <div class="sky-field">
-          <label class="sky-field__label" for="compose-to-select">To</label>
-        
-          <div style="display:flex; gap:8px;">
-            <div class="sky-field__wrap" style="flex:1;">
-              <select class="sky-field__input" id="compose-to-select">
-                <option value="">Select recipient...</option>
-                {% for emp in employees %}
-                  <option value="{{ emp.pk }}"
-                    data-name="{% if emp.first_name or emp.last_name %}{{ emp.first_name }} {{ emp.last_name }} ({{ emp.username }}){% else %}{{ emp.username }}{% endif %}">
-                    
-                    {% if emp.pk == request.user.pk %}Me - {% endif %}
-                    {% if emp.first_name or emp.last_name %}
-                      {{ emp.first_name }} {{ emp.last_name }} ({{ emp.username }})
-                    {% else %}
-                      {{ emp.username }}
-                    {% endif %}
-                  </option>
-                {% endfor %}
-              </select>
+          <label class="sky-field__label" for="recipient-input">To</label>
+    
+          <div style="position: relative;">
+            <input type="text"
+                   class="sky-field__input"
+                   id="recipient-input"
+                   placeholder="Type recipient name...">
+    
+            <div id="recipient-dropdown"
+                 style="display:none; position:absolute; top:100%; left:0; right:0; background:white; border:1px solid rgba(0,0,0,0.08); border-radius:8px; max-height:180px; overflow-y:auto; z-index:9999;">
             </div>
-        
-            <button type="button" class="sky-btn sky-btn--outline" id="btn-add-recipient">
-              Add
-            </button>
           </div>
-        
+    
           <div id="selected-recipients"
                style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
           </div>
-        
+    
           <small style="font-size: 11px; color: var(--sky-grey40);">
-            Select a user then click Add. You can add multiple recipients.
+            Start typing a name, then select a recipient from the list.
           </small>
         </div>
     
@@ -642,6 +631,7 @@
                       style="min-height: 220px; resize: vertical; line-height: 1.7;"></textarea>
           </div>
         </div>
+    
       </div>
     
       <div class="sky-modal__footer" style="justify-content: space-between;">
@@ -669,6 +659,15 @@
 
 {% block extra_js %}
 <script>
+const USERS = [
+  {% for emp in employees %}
+  {
+    id: "{{ emp.pk }}",
+    name: "{% if emp.pk == request.user.pk %}Me - {% endif %}{% if emp.first_name or emp.last_name %}{{ emp.first_name }} {{ emp.last_name }} ({{ emp.username }}){% else %}{{ emp.username }}{% endif %}"
+  },
+  {% endfor %}
+];
+
 document.addEventListener("DOMContentLoaded", function () {
     const composeBtn = document.getElementById("btn-compose");
     const composeOverlay = document.getElementById("compose-overlay");
@@ -697,40 +696,68 @@ document.addEventListener("DOMContentLoaded", function () {
     const attachBtn = document.getElementById("btn-attach");
     const attachmentInput = document.getElementById("message-attachment");
     const attachmentName = document.getElementById("attachment-name");
-    const recipientSelect = document.getElementById("compose-to-select");
-const addRecipientBtn = document.getElementById("btn-add-recipient");
-const selectedRecipients = document.getElementById("selected-recipients");
-
-const selectedRecipientIds = new Set();
-
-function addRecipient() {
-    const option = recipientSelect.options[recipientSelect.selectedIndex];
-    const id = recipientSelect.value;
-
-    if (!id || selectedRecipientIds.has(id)) return;
-
-    const name = option.dataset.name || option.textContent.trim();
-    selectedRecipientIds.add(id);
-
-    const chip = document.createElement("span");
-    chip.style.cssText = "display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:rgba(0,15,245,0.06); color:var(--sky-primary); font-size:12px; font-weight:700;";
+    const recipientInput = document.getElementById("recipient-input");
+    const recipientDropdown = document.getElementById("recipient-dropdown");
+    const selectedRecipients = document.getElementById("selected-recipients");
+    const selectedRecipientIds = new Set();
     
-    chip.innerHTML = `
-        ${name}
-        <button type="button" style="border:none;background:transparent;cursor:pointer;font-weight:900;">×</button>
-        <input type="hidden" name="to" value="${id}">
-    `;
-
-    chip.querySelector("button").onclick = () => {
-        selectedRecipientIds.delete(id);
-        chip.remove();
-    };
-
-    selectedRecipients.appendChild(chip);
-    recipientSelect.value = "";
-}
-
-addRecipientBtn.addEventListener("click", addRecipient);
+    function addRecipient(user) {
+        if (selectedRecipientIds.has(user.id)) return;
+    
+        selectedRecipientIds.add(user.id);
+    
+        const chip = document.createElement("span");
+        chip.style.cssText = "display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:rgba(0,15,245,0.06); color:var(--sky-primary); font-size:12px; font-weight:700;";
+    
+        chip.innerHTML = `
+            ${user.name}
+            <button type="button" style="border:none;background:transparent;cursor:pointer;font-weight:900;color:inherit;">×</button>
+            <input type="hidden" name="to" value="${user.id}">
+        `;
+    
+        chip.querySelector("button").addEventListener("click", function () {
+            selectedRecipientIds.delete(user.id);
+            chip.remove();
+        });
+    
+        selectedRecipients.appendChild(chip);
+        recipientInput.value = "";
+        recipientDropdown.style.display = "none";
+    }
+    
+    if (recipientInput && recipientDropdown) {
+        recipientInput.addEventListener("input", function () {
+            const search = recipientInput.value.toLowerCase().trim();
+            recipientDropdown.innerHTML = "";
+    
+            if (!search) {
+                recipientDropdown.style.display = "none";
+                return;
+            }
+    
+            const matches = USERS.filter(function (user) {
+                return user.name.toLowerCase().includes(search) && !selectedRecipientIds.has(user.id);
+            });
+    
+            matches.forEach(function (user) {
+                const option = document.createElement("div");
+                option.textContent = user.name;
+                option.style.cssText = "padding:10px 12px; cursor:pointer; font-size:13px;";
+                option.addEventListener("mouseenter", function () {
+                    option.style.background = "rgba(0,15,245,0.04)";
+                });
+                option.addEventListener("mouseleave", function () {
+                    option.style.background = "white";
+                });
+                option.addEventListener("click", function () {
+                    addRecipient(user);
+                });
+                recipientDropdown.appendChild(option);
+            });
+    
+            recipientDropdown.style.display = matches.length ? "block" : "none";
+        });
+    }
 
     let currentSender = "";
     let currentSubject = "";
