@@ -730,8 +730,13 @@ def message_mark_read(request, message_id):
 
 @login_required
 def reports(request):
-    teams = Team.objects.select_related('department').prefetch_related('managers__emp__user').all()
-    departments = Department.objects.all()
+    teams = (
+        Team.objects
+        .select_related('department')
+        .prefetch_related('managers__emp__user')
+        .order_by('teamName')
+    )
+    departments = Department.objects.order_by('departName')
 
     dept_id = request.GET.get('department')
     if dept_id:
@@ -769,9 +774,22 @@ def reports(request):
 @login_required
 def export_pdf(request):
     from django.http import HttpResponse
-    from reportlab.pdfgen import canvas
+    try:
+        from reportlab.pdfgen import canvas
+    except ModuleNotFoundError:
+        return HttpResponse(
+            "PDF export is unavailable because 'reportlab' is not installed. "
+            "Please install the project requirements and try again.",
+            status=503,
+            content_type='text/plain',
+        )
 
-    teams = Team.objects.select_related('department').prefetch_related('managers__emp__user').all()
+    teams = (
+        Team.objects
+        .select_related('department')
+        .prefetch_related('managers__emp__user')
+        .order_by('teamName')
+    )
     total_teams = teams.count()
     unmanaged = teams.filter(managers__isnull=True).distinct().count()
 
@@ -797,6 +815,11 @@ def export_pdf(request):
         managers = list(team.managers.all())
         manager_name = str(managers[0].emp.user) if managers else "No Manager"
 
+        if y < 80:
+            p.showPage()
+            p.setFont("Helvetica", 12)
+            y = 800
+
         p.drawString(120, y, f"{team_name} - {dept_name} - {manager_name}")
         y -= 20
 
@@ -808,9 +831,22 @@ def export_pdf(request):
 @login_required
 def export_excel(request):
     from django.http import HttpResponse
-    from openpyxl import Workbook
+    try:
+        from openpyxl import Workbook
+    except ModuleNotFoundError:
+        return HttpResponse(
+            "Excel export is unavailable because 'openpyxl' is not installed. "
+            "Please install the project requirements and try again.",
+            status=503,
+            content_type='text/plain',
+        )
 
-    teams = Team.objects.select_related('department').prefetch_related('managers__emp__user').all()
+    teams = (
+        Team.objects
+        .select_related('department')
+        .prefetch_related('managers__emp__user')
+        .order_by('teamName')
+    )
 
     wb = Workbook()
     ws = wb.active

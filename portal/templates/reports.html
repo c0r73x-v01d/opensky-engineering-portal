@@ -5,25 +5,209 @@
 
 {% block extra_css %}
 <style>
-  .reports-page { max-width: 1100px; margin: 0 auto; padding: 24px; }
-  .reports-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
-  .reports-actions { display: flex; gap: 12px; flex-wrap: wrap; }
-  .reports-actions a { text-decoration: none; }
-  .reports-button { border: 1px solid #d6dae6; border-radius: 8px; padding: 10px 14px; font-weight: 600; background: #fff; color: #18212f; }
-  .reports-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
-  .reports-card { background: #fff; border: 1px solid #e5e9f2; border-radius: 12px; padding: 18px; }
-  .reports-card h2, .reports-card h3 { margin-top: 0; }
-  .reports-number { font-size: 2rem; font-weight: 700; margin: 8px 0; }
-  .reports-filter { margin-bottom: 24px; }
-  .reports-filter select { min-width: 240px; padding: 8px 10px; border-radius: 8px; border: 1px solid #cfd6e4; }
-  .reports-alert { margin-bottom: 24px; border: 1px solid #f1c27d; background: #fff5e6; border-radius: 12px; padding: 16px 18px; }
-  .reports-alert ul { margin: 12px 0 0; padding-left: 20px; }
-  .reports-table-wrap { overflow-x: auto; }
-  .reports-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e5e9f2; border-radius: 12px; overflow: hidden; }
-  .reports-table th, .reports-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #eef1f6; vertical-align: top; }
-  .reports-table th { background: #f7f9fc; font-size: 0.9rem; }
-  .reports-muted { color: #637086; }
-  .reports-manager-list { margin: 0; padding-left: 18px; }
+  .reports-page {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: var(--sky-sp5) var(--sky-sp6);
+  }
+  .reports-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--sky-sp4);
+    flex-wrap: wrap;
+    margin-bottom: var(--sky-sp5);
+    animation: sUp 0.4s ease-out both;
+  }
+  .reports-header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--sky-grey90);
+    letter-spacing: -0.03em;
+    margin: 0 0 var(--sky-sp1);
+  }
+  .reports-muted {
+    color: var(--sky-grey40);
+    font-size: 14px;
+  }
+  .reports-actions {
+    display: flex;
+    gap: var(--sky-sp3);
+    flex-wrap: wrap;
+  }
+  .reports-actions a {
+    text-decoration: none;
+  }
+  .reports-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 164px;
+    padding: 14px 22px;
+    border-radius: var(--sky-rad-s);
+    border: 1px solid rgba(0, 15, 245, 0.05);
+    background: rgba(255, 255, 255, 0.56);
+    color: var(--sky-grey90);
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.18s ease;
+  }
+  .reports-button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(0, 15, 245, 0.12);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--sky-primary);
+  }
+  .reports-stats {
+    display: flex;
+    gap: var(--sky-sp4);
+    flex-wrap: wrap;
+    margin-bottom: var(--sky-sp5);
+    animation: sUp 0.4s ease-out 0.05s both;
+  }
+  .reports-stats .sky-stat {
+    flex: 1;
+    min-width: 180px;
+  }
+  .reports-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--sky-sp4);
+    flex-wrap: wrap;
+    margin-bottom: var(--sky-sp5);
+    animation: sUp 0.4s ease-out 0.1s both;
+  }
+  .reports-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp3);
+    flex-wrap: wrap;
+    padding: 14px 18px;
+    border-radius: var(--sky-sp3);
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(0, 15, 245, 0.04);
+    backdrop-filter: blur(16px);
+  }
+  .reports-filter label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--sky-grey50);
+    white-space: nowrap;
+  }
+  .reports-filter select {
+    min-width: 270px;
+    padding: 10px 14px;
+    border-radius: var(--sky-rad-s);
+    border: 1px solid rgba(0, 15, 245, 0.05);
+    background: rgba(255, 255, 255, 0.56);
+    color: var(--sky-grey80);
+    font-size: 13px;
+    font-family: var(--sky-font);
+    outline: none;
+    cursor: pointer;
+  }
+  .reports-alert {
+    margin-bottom: var(--sky-sp5);
+    padding: 18px 22px;
+    border-radius: 18px;
+    background: rgba(255, 248, 236, 0.92);
+    border: 1px solid rgba(241, 194, 125, 0.65);
+    box-shadow: 0 14px 30px rgba(241, 194, 125, 0.08);
+  }
+  .reports-alert h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--sky-grey90);
+  }
+  .reports-alert ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+  .reports-table-shell {
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(0, 15, 245, 0.04);
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(9, 30, 66, 0.04);
+  }
+  .reports-table-wrap {
+    overflow-x: auto;
+  }
+  .reports-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: transparent;
+  }
+  .reports-table th,
+  .reports-table td {
+    padding: 18px 20px;
+    text-align: left;
+    border-bottom: 1px solid rgba(14, 24, 36, 0.05);
+    vertical-align: top;
+  }
+  .reports-table th {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--sky-grey80);
+    background: rgba(247, 249, 252, 0.8);
+  }
+  .reports-table td {
+    font-size: 14px;
+    color: var(--sky-grey90);
+  }
+  .reports-table tbody tr:hover {
+    background: rgba(0, 15, 245, 0.018);
+  }
+  .reports-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+  .reports-table__team {
+    font-weight: 700;
+    color: var(--sky-grey90);
+  }
+  .reports-table__empty {
+    padding: 28px 20px;
+    text-align: center;
+    color: var(--sky-grey40);
+  }
+  .reports-manager-list {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .reports-manager-list li + li {
+    margin-top: 4px;
+  }
+  @media (max-width: 980px) {
+    .reports-page {
+      padding: var(--sky-sp4);
+    }
+    .reports-header {
+      align-items: stretch;
+    }
+    .reports-stats {
+      flex-direction: column;
+    }
+    .reports-actions {
+      width: 100%;
+    }
+    .reports-button {
+      width: 100%;
+      min-width: 0;
+    }
+    .reports-toolbar {
+      align-items: stretch;
+    }
+    .reports-filter {
+      width: 100%;
+    }
+    .reports-filter select {
+      width: 100%;
+      min-width: 0;
+    }
+  }
 </style>
 {% endblock %}
 
@@ -40,27 +224,39 @@
     </div>
   </div>
 
-  <div class="reports-grid">
-    <section class="reports-card">
-      <h2>Total Teams</h2>
-      <div class="reports-number">{{ total_teams }}</div>
-      <div class="reports-muted">Filtered active teams</div>
-    </section>
-    <section class="reports-card">
-      <h2>Teams Without Managers</h2>
-      <div class="reports-number">{{ teams_without_managers }}</div>
-      <div class="reports-muted">Teams needing manager assignment</div>
-    </section>
-    <section class="reports-card">
-      <h2>Departments</h2>
-      <div class="reports-number">{{ departments|length }}</div>
-      <div class="reports-muted">Available department filters</div>
-    </section>
+  <div class="reports-stats">
+    <div class="sky-stat sky-stat--with-icon">
+      <div class="sky-stat__icon" style="background: rgba(0, 15, 245, 0.05); color: var(--sky-primary);">
+        <span>#</span>
+      </div>
+      <div>
+        <div class="sky-stat__value">{{ total_teams }}</div>
+        <div class="sky-stat__label">Total Teams</div>
+      </div>
+    </div>
+    <div class="sky-stat sky-stat--with-icon">
+      <div class="sky-stat__icon" style="background: rgba(102, 38, 161, 0.05); color: var(--sky-entertainment);">
+        <span>!</span>
+      </div>
+      <div>
+        <div class="sky-stat__value">{{ teams_without_managers }}</div>
+        <div class="sky-stat__label">Teams Without Managers</div>
+      </div>
+    </div>
+    <div class="sky-stat sky-stat--with-icon">
+      <div class="sky-stat__icon" style="background: rgba(0, 126, 19, 0.05); color: var(--sky-positive);">
+        <span>@</span>
+      </div>
+      <div>
+        <div class="sky-stat__value">{{ departments|length }}</div>
+        <div class="sky-stat__label">Departments</div>
+      </div>
+    </div>
   </div>
 
-  <form method="get" class="reports-filter">
-    <label for="department">Filter by department</label>
-    <div>
+  <div class="reports-toolbar">
+    <form method="get" class="reports-filter">
+      <label for="department">Filter by department</label>
       <select id="department" name="department" onchange="this.form.submit()">
         <option value="">All Departments</option>
         {% for department in departments %}
@@ -69,8 +265,8 @@
         </option>
         {% endfor %}
       </select>
-    </div>
-  </form>
+    </form>
+  </div>
 
   {% if unmanaged_active %}
   <section class="reports-alert">
@@ -83,47 +279,51 @@
   </section>
   {% endif %}
 
-  <div class="reports-table-wrap">
-    <table class="reports-table">
-      <thead>
-        <tr>
-          <th>Team Name</th>
-          <th>Department</th>
-          <th>Manager</th>
-          <th>Status</th>
-          <th>Agile Practice</th>
-          <th>Projects</th>
-          <th>Updated</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for team in teams %}
-        <tr>
-          <td>{{ team.teamName }}</td>
-          <td>{% if team.department %}{{ team.department.departName }}{% else %}<span class="reports-muted">Unassigned</span>{% endif %}</td>
-          <td>
-            {% if team.managers.all %}
-            <ul class="reports-manager-list">
-              {% for manager in team.managers.all %}
-              <li>{{ manager.emp.user }}</li>
-              {% endfor %}
-            </ul>
-            {% else %}
-            <span class="reports-muted">No Manager</span>
-            {% endif %}
-          </td>
-          <td>{{ team.teamStatus }}</td>
-          <td>{{ team.agilePractice|default:"-" }}</td>
-          <td>{{ team.concurrentProjs|default:"0" }}</td>
-          <td>{{ team.updatedAt|date:"Y-m-d H:i" }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="7" class="reports-muted">No teams match the selected filter.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="reports-table-shell">
+    <div class="reports-table-wrap">
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>Team Name</th>
+            <th>Department</th>
+            <th>Manager</th>
+            <th>Status</th>
+            <th>Agile Practice</th>
+            <th>Projects</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for team in teams %}
+          <tr>
+            <td class="reports-table__team">{{ team.teamName }}</td>
+            <td>{% if team.department %}{{ team.department.departName }}{% else %}<span class="reports-muted">Unassigned</span>{% endif %}</td>
+            <td>
+              {% with managers=team.managers.all %}
+                {% if managers %}
+                <ul class="reports-manager-list">
+                  {% for manager in managers %}
+                  <li>{{ manager.emp.user }}</li>
+                  {% endfor %}
+                </ul>
+                {% else %}
+                <span class="reports-muted">No Manager</span>
+                {% endif %}
+              {% endwith %}
+            </td>
+            <td>{{ team.teamStatus }}</td>
+            <td>{{ team.agilePractice|default:"-" }}</td>
+            <td>{{ team.concurrentProjs|default:"0" }}</td>
+            <td>{{ team.updatedAt|date:"Y-m-d H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="reports-table__empty">No teams match the selected filter.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endblock %}
