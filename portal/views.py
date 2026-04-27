@@ -26,6 +26,7 @@ from .models import (
     NotificationRecipient,
     Skill,
     Team,
+    TeamDependency,
     TeamManager,
     TeamType,
     User,
@@ -385,7 +386,142 @@ def teams(request):
 
 @login_required
 def organisation(request):
-    return _coming_soon(request, 'organisation', 'Organisation')
+    type_colours = {
+        "Platform": "#0010f5",
+        "Product": "#6626a1",
+        "Infrastructure": "#f15a22",
+        "Data": "#0a7cff",
+        "Security": "#007e13",
+        "Engineering": "#0010f5",
+        "Design": "#6626a1",
+        "Operations": "#f15a22",
+    }
+
+    teams_qs = (
+        Team.objects
+        .select_related("department", "type")
+        .prefetch_related("employees__user", "managers__emp__user", "projects")
+        .order_by("department__departName", "teamName")
+    )
+
+    all_teams = []
+
+    for team in teams_qs:
+        manager = team.managers.first()
+        main_project = team.projects.filter(isMainProj=True).first()
+        projects = list(team.projects.all())
+        type_name = team.type.typeName if team.type else "Unassigned"
+
+        members = []
+        for emp in team.employees.all():
+            full_name = f"{emp.user.first_name} {emp.user.last_name}".strip()
+            members.append({
+                "name": full_name or emp.user.username,
+                "username": emp.user.username,
+                "email": emp.user.email,
+                "position": emp.position or "Engineer",
+                "initials": "".join(part[0] for part in full_name.split()[:2]).upper()
+                            or emp.user.username[:2].upper(),
+            })
+
+        all_teams.append({
+            "team_id": team.teamId,
+            "name": team.teamName,
+            "department_id": team.department.departmentId,
+            "department_name": team.department.departName,
+            "type_name": type_name,
+            "type_colour": type_colours.get(type_name, "#0010f5"),
+            "description": team.descrip or "No team description available.",
+            "responsibilities": team.responsib or "Responsibilities not yet recorded.",
+            "focus_area": team.focusArea or "Not specified",
+            "status": team.teamStatus,
+            "status_display": team.teamStatus.replace("_", " ").title(),
+            "manager_name": str(manager.emp.user) if manager else "No manager assigned",
+            "manager_email": manager.emp.user.email if manager else "",
+            "member_count": team.employees.count(),
+            "members": members,
+            "agile_practice": team.agilePractice or "Not specified",
+            "contact_channel": team.commChann or "Not specified",
+            "team_wiki": team.teamWiki or "",
+            "standup_link": team.standupLink or "",
+            "jira_board": team.jiraBoardLink or "",
+            "repo_count": len(projects),
+            "main_repo": main_project.repoName if main_project else "",
+            "repositories": [
+                {
+                    "name": project.repoName,
+                    "url": project.repoUrl or "",
+                    "is_main": project.isMainProj,
+                }
+                for project in projects
+            ],
+        })
+
+    dependencies = []
+    for dep in TeamDependency.objects.select_related("upstream", "downstream").all():
+        dependencies.append({
+            "from": dep.upstream.teamId,
+            "to": dep.downstream.teamId,
+            "from_name": dep.upstream.teamName,
+            "to_name": dep.downstream.teamName,
+            "type": dep.dependencyType or "dependency",
+        })
+
+    for team in all_teams:
+        team["depends_on"] = [dep for dep in dependencies if dep["from"] == team["team_id"]]
+        team["depended_on_by"] = [dep for dep in dependencies if dep["to"] == team["team_id"]]
+
+    departments = []
+    for dept in Department.objects.all().order_by("departName"):
+        dept_teams = [team for team in all_teams if team["department_id"] == dept.departmentId]
+        leader_obj = getattr(dept, "leader", None)
+
+        leader = None
+        if leader_obj:
+            user = leader_obj.emp.user
+            full_name = f"{user.first_name} {user.last_name}".strip()
+            leader = {
+                "full_name": full_name or user.username,
+                "email": user.email,
+                "position": leader_obj.emp.position or "Department Leader",
+                "initials": "".join(part[0] for part in full_name.split()[:2]).upper()
+                            or user.username[:2].upper(),
+            }
+
+        departments.append({
+            "department_id": dept.departmentId,
+            "name": dept.departName,
+            "specialization": dept.specialization or "No specialisation recorded",
+            "leader": leader,
+            "teams": dept_teams,
+            "engineer_count": sum(team["member_count"] for team in dept_teams),
+        })
+
+    team_types = []
+    for team_type in TeamType.objects.all().order_by("typeName"):
+        type_teams = [team for team in all_teams if team["type_name"] == team_type.typeName]
+        team_types.append({
+            "name": team_type.typeName,
+            "color": type_colours.get(team_type.typeName, "#0010f5"),
+            "teams": type_teams,
+        })
+
+    stats = {
+        "departments": Department.objects.count(),
+        "teams": Team.objects.count(),
+        "engineers": Employee.objects.count(),
+        "dependencies": TeamDependency.objects.count(),
+    }
+
+    return render(request, "organisation.html", {
+        "active_page": "organisation",
+        "stats": stats,
+        "departments": departments,
+        "team_types": team_types,
+        "teams_json": all_teams,
+        "deps_json": dependencies,
+    })
+
 
 
 # ════════════════════════════════════════════════════════════════════

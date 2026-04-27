@@ -1,0 +1,852 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Organisation{% endblock %}
+
+{% block extra_css %}
+<style>
+
+  .org-container { max-width: 1320px; margin: 0 auto; padding: var(--sky-sp5) var(--sky-sp6); }
+
+  /* ── Page header ── */
+  .org-header { margin-bottom: var(--sky-sp5); animation: sUp 0.4s ease-out both; }
+  .org-header h1 {
+    font-size: 28px; font-weight: 800; color: var(--sky-grey90);
+    letter-spacing: -0.03em; margin-bottom: var(--sky-sp1);
+  }
+  .org-header p { font-size: 14px; color: var(--sky-grey40); }
+
+  /* ── Stats row ── */
+  .org-stats {
+    display: flex; gap: var(--sky-sp4);
+    margin-bottom: var(--sky-sp5); flex-wrap: wrap;
+    animation: sUp 0.4s ease-out 0.05s both;
+  }
+  .org-stats .sky-stat { flex: 1; min-width: 150px; }
+
+  /* ── Toolbar ── */
+  .org-toolbar {
+    display: flex; align-items: center; gap: var(--sky-sp5);
+    margin-bottom: var(--sky-sp5); flex-wrap: wrap;
+    animation: sUp 0.4s ease-out 0.1s both;
+  }
+  .org-toolbar .sky-toggle { flex: 0 0 auto; }
+  .org-toolbar .sky-field { flex: 1; max-width: 360px; margin-bottom: 0; }
+  .org-toolbar__filter {
+    padding: 8px var(--sky-sp3); border-radius: var(--sky-rad-s);
+    border: 1px solid rgba(0, 15, 245, 0.05);
+    background: rgba(255, 255, 255, 0.56);
+    font-size: 13px; color: var(--sky-grey80);
+    outline: none; cursor: pointer; min-width: 160px;
+    font-family: var(--sky-font);
+  }
+
+  /* ── Department accordion ── */
+  .org-dept-list { display: flex; flex-direction: column; gap: var(--sky-sp3); animation: sUp 0.35s ease-out both; }
+  .org-dept {
+    border-radius: var(--sky-sp3); overflow: hidden;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 15, 245, 0.03);
+    transition: all 0.25s ease;
+  }
+  .org-dept--expanded { border-color: rgba(0, 15, 245, 0.09); }
+  .org-dept__header {
+    width: 100%; display: flex; align-items: center; gap: var(--sky-sp4);
+    padding: var(--sky-sp4) var(--sky-sp5);
+    border: none; cursor: pointer; background: transparent;
+    font-family: var(--sky-font); text-align: left;
+  }
+  .org-dept--expanded .org-dept__header { background: rgba(0, 15, 245, 0.015); }
+  .org-dept__chev {
+    color: var(--sky-grey30);
+    transition: all 0.2s ease; flex-shrink: 0;
+  }
+  .org-dept--expanded .org-dept__chev {
+    color: var(--sky-primary);
+    transform: rotate(90deg);
+  }
+  .org-dept__name {
+    font-size: 15px; font-weight: 700;
+    color: var(--sky-grey90); letter-spacing: -0.02em;
+  }
+  .org-dept__spec {
+    font-size: 12px; color: var(--sky-grey40);
+    margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .org-dept__meta { display: flex; gap: var(--sky-sp4); flex-shrink: 0; }
+  .org-dept__meta-teams { font-size: 12px; font-weight: 700; color: var(--sky-primary); }
+  .org-dept__meta-eng { font-size: 12px; font-weight: 600; color: var(--sky-grey40); }
+  .org-dept__body {
+    padding: 0 var(--sky-sp5) var(--sky-sp5);
+    animation: sUp 0.25s ease-out both;
+  }
+  .org-dept__leader {
+    display: flex; align-items: center; gap: var(--sky-sp4);
+    padding: var(--sky-sp4) var(--sky-sp5);
+    border-radius: var(--sky-sp3);
+    background: rgba(0, 0, 0, 0.008);
+    border: 1px solid rgba(0, 0, 0, 0.015);
+    margin-bottom: var(--sky-sp4);
+  }
+  .org-dept__leader-avatar {
+    width: 44px; height: 44px; border-radius: var(--sky-sp2);
+    background: rgba(0, 15, 245, 0.08);
+    color: var(--sky-primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; flex-shrink: 0;
+  }
+  .org-dept__leader-info { flex: 1; min-width: 0; }
+  .org-dept__leader-name-row {
+    display: flex; align-items: center;
+    gap: var(--sky-sp2); margin-bottom: var(--sky-sp1);
+  }
+  .org-dept__leader-name { font-size: 14px; font-weight: 700; color: var(--sky-grey90); }
+  .org-dept__leader-badge {
+    font-size: 9px; font-weight: 700;
+    padding: 2px 8px; border-radius: var(--sky-rad-xs);
+    background: rgba(0, 15, 245, 0.05);
+    color: var(--sky-primary);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .org-dept__leader-pos { font-size: 12px; color: var(--sky-grey40); }
+  .org-dept__leader-email {
+    display: flex; align-items: center; gap: var(--sky-sp1);
+    font-size: 11px; font-weight: 600;
+    color: var(--sky-primary); text-decoration: none;
+    flex-shrink: 0;
+  }
+  .org-dept__teams-list { display: flex; flex-direction: column; gap: var(--sky-sp3); }
+
+  /* ── Team row inside department ── */
+  .org-team-row {
+    padding: var(--sky-sp3) var(--sky-sp4);
+    border-radius: var(--sky-rad-s);
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.02);
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .org-team-row--hl {
+    background: rgba(0, 15, 245, 0.03);
+    border-color: rgba(0, 15, 245, 0.12);
+  }
+  .org-team-row__top {
+    display: flex; align-items: center;
+    gap: var(--sky-sp2); margin-bottom: 6px;
+  }
+  .org-team-row__name { font-size: 14px; font-weight: 700; color: var(--sky-grey90); }
+  .org-team-row__eng {
+    margin-left: auto; font-size: 12px; font-weight: 600;
+    color: var(--sky-grey40); flex-shrink: 0;
+  }
+  .org-team-row__bottom {
+    display: flex; align-items: center;
+    gap: var(--sky-sp4); font-size: 12px; color: var(--sky-grey40);
+  }
+  .org-team-row__mgr-label { font-weight: 600; color: var(--sky-grey50); }
+  .org-team-row__sep { width: 1px; height: 12px; background: var(--sky-grey10); }
+  .org-team-row__repo { font-family: monospace; font-size: 11px; color: var(--sky-grey30); }
+
+  /* ── Dependency graph ── */
+  .org-graph-wrap {
+    position: relative; width: 100%; height: 540px;
+    border-radius: var(--sky-sp3);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 15, 245, 0.03);
+    overflow: hidden;
+    animation: sUp 0.35s ease-out both;
+  }
+  .org-graph-controls {
+    position: absolute; top: var(--sky-sp3); right: var(--sky-sp3); z-index: 10;
+    display: flex; flex-direction: column; gap: var(--sky-sp1);
+    background: rgba(255, 255, 255, 0.88);
+    border-radius: var(--sky-rad-s);
+    padding: var(--sky-sp1);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+  }
+  .org-graph-btn {
+    width: 30px; height: 30px; border-radius: var(--sky-rad-xs);
+    border: 1px solid rgba(0, 0, 0, 0.03); background: var(--sky-white);
+    cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    color: var(--sky-grey50);
+    font-size: 16px; font-weight: 700;
+  }
+  .org-graph-zoom { text-align: center; font-size: 10px; font-weight: 700; color: var(--sky-grey40); padding: 2px 0; }
+  .org-graph-legend {
+    position: absolute; top: var(--sky-sp3); left: var(--sky-sp3); z-index: 10;
+    display: flex; flex-direction: column; gap: var(--sky-sp1);
+    background: rgba(255, 255, 255, 0.88);
+    border-radius: var(--sky-rad-s);
+    padding: var(--sky-sp2) var(--sky-sp3);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+  }
+  .org-graph-legend__title {
+    font-size: 10px; font-weight: 700; color: var(--sky-grey40);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+  .org-graph-legend__items { display: flex; gap: var(--sky-sp3); flex-wrap: wrap; }
+  .org-graph-legend__item {
+    display: flex; align-items: center;
+    gap: var(--sky-sp1);
+    font-size: 10px; font-weight: 600; color: var(--sky-grey50);
+  }
+  .org-graph-legend__dot { width: 8px; height: 8px; border-radius: 50%; }
+  .org-graph-legend__note {
+    border-top: 1px solid rgba(0, 0, 0, 0.02);
+    margin-top: var(--sky-sp1); padding-top: var(--sky-sp1);
+    font-size: 10px; font-weight: 600; color: var(--sky-grey40);
+  }
+  .org-graph-hint {
+    position: absolute; bottom: var(--sky-sp3); left: var(--sky-sp3); z-index: 10;
+    font-size: 11px; color: var(--sky-grey30); font-weight: 500;
+  }
+  #depGraph {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+.org-graph-wrap {
+  height: 600px;
+  background: rgba(255, 255, 255, 0.78);
+ }
+
+.org-graph-legend {
+  min-width: 360px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.025);
+ }
+
+.org-graph-btn:hover {
+  color: var(--sky-primary);
+  border-color: rgba(0, 15, 245, 0.15);
+ }
+
+.org-graph-hint {
+  background: rgba(255, 255, 255, 0.68);
+  padding: 4px 8px;
+  border-radius: 8px; 
+ }
+  /* ── Team types grid ── */
+ /* ── Team Types tab ── */
+    .org-types {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sky-sp5);
+    animation: sUp 0.35s ease-out both;
+    }
+
+    .org-type-card {
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 15, 245, 0.06);
+    overflow: hidden;
+    }
+
+    .org-type-card__header {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp3);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.035);
+    }
+
+    .org-type-card__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    }
+
+    .org-type-card__name {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--sky-grey90);
+    flex: 1;
+    margin: 0;
+    }
+
+    .org-type-card__count {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--sky-primary);
+    }
+
+    .org-type-card__body {
+    padding: 16px 24px 22px;
+    }
+
+    .org-type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
+    gap: var(--sky-sp3);
+    }
+
+    .org-type-team {
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.58);
+    border: 1px solid rgba(0, 0, 0, 0.035);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    }
+
+    .org-type-team:hover {
+    transform: translateY(-1px);
+    border-color: rgba(0, 15, 245, 0.12);
+    background: rgba(255, 255, 255, 0.88);
+    }
+
+    .org-type-team__top {
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp2);
+    margin-bottom: 8px;
+    }
+
+    .org-type-team__name {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--sky-grey90);
+    }
+
+    .org-type-team__bottom {
+    display: flex;
+    align-items: center;
+    gap: var(--sky-sp3);
+    font-size: 12px;
+    color: var(--sky-grey40);
+    }
+
+    .org-type-team__sep {
+    width: 1px;
+    height: 12px;
+    background: var(--sky-grey10);
+    }
+
+    .org-type-team__repo {
+    font-size: 11px;
+    color: var(--sky-grey30);
+    font-family: monospace;
+    margin-top: 6px;
+    }
+
+  /* ── Type / status badges (org-specific sizing) ── */
+  .org-type-badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: var(--sky-rad-xs);
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.03em;
+    white-space: nowrap;
+    background: rgba(0, 15, 245, 0.05);
+    color: var(--sky-primary);
+  }
+  .org-status-badge {
+    font-size: 9px; font-weight: 700;
+    padding: 2px 5px; border-radius: var(--sky-rad-xs);
+    text-transform: uppercase;
+    white-space: nowrap; letter-spacing: 0.02em;
+    flex-shrink: 0; line-height: 1;
+    background: var(--sky-grey05);
+    color: var(--sky-grey50);
+  }
+
+  /* ── Detail panel body sub-components (used inside sky-slide-panel) ── */
+    .org-detail__actions {
+    display: flex;
+    align-items: center; /* ADD THIS */
+    gap: var(--sky-sp3); /* slightly more spacing */
+    margin-bottom: var(--sky-sp6);
+    flex-wrap: wrap;
+  
+  }
+    .org-detail-status {
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    background: rgba(0, 126, 19, 0.08);
+    color: var(--sky-positive);
+    border: 1px solid rgba(0, 126, 19, 0.18);
+ }
+  .org-detail__section { margin-bottom: var(--sky-sp5); }
+  .org-detail__section-title {
+    font-size: 11px; font-weight: 700;
+    color: var(--sky-grey40);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 0 0 var(--sky-sp3);
+  }
+  .org-detail__grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: var(--sky-sp3);
+  }
+  .org-info-pill {
+    padding: var(--sky-sp3) var(--sky-sp4);
+    border-radius: var(--sky-rad-s);
+    background: rgba(0, 0, 0, 0.008);
+    border: 1px solid rgba(0, 0, 0, 0.015);
+  }
+  .org-info-pill__label {
+    font-size: 10px; font-weight: 700;
+    color: var(--sky-grey30);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: var(--sky-sp1);
+  }
+  .org-info-pill__value {
+    font-size: 13px; font-weight: 600;
+    color: var(--sky-grey90); line-height: 1.3;
+  }
+  .org-chip {
+    display: inline-block; padding: 4px 10px;
+    border-radius: var(--sky-rad-xs);
+    font-size: 11px; font-weight: 600;
+    background: rgba(0, 15, 245, 0.04);
+    color: var(--sky-primary);
+    border: 1px solid rgba(0, 15, 245, 0.08);
+  }
+  .org-member-row {
+    display: flex; align-items: center; gap: var(--sky-sp3);
+    padding: var(--sky-sp2) var(--sky-sp3);
+    border-radius: var(--sky-rad-s);
+    background: rgba(0, 0, 0, 0.008);
+    border: 1px solid rgba(0, 0, 0, 0.015);
+  }
+  .org-member-avatar {
+    width: 32px; height: 32px;
+    border-radius: var(--sky-rad-s);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; flex-shrink: 0;
+  }
+  .org-member-name { font-size: 13px; font-weight: 600; color: var(--sky-grey80); }
+  .org-member-pos { font-size: 11px; color: var(--sky-grey40); margin-left: var(--sky-sp2); }
+  .org-member-user { font-size: 11px; color: var(--sky-grey30); font-family: monospace; }
+  .org-repo-row {
+    display: flex; align-items: center; gap: var(--sky-sp3);
+    padding: var(--sky-sp2) var(--sky-sp3);
+    border-radius: var(--sky-rad-s);
+    background: rgba(0, 0, 0, 0.01);
+    border: 1px solid rgba(0, 0, 0, 0.015);
+  }
+  .org-repo-url {
+    font-size: 12px; font-weight: 600;
+    color: var(--sky-grey80); flex: 1; font-family: monospace;
+  }
+  .org-repo-main {
+    font-size: 9px; font-weight: 700;
+    padding: 1px 8px; border-radius: var(--sky-rad-xs);
+    background: rgba(0, 15, 245, 0.05);
+    color: var(--sky-primary);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .org-dep-row {
+    display: flex; align-items: center; gap: var(--sky-sp3);
+    padding: var(--sky-sp2) var(--sky-sp3);
+    border-radius: var(--sky-rad-xs);
+  }
+  .org-dep-row--up {
+    background: rgba(0, 126, 19, 0.02);
+    border: 1px solid rgba(0, 126, 19, 0.06);
+  }
+  .org-dep-row--down {
+    background: rgba(241, 90, 34, 0.02);
+    border: 1px solid rgba(241, 90, 34, 0.06);
+  }
+  .org-dep-arrow--up { color: var(--sky-positive); font-size: 12px; font-weight: 800; }
+  .org-dep-arrow--down { color: var(--sky-attention); font-size: 12px; font-weight: 800; }
+  .org-dep-name { font-size: 12px; font-weight: 600; color: var(--sky-grey80); }
+  .org-ql-row {
+    display: flex; align-items: center; gap: var(--sky-sp3);
+    padding: var(--sky-sp2) var(--sky-sp3);
+    border-radius: var(--sky-rad-s);
+    background: rgba(0, 0, 0, 0.01);
+    border: 1px solid rgba(0, 0, 0, 0.015);
+  }
+  .org-ql-label {
+    font-weight: 700; font-size: 12px;
+    color: var(--sky-grey50); min-width: 72px;
+  }
+  .org-ql-value {
+    color: var(--sky-primary);
+    font-size: 12px; font-weight: 500;
+    word-break: break-all;
+  }
+  .org-empty {
+    text-align: center; padding: var(--sky-sp8);
+    color: var(--sky-grey40); font-size: 14px; font-weight: 600;
+  }
+
+  /* ── Add/Edit team modal: removed — team management goes through Django Admin ── */
+
+/* ── Mockup polish: Department section ── */
+.sky-toggle__btn {
+  outline: none !important;
+  border: none;
+}
+
+.sky-toggle__btn:focus,
+.sky-toggle__btn:focus-visible,
+.org-dept__header:focus,
+.org-dept__header:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.org-dept {
+  border-radius: 18px;
+  border: 1px solid rgba(0, 15, 245, 0.04);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.org-dept--expanded {
+  border: 1px solid rgba(0, 15, 245, 0.18);
+  box-shadow: 0 18px 45px rgba(0, 15, 245, 0.04);
+}
+
+.org-dept__header {
+  padding: 22px 28px;
+}
+
+.org-dept__chev {
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.org-dept__name {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.org-dept__spec {
+  font-size: 13px;
+  color: var(--sky-grey40);
+}
+
+.org-dept__body {
+  padding: 0 28px 28px 28px;
+}
+
+.org-dept__leader {
+  border-radius: 16px;
+  padding: 18px 22px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(0, 0, 0, 0.035);
+}
+
+.org-dept__leader-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+.org-dept__leader-badge {
+  background: rgba(0, 15, 245, 0.08);
+  color: var(--sky-primary);
+  font-size: 10px;
+}
+
+.org-team-row {
+  border-radius: 14px;
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(0, 0, 0, 0.035);
+}
+
+.org-team-row:hover {
+  transform: translateY(-1px);
+  border-color: rgba(0, 15, 245, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.org-team-row__name {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.org-team-row__bottom {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.org-status-badge {
+  background: rgba(0, 126, 19, 0.08);
+  color: var(--sky-positive);
+  border: 1px solid rgba(0, 126, 19, 0.14);
+}
+
+.org-type-badge {
+  font-size: 10px;
+  padding: 4px 9px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="org-container">
+
+  {# ── Page header ── #}
+  <div class="org-header">
+    <h1>Organisation</h1>
+    <p>Departments, team types, and dependency relationships across Sky Engineering</p>
+  </div>
+
+  {# ── Stats row ── #}
+  <div class="org-stats">
+    <div class="sky-stat sky-stat--with-icon">
+      <div class="sky-stat__icon" style="background: rgba(0, 15, 245, 0.05); color: var(--sky-primary);">
+        <span class="sky-icon" data-icon="Building" data-size="20"></span>
+      </div>
+      <div>
+        <div class="sky-stat__value">{{ stats.departments }}</div>
+        <div class="sky-stat__label">Departments</div>
+      </div>
+    </div>
+    <div class="sky-stat sky-stat--with-icon">
+      <div class="sky-stat__icon" style="background: rgba(102, 38, 161, 0.05); color: var(--sky-entertainment);">
+        <span class="sky-icon" data-icon="Users" data-size="20"></span>
+      </div>
+      <div>
+        <div class="sky-stat__value">{{ stats.teams }}</div>
+        <div class="sky-stat__label">Teams</div>
+      </div>
+    </div>
+    <div class="sky-stat sky-stat--with-icon">
+      <div class="sky-stat__icon" style="background: rgba(0, 126, 19, 0.05); color: var(--sky-positive);">
+        <span class="sky-icon" data-icon="Layers" data-size="20"></span>
+      </div>
+      <div>
+        <div class="sky-stat__value">{{ stats.engineers }}</div>
+        <div class="sky-stat__label">Engineers</div>
+      </div>
+    </div>
+    <div class="sky-stat sky-stat--with-icon">
+      <div class="sky-stat__icon" style="background: rgba(241, 90, 34, 0.05); color: var(--sky-attention);">
+        <span class="sky-icon" data-icon="Network" data-size="20"></span>
+      </div>
+      <div>
+        <div class="sky-stat__value">{{ stats.dependencies }}</div>
+        <div class="sky-stat__label">Dependencies</div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Toolbar: tabs + search + dept filter ── #}
+  <div class="org-toolbar">
+    <div class="sky-toggle">
+      <button class="sky-toggle__btn sky-toggle__btn--active" data-tab="departments">
+        <span class="sky-icon" data-icon="Building" data-size="14"></span> Departments
+      </button>
+      <button class="sky-toggle__btn" data-tab="dependencies">
+        <span class="sky-icon" data-icon="Network" data-size="14"></span> Dependency Graph
+      </button>
+      <button class="sky-toggle__btn" data-tab="types">
+        <span class="sky-icon" data-icon="Layers" data-size="14"></span> Team Types
+      </button>
+    </div>
+
+    <div class="sky-field">
+      <div class="sky-field__wrap">
+        <span class="sky-field__icon"><span class="sky-icon" data-icon="Search" data-size="16"></span></span>
+        <input type="text" class="sky-field__input sky-field__input--with-icon"
+               id="org-search-input" placeholder="Search departments, teams, leaders...">
+      </div>
+    </div>
+
+    <select class="org-toolbar__filter" id="org-dept-filter">
+      <option value="">All Departments</option>
+      {% for dept in departments %}
+        <option value="{{ dept.department_id }}">{{ dept.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  {# ═══ TAB 1: Departments (accordion) ═══ #}
+  <div class="org-tab-panel" id="tab-departments">
+    <div class="org-dept-list">
+      {% for dept in departments %}
+        <div class="org-dept" data-dept-id="{{ dept.department_id }}">
+          <button class="org-dept__header" data-dept-toggle="{{ dept.department_id }}">
+            <div class="org-dept__chev">
+              <span class="sky-icon" data-icon="ChevRight" data-size="16"></span>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div class="org-dept__name">{{ dept.name }}</div>
+              <div class="org-dept__spec">{{ dept.specialization }}</div>
+            </div>
+            <div class="org-dept__meta">
+              <span class="org-dept__meta-teams">{{ dept.teams|length }} teams</span>
+              <span class="org-dept__meta-eng">{{ dept.engineer_count }} eng.</span>
+            </div>
+          </button>
+
+          <div class="org-dept__body" style="display: none;">
+            {% if dept.leader %}
+              <div class="org-dept__leader">
+                <div class="org-dept__leader-avatar">{{ dept.leader.initials }}</div>
+                <div class="org-dept__leader-info">
+                  <div class="org-dept__leader-name-row">
+                    <span class="org-dept__leader-name">{{ dept.leader.full_name }}</span>
+                    <span class="org-dept__leader-badge">Dept. Leader</span>
+                  </div>
+                  <div class="org-dept__leader-pos">{{ dept.leader.position }}</div>
+                </div>
+                <a href="{% url 'messages' %}" class="org-dept__leader-email">
+                  <span class="sky-icon" data-icon="Mail" data-size="12"></span> {{ dept.leader.email }}
+                </a>
+              </div>
+            {% endif %}
+
+            <div class="org-dept__teams-list">
+              {% for team in dept.teams %}
+                <div class="org-team-row" data-team-id="{{ team.team_id }}">
+                  <div class="org-team-row__top">
+                    <span class="org-team-row__name">{{ team.name }}</span>
+                    {% if team.type_name %}
+                      <span class="org-type-badge">{{ team.type_name }}</span>
+                    {% endif %}
+                    <span class="org-status-badge">{{ team.status_display }}</span>
+                    <span class="org-team-row__eng">{{ team.member_count }} eng.</span>
+                    <span class="sky-icon" data-icon="ArrowUpRight" data-size="12"></span>
+                  </div>
+                  <div class="org-team-row__bottom">
+                    <span>
+                      <span class="org-team-row__mgr-label">Mgr:</span> {{ team.manager_name }}
+                    </span>
+                    <span class="org-team-row__sep"></span>
+                    <span>{{ team.agile_practice }}</span>
+                    <span class="org-team-row__sep"></span>
+                    <span>{{ team.repo_count }} repo{{ team.repo_count|pluralize }}</span>
+                    {% if team.main_repo %}
+                      <span class="org-team-row__sep"></span>
+                      <span class="org-team-row__repo">{{ team.main_repo }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="org-empty">No departments found</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ═══ TAB 2: Dependency Graph ═══ #}
+  <div class="org-tab-panel" id="tab-dependencies" style="display: none;">
+    <div class="org-graph-wrap" id="org-graph">
+      <div class="org-graph-controls">
+        <button class="org-graph-btn" id="graph-zoom-in">+</button>
+        <div class="org-graph-zoom" id="graph-zoom-label">100%</div>
+        <button class="org-graph-btn" id="graph-zoom-out">&minus;</button>
+        <button class="org-graph-btn" id="graph-reset" style="margin-top: 2px;">
+          <span class="sky-icon" data-icon="Maximize" data-size="14"></span>
+        </button>
+      </div>
+      <div class="org-graph-legend">
+        <div class="org-graph-legend__title">Team Types</div>
+        <div class="org-graph-legend__items">
+          <span class="org-graph-legend__item"><span class="org-graph-legend__dot" style="background: var(--sky-primary);"></span>Platform</span>
+          <span class="org-graph-legend__item"><span class="org-graph-legend__dot" style="background: var(--sky-entertainment);"></span>Product</span>
+          <span class="org-graph-legend__item"><span class="org-graph-legend__dot" style="background: var(--sky-attention);"></span>Infrastructure</span>
+          <span class="org-graph-legend__item"><span class="org-graph-legend__dot" style="background: var(--sky-store);"></span>Data</span>
+          <span class="org-graph-legend__item"><span class="org-graph-legend__dot" style="background: var(--sky-positive);"></span>Security</span>
+        </div>
+        <div class="org-graph-legend__note">A ▸ B = A depends on B</div>
+      </div>
+      <div class="org-graph-hint">Use +/− to zoom · Hover to highlight dependencies · Click for details</div>
+      <svg width="100%" height="100%" id="depGraph" style="cursor: grab;"></svg>
+    </div>
+  </div>
+
+{# ═══ TAB 3: Team Types ═══ #}
+<div class="org-tab-panel" id="tab-types" style="display: none;">
+  <div class="org-types">
+
+    {% for dept in departments %}
+      {% if dept.teams %}
+        <div class="org-type-card" data-dept-id="{{ dept.department_id }}">
+          <div class="org-type-card__header">
+            <div class="org-type-card__dot"
+                 style="
+                   {% if dept.name == 'Platform' %}background: var(--sky-primary);
+                   {% elif dept.name == 'Product' %}background: var(--sky-entertainment);
+                   {% elif dept.name == 'Data' %}background: var(--sky-store);
+                   {% elif dept.name == 'Infrastructure' %}background: var(--sky-attention);
+                   {% else %}background: var(--sky-primary);
+                   {% endif %}
+                 ">
+            </div>
+
+            <h3 class="org-type-card__name">{{ dept.name }}</h3>
+
+            <span class="org-type-card__count">
+              {{ dept.teams|length }} team{{ dept.teams|length|pluralize }}
+            </span>
+          </div>
+
+          <div class="org-type-card__body">
+            <div class="org-type-grid">
+              {% for team in dept.teams %}
+                <div class="org-type-team" data-team-id="{{ team.team_id }}">
+                  <div class="org-type-team__top">
+                    <span class="org-type-team__name">{{ team.name }}</span>
+                    <span class="org-status-badge">{{ team.status_display }}</span>
+                  </div>
+
+                  <div class="org-type-team__bottom">
+                    <span>{{ team.department_name }}</span>
+                    <span class="org-type-team__sep"></span>
+                    <span>{{ team.member_count }} eng.</span>
+                  </div>
+
+                  {% if team.main_repo %}
+                    <div class="org-type-team__repo">{{ team.main_repo }}</div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+        </div>
+      {% endif %}
+    {% endfor %}
+
+  </div>
+</div>
+
+</div>
+{# ═══ Team detail slide-in panel (hidden by default) ═══ #}
+<div class="sky-slide-panel" id="org-detail-overlay">
+  <div class="sky-slide-panel__backdrop" id="org-detail-backdrop"></div>
+  <div class="sky-slide-panel__content">
+    <div class="sky-slide-panel__header">
+      <div>
+        <div style="display: flex; align-items: center; gap: var(--sky-sp2); margin-bottom: var(--sky-sp1);">
+          <h2 class="sky-slide-panel__title" id="detail-title"></h2>
+          <span id="detail-type-badge"></span>
+        </div>
+        <p class="sky-slide-panel__subtitle" id="detail-subtitle"></p>
+      </div>
+      <button class="sky-slide-panel__close" id="detail-close">
+        <span class="sky-icon" data-icon="X" data-size="18"></span>
+      </button>
+    </div>
+    <div class="sky-slide-panel__body" id="detail-body">
+      {# Populated by JS from TEAMS_JSON #}
+    </div>
+  </div>
+</div>
+
+{{ teams_json|json_script:"org-teams-data" }}
+{{ deps_json|json_script:"org-deps-data" }}
+
+<script src="{% static 'js/organisation.js' %}"></script>
+{% endblock %}
