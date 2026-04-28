@@ -130,171 +130,249 @@
   }
 
   // ────────────────────────────────────────────────────────────────
-  //  Detail panel (TM-10, TM-11, TM-12)
+  //  Detail panel renderers
   // ────────────────────────────────────────────────────────────────
-  function renderMembersList(members) {
-    if (!members.length) {
-      return '<p class="panel-section__empty">No members assigned.</p>';
-    }
-    return '<ul class="panel-list">' + members.map(function (m) {
-      return (
-        '<li>' +
-          '<span>' + esc(m.name) + ' <span style="color: var(--sky-grey40);">— ' + esc(m.position) + '</span></span>' +
-          (m.is_manager ? '<span class="skill-pill skill-pill--manager">Manager</span>' : '') +
-        '</li>'
-      );
-    }).join('') + '</ul>';
+  function statusModifier(status) {
+    if (status === 'active') return 'positive';
+    if (status === 'restructuring') return 'attention';
+    return 'grey';
   }
 
-  function renderReposList(repos) {
-    if (!repos.length) {
-      return '<p class="panel-section__empty">No repositories.</p>';
-    }
-    return '<ul class="panel-list">' + repos.map(function (r) {
-      var name = r.url
-        ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.name) + '</a>'
-        : esc(r.name);
-      return (
-        '<li>' +
-          '<span>' + name + (r.is_main ? ' <span class="type-badge">Main</span>' : '') + '</span>' +
-        '</li>'
-      );
-    }).join('') + '</ul>';
-  }
-
-  function renderDepList(deps) {
-    if (!deps.length) {
-      return '<p class="panel-section__empty">None.</p>';
-    }
-    return '<ul class="panel-list">' + deps.map(function (d) {
-      var typeBadge = d.type
-        ? ' <span class="type-badge">' + esc(d.type) + '</span>' : '';
-      var depType = d.dep_type
-        ? '<span style="color: var(--sky-grey40); font-size: 11px;">' + esc(d.dep_type) + '</span>' : '';
-      return (
-        '<li>' +
-          '<span>' + esc(d.name) + typeBadge + '</span>' +
-          depType +
-        '</li>'
-      );
-    }).join('') + '</ul>';
-  }
-
-  function renderQuickLinks(team) {
-    var items = [];
-    if (team.standup_link) {
-      items.push(
-        '<li><a href="' + esc(team.standup_link) + '" target="_blank" rel="noopener">Join standup' +
-        (team.standup_time ? ' (' + esc(team.standup_time) + ')' : '') + '</a></li>'
-      );
-    }
-    if (team.jira_link) {
-      items.push(
-        '<li><a href="' + esc(team.jira_link) + '" target="_blank" rel="noopener">Jira board' +
-        (team.jira_project ? ' — ' + esc(team.jira_project) : '') + '</a></li>'
-      );
-    }
-    if (team.comm_channel) {
-      items.push('<li><span>Channel: ' + esc(team.comm_channel) + '</span></li>');
-    }
-    if (team.team_wiki) {
-      items.push(
-        '<li><a href="' + esc(team.team_wiki) + '" target="_blank" rel="noopener">Team wiki</a></li>'
-      );
-    }
-    if (!items.length) {
-      return '<p class="panel-section__empty">No quick links available.</p>';
-    }
-    return '<ul class="panel-list">' + items.join('') + '</ul>';
-  }
-
-  function renderDetails(team) {
-    var concurrent = (team.concurrent_projs === null || team.concurrent_projs === undefined)
-      ? '—' : esc(String(team.concurrent_projs));
+  function renderActionsRow(team) {
+    var mod = statusModifier(team.status);
     return (
-      '<dl class="panel-meta">' +
-        '<dt>Department</dt><dd>' + esc(team.department_name) + '</dd>' +
-        (team.type_name ? '<dt>Type</dt><dd>' + esc(team.type_name) + '</dd>' : '') +
-        (team.focus ? '<dt>Focus</dt><dd>' + esc(team.focus) + '</dd>' : '') +
-        (team.workstream ? '<dt>Workstream</dt><dd>' + esc(team.workstream) + '</dd>' : '') +
-        (team.agile_practice ? '<dt>Agile</dt><dd>' + esc(team.agile_practice) + '</dd>' : '') +
-        '<dt>Concurrent</dt><dd>' + concurrent + '</dd>' +
-      '</dl>'
+      '<div class="tm-detail__actions">' +
+        '<span class="tm-detail-status tm-detail-status--' + mod + '">● ' +
+          esc(team.status_display || team.status) +
+        '</span>' +
+        '<button id="action-email" class="sky-btn sky-btn--primary" type="button">' +
+          '<span class="sky-icon" data-icon="Mail" data-size="14"></span> Email Team' +
+        '</button>' +
+        '<button id="action-schedule" class="sky-btn sky-btn--primary" type="button">' +
+          '<span class="sky-icon" data-icon="Calendar" data-size="14"></span> Schedule Meeting' +
+        '</button>' +
+      '</div>'
     );
   }
 
-  function renderDates(team) {
+  function renderInfoPill(label, value) {
     return (
-      '<dl class="panel-meta">' +
-        '<dt>Created</dt><dd>' + esc(team.created_at) + '</dd>' +
-        '<dt>Updated</dt><dd>' + esc(team.updated_at) + '</dd>' +
-        (team.disbanded_at ? '<dt>Disbanded</dt><dd>' + esc(team.disbanded_at) + '</dd>' : '') +
-      '</dl>'
+      '<div class="tm-info-pill">' +
+        '<div class="tm-info-pill__label">' + esc(label) + '</div>' +
+        '<div class="tm-info-pill__value">' + esc(value || 'Not specified') + '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderMissionSection(team) {
+    return (
+      '<div class="tm-detail__section">' +
+        '<h3 class="tm-detail__section-title">Mission &amp; Responsibilities</h3>' +
+        renderInfoPill('Purpose', team.description || 'No team description recorded.') +
+        renderInfoPill('Responsibilities', team.responsibilities || 'Responsibilities not yet recorded.') +
+      '</div>'
+    );
+  }
+
+  function renderTeamInfoSection(team) {
+    return (
+      '<div class="tm-detail__section">' +
+        '<h3 class="tm-detail__section-title">Team Information</h3>' +
+        '<div class="tm-detail__grid">' +
+          renderInfoPill('Manager', team.manager_name) +
+          renderInfoPill('Status', team.status_display || team.status) +
+          renderInfoPill('Agile Practice', team.agile_practice) +
+          renderInfoPill('Contact Channel', team.comm_channel) +
+          renderInfoPill('Focus Area', team.focus) +
+          renderInfoPill('Workstream', team.workstream) +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderSkillsSection(team) {
+    if (!team.skills.length) {
+      return (
+        '<div class="tm-detail__section">' +
+          '<h3 class="tm-detail__section-title">Skills</h3>' +
+          '<p class="tm-empty">No skills tagged.</p>' +
+        '</div>'
+      );
+    }
+    return (
+      '<div class="tm-detail__section">' +
+        '<h3 class="tm-detail__section-title">Skills</h3>' +
+        '<div style="display: flex; flex-wrap: wrap; gap: var(--sky-sp1);">' +
+          team.skills.map(function (s) {
+            return '<span class="skill-pill">' + esc(s) + '</span>';
+          }).join('') +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderMembersSection(team) {
+    if (!team.members.length) {
+      return (
+        '<div class="tm-detail__section">' +
+          '<h3 class="tm-detail__section-title">Team Members</h3>' +
+          '<p class="tm-empty">No members assigned.</p>' +
+        '</div>'
+      );
+    }
+    return (
+      '<div class="tm-detail__section">' +
+        '<h3 class="tm-detail__section-title">Team Members (' + team.member_count + ')</h3>' +
+        team.members.map(function (m) {
+          var avatarMod = m.is_manager ? ' tm-member-avatar--manager' : '';
+          var managerTag = m.is_manager
+            ? ' <span class="skill-pill skill-pill--manager">Manager</span>' : '';
+          return (
+            '<div class="tm-member-row">' +
+              '<div class="tm-member-avatar' + avatarMod + '">' + esc(m.initials || '?') + '</div>' +
+              '<div style="flex: 1;">' +
+                '<span class="tm-member-name">' + esc(m.name) + '</span>' +
+                '<span class="tm-member-pos">' + esc(m.position) + '</span>' +
+                managerTag +
+                (m.email ? '<div class="tm-member-email">' + esc(m.email) + '</div>' : '') +
+              '</div>' +
+            '</div>'
+          );
+        }).join('') +
+      '</div>'
+    );
+  }
+
+  function renderReposSection(team) {
+    if (!team.repos.length) {
+      return (
+        '<div class="tm-detail__section">' +
+          '<h3 class="tm-detail__section-title">Code Repositories</h3>' +
+          '<p class="tm-empty">No repositories recorded.</p>' +
+        '</div>'
+      );
+    }
+    return (
+      '<div class="tm-detail__section">' +
+        '<h3 class="tm-detail__section-title">Code Repositories (' + team.repo_count + ')</h3>' +
+        team.repos.map(function (r) {
+          var label = r.url
+            ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.url) + '</a>'
+            : esc(r.name);
+          var mainBadge = r.is_main ? '<span class="tm-repo-main">Main</span>' : '';
+          return (
+            '<div class="tm-repo-row">' +
+              '<span class="tm-repo-url">' + label + '</span>' +
+              mainBadge +
+            '</div>'
+          );
+        }).join('') +
+      '</div>'
+    );
+  }
+
+  function renderDependenciesSection(team) {
+    var hasAny = team.upstream.length || team.downstream.length;
+    if (!hasAny) {
+      return (
+        '<div class="tm-detail__section">' +
+          '<h3 class="tm-detail__section-title">Dependencies</h3>' +
+          '<p class="tm-empty">No dependencies recorded.</p>' +
+        '</div>'
+      );
+    }
+    var rows = '';
+    rows += team.upstream.map(function (d) {
+      return (
+        '<div class="tm-dep-row tm-dep-row--up">' +
+          '<span class="tm-dep-arrow--up">→</span>' +
+          '<span class="tm-dep-name">Depends on ' + esc(d.name) + '</span>' +
+          (d.dep_type ? '<span class="tm-dep-meta">' + esc(d.dep_type) + '</span>' : '') +
+        '</div>'
+      );
+    }).join('');
+    rows += team.downstream.map(function (d) {
+      return (
+        '<div class="tm-dep-row tm-dep-row--down">' +
+          '<span class="tm-dep-arrow--down">←</span>' +
+          '<span class="tm-dep-name">' + esc(d.name) + ' depends on this team</span>' +
+          (d.dep_type ? '<span class="tm-dep-meta">' + esc(d.dep_type) + '</span>' : '') +
+        '</div>'
+      );
+    }).join('');
+    return (
+      '<div class="tm-detail__section">' +
+        '<h3 class="tm-detail__section-title">Dependencies</h3>' +
+        rows +
+      '</div>'
+    );
+  }
+
+  function renderQuickLinksSection(team) {
+    var rows = [];
+    if (team.standup_link) {
+      rows.push(
+        '<div class="tm-ql-row">' +
+          '<span class="tm-ql-label">Standup</span>' +
+          '<span class="tm-ql-value"><a href="' + esc(team.standup_link) +
+            '" target="_blank" rel="noopener">' + esc(team.standup_link) + '</a>' +
+            (team.standup_time ? ' (' + esc(team.standup_time) + ')' : '') +
+          '</span>' +
+        '</div>'
+      );
+    }
+    if (team.jira_link) {
+      rows.push(
+        '<div class="tm-ql-row">' +
+          '<span class="tm-ql-label">Jira</span>' +
+          '<span class="tm-ql-value"><a href="' + esc(team.jira_link) +
+            '" target="_blank" rel="noopener">' +
+            esc(team.jira_project || team.jira_link) + '</a></span>' +
+        '</div>'
+      );
+    }
+    if (team.team_wiki) {
+      rows.push(
+        '<div class="tm-ql-row">' +
+          '<span class="tm-ql-label">Wiki</span>' +
+          '<span class="tm-ql-value"><a href="' + esc(team.team_wiki) +
+            '" target="_blank" rel="noopener">' + esc(team.team_wiki) + '</a></span>' +
+        '</div>'
+      );
+    }
+    if (!rows.length) return '';
+    return (
+      '<div class="tm-detail__section">' +
+        '<h3 class="tm-detail__section-title">Quick Links</h3>' +
+        rows.join('') +
+      '</div>'
+    );
+  }
+
+  function renderDatesSection(team) {
+    return (
+      '<div class="tm-detail__section">' +
+        '<h3 class="tm-detail__section-title">Dates</h3>' +
+        '<div class="tm-detail__grid">' +
+          renderInfoPill('Created', team.created_at || '—') +
+          renderInfoPill('Updated', team.updated_at || '—') +
+          (team.disbanded_at ? renderInfoPill('Disbanded', team.disbanded_at) : '') +
+        '</div>' +
+      '</div>'
     );
   }
 
   function renderPanelBody(team) {
     return (
-      '<section class="panel-section">' +
-        '<h3 class="panel-section__title">Mission</h3>' +
-        (team.description
-          ? '<p class="panel-section__text">' + esc(team.description) + '</p>'
-          : '<p class="panel-section__empty">No description.</p>') +
-      '</section>' +
-
-      '<section class="panel-section">' +
-        '<h3 class="panel-section__title">Responsibilities</h3>' +
-        (team.responsibilities
-          ? '<p class="panel-section__text">' + esc(team.responsibilities) + '</p>'
-          : '<p class="panel-section__empty">No responsibilities recorded.</p>') +
-      '</section>' +
-
-      '<section class="panel-section">' +
-        '<h3 class="panel-section__title">Team Details</h3>' +
-        renderDetails(team) +
-      '</section>' +
-
-      '<section class="panel-section">' +
-        '<h3 class="panel-section__title">Members (' + team.member_count + ')</h3>' +
-        renderMembersList(team.members) +
-      '</section>' +
-
-      '<section class="panel-section">' +
-        '<h3 class="panel-section__title">Skills</h3>' +
-        (team.skills.length
-          ? '<div class="team-card__skills">' + team.skills.map(function (s) {
-              return '<span class="skill-pill">' + esc(s) + '</span>';
-            }).join('') + '</div>'
-          : '<p class="panel-section__empty">No skills tagged.</p>') +
-      '</section>' +
-
-      '<section class="panel-section">' +
-        '<h3 class="panel-section__title">Repositories (' + team.repo_count + ')</h3>' +
-        renderReposList(team.repos) +
-      '</section>' +
-
-      '<section class="panel-section">' +
-        '<h3 class="panel-section__title">Dependencies</h3>' +
-        '<p class="panel-deps__heading">Upstream (' + team.upstream.length + ')</p>' +
-        renderDepList(team.upstream) +
-        '<p class="panel-deps__heading">Downstream (' + team.downstream.length + ')</p>' +
-        renderDepList(team.downstream) +
-      '</section>' +
-
-      '<section class="panel-section">' +
-        '<h3 class="panel-section__title">Quick Links</h3>' +
-        renderQuickLinks(team) +
-      '</section>' +
-
-      '<section class="panel-section">' +
-        '<h3 class="panel-section__title">Dates</h3>' +
-        renderDates(team) +
-      '</section>' +
-
-      '<div class="panel-actions">' +
-        '<button id="action-email" class="sky-btn sky-btn--primary">Email Team</button>' +
-        '<button id="action-schedule" class="sky-btn sky-btn--ghost">Schedule Meeting</button>' +
-      '</div>'
+      renderActionsRow(team) +
+      renderMissionSection(team) +
+      renderTeamInfoSection(team) +
+      renderSkillsSection(team) +
+      renderMembersSection(team) +
+      renderReposSection(team) +
+      renderDependenciesSection(team) +
+      renderQuickLinksSection(team) +
+      renderDatesSection(team)
     );
   }
 
@@ -304,13 +382,19 @@
 
     document.getElementById('panel-team-name').textContent = team.team_name;
     document.getElementById('panel-subtitle').textContent =
-      team.department_name + ' · ' + team.manager_name;
+      team.department_name + ' • ' + team.member_count + ' engineer' +
+      (team.member_count === 1 ? '' : 's');
+
+    var typeBadge = document.getElementById('panel-type-badge');
+    typeBadge.innerHTML = team.type_name
+      ? '<span class="tm-type-badge">' + esc(team.type_name) + '</span>'
+      : '';
 
     var body = document.getElementById('panel-body');
     body.innerHTML = renderPanelBody(team);
 
-    // Re-render any newly added [data-icon] spans inside the panel via the
-    // SKY_ICONS registry (loaded by base.html).
+    // Re-hydrate any [data-icon] spans inside the freshly injected markup
+    // via the SKY_ICONS registry (loaded by base.html).
     if (typeof SKY_ICONS !== 'undefined') {
       body.querySelectorAll('.sky-icon[data-icon]').forEach(function (el) {
         var name = el.dataset.icon;

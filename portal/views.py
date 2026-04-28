@@ -274,14 +274,20 @@ def _serialize_team(t):
     manager_emp_ids = {m.emp_id for m in managers}
     manager_names = [str(m.emp.user) for m in managers]
 
-    members = [
-        {
-            'name': str(e.user),
+    members = []
+    for e in t.employees.all():
+        full_name = f'{e.user.first_name} {e.user.last_name}'.strip()
+        display_name = full_name or e.user.username
+        initials = ''.join(p[0] for p in full_name.split()[:2]).upper() \
+            or e.user.username[:2].upper()
+        members.append({
+            'name': display_name,
             'position': e.position or 'Engineer',
             'is_manager': e.empId in manager_emp_ids,
-        }
-        for e in t.employees.all()
-    ]
+            'initials': initials,
+            'email': e.user.email or '',
+            'username': e.user.username,
+        })
     repos = [
         {
             'name': p.repoName,
@@ -317,6 +323,7 @@ def _serialize_team(t):
         'type_id': t.type_id or 0,
         'type_name': t.type.typeName if t.type else '',
         'status': t.teamStatus,
+        'status_display': t.teamStatus.replace('_', ' ').title() if t.teamStatus else '',
         'manager_name': manager_names[0] if manager_names else 'Unassigned',
         'manager_names': manager_names,
         'description': t.descrip or '',
