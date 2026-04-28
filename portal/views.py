@@ -1,12 +1,14 @@
 """
 OpenSky Engineering Portal views.
 """
+import datetime
 import json
 
 from django.contrib import messages as dj_messages
-from django.contrib.auth import login
+from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -17,6 +19,7 @@ from .forms import MeetingForm, RegisterForm
 from .models import (
     Action,
     Department,
+    DepartmentLeader,
     Employee,
     Meeting,
     MeetingInvitation,
@@ -25,6 +28,7 @@ from .models import (
     MessageRecipient,
     Notification,
     NotificationRecipient,
+    Project,
     Skill,
     Team,
     TeamDependency,
@@ -64,9 +68,577 @@ def register_view(request):
 # ════════════════════════════════════════════════════════════════════
 # === PAGES ===
 # ════════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════
+# === HOME ===
+# ════════════════════════════════════════════════════════════════════
+#
+# The home dashboard pulls data from many slices (the user's team, recent
+# meetings, messages, audit actions, dependencies). The serialisers below
+# flatten every domain object into the camelCase->snake_case shape the
+# template expects, so the template stays free of attribute gymnastics.
+#
+# Avatar palette: each user gets a stable bg/fg pair derived from their
+# username, so the same person renders the same colour anywhere on the
+# dashboard (member stack, message rows, manager card).
+# ════════════════════════════════════════════════════════════════════
+
+# Eight-stop palette indexed by username hash. Matches the design tokens.
+_AVATAR_PALETTE = [
+    ('rgba(0, 15, 245, .08)', '#0010f5'),    # primary
+    ('rgba(0, 126, 19, .08)', '#007e13'),    # positive
+    ('rgba(102, 38, 161, .08)', '#6626a1'),  # entertainment
+    ('rgba(241, 90, 34, .08)', '#f15a22'),   # attention
+    ('rgba(0, 174, 191, .08)', '#00aebf'),   # cyan
+    ('rgba(214, 0, 122, .08)', '#d6007a'),   # magenta
+    ('rgba(244, 154, 0, .08)', '#f49a00'),   # amber
+    ('rgba(0, 96, 134, .08)', '#006086'),    # deep blue
+]
+
+# Status presentation maps. Three-tone scheme matches Teams page.
+_STATUS_COLOUR = {
+    'active': '#007e13',
+    'restructuring': '#f15a22',
+    'disbanded': '#9aa0a6',
+}
+_STATUS_LABEL = {
+    'active': 'Active',
+    'restructuring': 'Restructuring',
+    'disbanded': 'Disbanded',
+}
+
+# Type-name -> brand colour. Used for the team type badge in the hero card.
+_TYPE_COLOUR = {
+    'Platform': '#0010f5',
+    'Product': '#6626a1',
+    'Infrastructure': '#f15a22',
+    'Data': '#0a7cff',
+    'Security': '#007e13',
+    'Engineering': '#0010f5',
+    'Design': '#6626a1',
+    'Operations': '#f15a22',
+}
+
+# Conferencing platform -> coloured side-bar in the meetings widget.
+_PLATFORM_COLOUR = {
+    'teams': '#6264a7',
+    'zoom': '#2d8cff',
+    'meet': '#34a853',
+    'in-person': '#5f6368',
+}
+
+# Org-wide activity event presentation. Each event kind maps to (icon, colour).
+_ORG_EVENT_PRESENTATION = {
+    'team_status':     ('AlertTri', '#f15a22'),
+    'team_created':    ('Plus',     '#007e13'),
+    'team_disbanded':  ('Trash',    '#9aa0a6'),
+    'employee_joined': ('User',     '#6626a1'),
+    'manager_assigned':('Star',     '#0010f5'),
+    'leader_assigned': ('Award',    '#0010f5'),
+    'dept_created':    ('Building', '#007e13'),
+}
+
+_DEFAULT_WIDGET_SIZES = {
+    'depAlerts': 'S',
+    'meetings':  'M',
+    'messages':  'L',
+    'activity':  'M',
+    'repos':     'S',
+}
+
+
+def _avatar_palette_for(username):
+    """Stable per-user (bg, fg) tuple — same username always same colours."""
+    idx = sum(ord(c) for c in (username or '?')) % len(_AVATAR_PALETTE)
+    return _AVATAR_PALETTE[idx]
+
+
+def _initials_for(first, last, fallback):
+    f = (first or '').strip()
+    l = (last or '').strip()
+    if f and l:
+        return (f[0] + l[0]).upper()
+    if f:
+        return f[:2].upper()
+    return (fallback or '??')[:2].upper()
+
+
+def _greeting(now=None):
+    """'Good morning' / 'Good afternoon' / 'Good evening' by local time."""
+    now = now or timezone.localtime()
+    h = now.hour
+    if h < 12:
+        return 'Good morning'
+    if h < 18:
+        return 'Good afternoon'
+    return 'Good evening'
+
+
+def _serialize_user_for_home(user, position):
+    """User context expected by home.html — flattens model + Employee.position."""
+    bg, fg = _avatar_palette_for(user.username)
+    return {
+        'username':      user.username,
+        'f_name':        user.first_name,
+        'l_name':        user.last_name,
+        'email':         user.email,
+        'about_me':      user.about_me or '',
+        'date_of_birth': user.dob,
+        'position':      position or 'Engineer',
+        'avatar_url':    user.avatar.url if user.avatar else '',
+        'avatar_bg':     bg,
+        'avatar_color':  fg,
+        'initials':      _initials_for(user.first_name, user.last_name, user.username),
+    }
+
+
+def _serialize_member_for_home(emp, manager_emp_ids):
+    """One row in the team-members avatar stack OR the My Team panel."""
+    u = emp.user
+    bg, fg = _avatar_palette_for(u.username)
+    return {
+        'f_name':       u.first_name,
+        'l_name':       u.last_name,
+        'email':        u.email,
+        'position':     emp.position or 'Engineer',
+        'is_manager':   emp.empId in manager_emp_ids,
+        'avatar_bg':    bg,
+        'avatar_color': fg,
+        'avatar_url':   u.avatar.url if u.avatar else '',
+    }
+
+
+def _serialize_team_for_home(team):
+    return {
+        'team_name':        team.teamName,
+        'descrip':          team.descrip or '',
+        'focus':            team.focusArea or 'Not specified',
+        'agile_practice':   team.agilePractice or 'Not specified',
+        'concurrent_projs': team.concurrentProjs or 0,
+    }
+
+
+def _format_time_ago(when, now):
+    """'2m ago' / '3h ago' / '5d ago' / 'just now'."""
+    if when is None:
+        return ''
+    delta = now - when
+    secs = delta.total_seconds()
+    if secs < 60:
+        return 'just now'
+    if secs < 3600:
+        return f'{int(secs // 60)}m ago'
+    if secs < 86400:
+        return f'{int(secs // 3600)}h ago'
+    return f'{int(secs // 86400)}d ago'
+
+
+def _format_meeting_for_widget(meeting, now):
+    """One meeting row: when, duration, conferencing platform, colour bar."""
+    started = meeting.startedAt
+    is_today = started.date() == now.date()
+    duration_minutes = int((meeting.endedAt - started).total_seconds() // 60) if meeting.endedAt else 0
+    duration = f'{duration_minutes}min' if duration_minutes else '—'
+    platform = (meeting.platform or 'in-person').lower()
+    return {
+        'title':           (meeting.message or 'Untitled').splitlines()[0],
+        'duration':        duration,
+        'platform':        platform.title(),
+        'platform_color':  _PLATFORM_COLOUR.get(platform, '#5f6368'),
+        'time_display':    started.strftime('%H:%M'),
+        'day_short':       started.strftime('%a'),
+        'is_today':        is_today,
+    }
+
+
+def _build_org_activity(now, limit=20):
+    """
+    Synthesise an org-wide activity feed from current state of the
+    organisation. Pulls seven event kinds and merges them into a single
+    list sorted by timestamp descending, then trims to `limit`.
+
+    This is a *snapshot* feed, not a true audit log: removals (e.g. a
+    manager being replaced) are invisible because the schema doesn't
+    soft-delete those rows. Future work: hook Django signals to write
+    Action records on save/delete and read from there instead.
+    """
+    events = []
+
+    # 1. Team status changes (only non-active teams, timestamped at updatedAt).
+    for t in Team.objects.exclude(teamStatus='active').only(
+        'teamId', 'teamName', 'teamStatus', 'updatedAt',
+    ):
+        label = _STATUS_LABEL.get(t.teamStatus, t.teamStatus)
+        events.append({
+            'kind':  'team_status',
+            'when':  t.updatedAt,
+            'text':  f'{t.teamName} is now {label}',
+            'actor': 'Org',
+        })
+
+    # 2. New teams.
+    for t in Team.objects.only('teamName', 'createdAt'):
+        events.append({
+            'kind':  'team_created',
+            'when':  t.createdAt,
+            'text':  f'New team created: {t.teamName}',
+            'actor': 'Org',
+        })
+
+    # 3. Disbanded teams (when disbandedAt set).
+    for t in Team.objects.exclude(disbandedAt__isnull=True).only(
+        'teamName', 'disbandedAt',
+    ):
+        events.append({
+            'kind':  'team_disbanded',
+            'when':  t.disbandedAt,
+            'text':  f'Team disbanded: {t.teamName}',
+            'actor': 'Org',
+        })
+
+    # 4. New employees.
+    for e in Employee.objects.select_related('user', 'teamId').only(
+        'joinedAt', 'position', 'teamId__teamName',
+        'user__first_name', 'user__last_name', 'user__username',
+    ):
+        full = f'{e.user.first_name} {e.user.last_name}'.strip() or e.user.username
+        team_part = f' to {e.teamId.teamName}' if e.teamId else ''
+        events.append({
+            'kind':  'employee_joined',
+            'when':  e.joinedAt,
+            'text':  f'{full} joined as {e.position or "Engineer"}{team_part}',
+            'actor': full,
+        })
+
+    # 5. Team manager assignments.
+    for tm in TeamManager.objects.select_related('emp__user', 'teamId').only(
+        'assignedAt', 'teamId__teamName',
+        'emp__user__first_name', 'emp__user__last_name', 'emp__user__username',
+    ):
+        u = tm.emp.user
+        full = f'{u.first_name} {u.last_name}'.strip() or u.username
+        events.append({
+            'kind':  'manager_assigned',
+            'when':  tm.assignedAt,
+            'text':  f'{full} assigned as manager of {tm.teamId.teamName}',
+            'actor': full,
+        })
+
+    # 6. Department leader assignments.
+    for dl in DepartmentLeader.objects.select_related('emp__user', 'department').only(
+        'assignedAt', 'department__departName',
+        'emp__user__first_name', 'emp__user__last_name', 'emp__user__username',
+    ):
+        u = dl.emp.user
+        full = f'{u.first_name} {u.last_name}'.strip() or u.username
+        events.append({
+            'kind':  'leader_assigned',
+            'when':  dl.assignedAt,
+            'text':  f'{full} now leads {dl.department.departName}',
+            'actor': full,
+        })
+
+    # 7. New departments.
+    for d in Department.objects.only('departName', 'createdAt'):
+        events.append({
+            'kind':  'dept_created',
+            'when':  d.createdAt,
+            'text':  f'New department: {d.departName}',
+            'actor': 'Org',
+        })
+
+    # Sort newest-first and trim. Drop events with no timestamp defensively.
+    events = [e for e in events if e['when'] is not None]
+    events.sort(key=lambda e: e['when'], reverse=True)
+
+    out = []
+    for ev in events[:limit]:
+        icon, colour = _ORG_EVENT_PRESENTATION.get(
+            ev['kind'], ('Activity', '#5f6368')
+        )
+        out.append({
+            'text':      ev['text'],
+            'actor':     ev['actor'],
+            'time':      _format_time_ago(ev['when'], now),
+            'icon_name': icon,
+            'color':     colour,
+        })
+    return out
+
+
 @login_required
 def home(request):
-    return _coming_soon(request, 'home', 'Home')
+    user = request.user
+    now = timezone.localtime()
+
+    # Resolve the user's Employee row + team. The Employee row may not
+    # exist for self-registered users who haven't been assigned yet.
+    emp = (
+        Employee.objects
+        .select_related('teamId__department', 'teamId__type')
+        .filter(user=user)
+        .first()
+    )
+    team = emp.teamId if emp else None
+    department = team.department if team else None
+
+    user_ctx = _serialize_user_for_home(user, emp.position if emp else None)
+
+    # Team-related context — every block below assumes a team exists, so
+    # we early-return a 'no team' rendering if the user has no Employee
+    # row yet (typical for fresh self-registrations).
+    if not team:
+        return render(request, 'home.html', {
+            'active_page':           'home',
+            'greeting':              _greeting(now),
+            'home_user':             user_ctx,
+            'team':                  None,
+            'department':            None,
+            'team_member_count':     0,
+            'team_members_visible':  [],
+            'team_members_extra':    0,
+            'team_type_name':        '',
+            'team_type_color':       '#0010f5',
+            'team_status_label':     '',
+            'team_status_color':     '#9aa0a6',
+            'manager':               None,
+            'repo_count':            0,
+            'dep_count':             0,
+            'dep_alerts':            [],
+            'upcoming_meetings':     [],
+            'recent_messages':       [],
+            'recent_activity':       _build_org_activity(now),
+            'repos':                 [],
+            'widget_sizes':          request.session.get('widget_sizes', _DEFAULT_WIDGET_SIZES),
+        })
+
+    # --- Members + manager ---
+    managers = list(team.managers.select_related('emp__user').all())
+    manager_emp_ids = {m.emp_id for m in managers}
+    members_qs = list(team.employees.select_related('user').all())
+    members = [_serialize_member_for_home(m, manager_emp_ids) for m in members_qs]
+
+    # Show first 5 in the avatar stack on the hero card, with a +N pill
+    # for the overflow.
+    members_visible = members[:5]
+    members_extra = max(0, len(members) - len(members_visible))
+
+    manager_serialised = None
+    if managers:
+        m_emp = managers[0].emp
+        bg, fg = _avatar_palette_for(m_emp.user.username)
+        manager_serialised = {
+            'f_name':       m_emp.user.first_name,
+            'l_name':       m_emp.user.last_name,
+            'email':        m_emp.user.email,
+            'position':     m_emp.position or 'Engineering Manager',
+            'avatar_bg':    bg,
+            'avatar_color': fg,
+            'avatar_url':   m_emp.user.avatar.url if m_emp.user.avatar else '',
+        }
+
+    # --- Repos for the team ---
+    repos_qs = list(Project.objects.filter(team=team).order_by('-isMainProj', 'repoName'))
+    repos_for_template = [
+        {
+            'repo_name':    p.repoName,
+            'repo_url':     p.repoUrl or '',
+            'is_main_proj': p.isMainProj,
+        }
+        for p in repos_qs
+    ]
+
+    # --- Dependency alerts: upstream teams whose status != 'active'.
+    # Semantically: 'something the team depends on is unhealthy'.
+    dep_links = list(
+        TeamDependency.objects
+        .filter(downstream=team)
+        .select_related('upstream')
+    )
+    dep_count_total = TeamDependency.objects.filter(
+        Q(upstream=team) | Q(downstream=team)
+    ).count()
+    dep_alerts = []
+    for link in dep_links:
+        if link.upstream.teamStatus and link.upstream.teamStatus != 'active':
+            dep_alerts.append({
+                'text':      f'{link.upstream.teamName} is {_STATUS_LABEL.get(link.upstream.teamStatus, link.upstream.teamStatus)}',
+                'icon_name': 'AlertTri',
+                'color':     _STATUS_COLOUR.get(link.upstream.teamStatus, '#f15a22'),
+            })
+
+    # --- Upcoming meetings invited to the user (max 5).
+    upcoming_qs = (
+        MeetingInvitation.objects
+        .filter(user=user, meet__startedAt__gte=now,
+                status__in=('pending', 'accepted'))
+        .select_related('meet')
+        .order_by('meet__startedAt')[:5]
+    )
+    upcoming_meetings = [_format_meeting_for_widget(inv.meet, now) for inv in upcoming_qs]
+
+    # --- Recent messages (inbox only, unread first, then by date).
+    msg_recip_qs = (
+        MessageRecipient.objects
+        .filter(user=user, recipMsgDeleted=False, message__status='sent')
+        .select_related('message__user')
+        .order_by('isRead', '-message__sentAt', '-message__createdAt')[:5]
+    )
+    recent_messages = []
+    for mr in msg_recip_qs:
+        m = mr.message
+        sender = m.user
+        bg, fg = _avatar_palette_for(sender.username)
+        sender_full = f'{sender.first_name} {sender.last_name}'.strip() or sender.username
+        recent_messages.append({
+            'from_name':         sender_full,
+            'from_initials':     _initials_for(sender.first_name, sender.last_name, sender.username),
+            'from_avatar_bg':    bg,
+            'from_avatar_color': fg,
+            'from_avatar_url':   sender.avatar.url if sender.avatar else '',
+            'time':              _format_time_ago(m.sentAt or m.createdAt, now),
+            'subject':           m.subject or '(no subject)',
+            'preview':           (m.body or '')[:120],
+            'unread':            not mr.isRead,
+        })
+
+    # --- Org-wide activity feed: synthesised from current state of orga
+    # objects (Department, Team, Employee, TeamManager, DepartmentLeader).
+    # See `_build_org_activity` for the full event taxonomy.
+    recent_activity = _build_org_activity(now)
+
+    # --- Department/type badges ---
+    type_name = team.type.typeName if team.type else ''
+    return render(request, 'home.html', {
+        'active_page':          'home',
+        'greeting':             _greeting(now),
+        'home_user':            user_ctx,
+        'team':                 _serialize_team_for_home(team),
+        'department':           {'depart_name': department.departName} if department else None,
+        'team_member_count':    len(members),
+        'team_members_visible': members_visible,
+        'team_members_extra':   members_extra,
+        'team_type_name':       type_name,
+        'team_type_color':      _TYPE_COLOUR.get(type_name, '#0010f5'),
+        'team_status_label':    _STATUS_LABEL.get(team.teamStatus, ''),
+        'team_status_color':    _STATUS_COLOUR.get(team.teamStatus, '#9aa0a6'),
+        'manager':              manager_serialised,
+        'repo_count':           len(repos_for_template),
+        'dep_count':            dep_count_total,
+        'dep_alerts':           dep_alerts,
+        'upcoming_meetings':    upcoming_meetings,
+        'recent_messages':      recent_messages,
+        'recent_activity':      recent_activity,
+        'repos':                repos_for_template,
+        'widget_sizes':         request.session.get('widget_sizes', _DEFAULT_WIDGET_SIZES),
+    })
+
+
+# ════════════════════════════════════════════════════════════════════
+# === PROFILE ===
+# ════════════════════════════════════════════════════════════════════
+#
+# Single endpoint for the profile modal — handles three forms posted to
+# the same URL, distinguished by `form_type`:
+#   - personal (default): about_me text + optional avatar upload
+#   - security: password change with current_password verification
+#   - widget_sizes (AJAX): persists per-session widget layout
+# ════════════════════════════════════════════════════════════════════
+
+_ABOUT_ME_MAX_LEN = 1000
+
+
+@login_required
+@require_POST
+def profile_update(request):
+    user = request.user
+
+    # Widget sizes — sent as JSON from home.js (drag/resize). Detected by
+    # the Content-Type header before we look at request.POST so the JSON
+    # body isn't accidentally treated as a form.
+    if request.content_type == 'application/json':
+        try:
+            sizes = json.loads(request.body or b'{}')
+        except json.JSONDecodeError:
+            return JsonResponse({'ok': False, 'error': 'Invalid JSON.'}, status=400)
+        cleaned = {}
+        for k, v in sizes.items():
+            if k in _DEFAULT_WIDGET_SIZES and v in ('S', 'M', 'L'):
+                cleaned[k] = v
+        request.session['widget_sizes'] = cleaned or _DEFAULT_WIDGET_SIZES
+        request.session.modified = True
+        return JsonResponse({'ok': True, 'widget_sizes': request.session['widget_sizes']})
+
+    form_type = (request.POST.get('form_type') or 'personal').strip().lower()
+
+    # ---- Security: change password ----
+    if form_type == 'security':
+        current = request.POST.get('current_password') or ''
+        new_pw = request.POST.get('new_password') or ''
+        confirm = request.POST.get('confirm_password') or ''
+
+        if not user.check_password(current):
+            dj_messages.error(request, 'Current password is incorrect.')
+            return redirect('home')
+        if len(new_pw) < 8:
+            dj_messages.error(request, 'New password must be at least 8 characters.')
+            return redirect('home')
+        if new_pw != confirm:
+            dj_messages.error(request, 'New password and confirmation do not match.')
+            return redirect('home')
+
+        with transaction.atomic():
+            user.set_password(new_pw)
+            user.save(update_fields=['password'])
+            Action.objects.create(
+                user=user,
+                action='update',
+                entityType='Users',
+                entityId=user.pk,
+                fieldChanged='password',
+                actionDescr='Changed account password.',
+            )
+        # Critical: keep the session valid after the password changes.
+        update_session_auth_hash(request, user)
+        dj_messages.success(request, 'Password updated.')
+        return redirect('home')
+
+    # ---- Personal: about_me + optional avatar ----
+    about_me = (request.POST.get('about_me') or '').strip()
+    if len(about_me) > _ABOUT_ME_MAX_LEN:
+        dj_messages.error(
+            request,
+            f'About Me cannot exceed {_ABOUT_ME_MAX_LEN} characters.',
+        )
+        return redirect('home')
+
+    avatar_file = request.FILES.get('avatar')
+    changed_fields = []
+
+    with transaction.atomic():
+        if about_me != (user.about_me or ''):
+            user.about_me = about_me
+            changed_fields.append('about_me')
+
+        if avatar_file:
+            # Pillow opens lazily on .save(); ImageField will reject non-images.
+            user.avatar = avatar_file
+            changed_fields.append('avatar')
+
+        if changed_fields:
+            user.save(update_fields=changed_fields)
+            for field in changed_fields:
+                Action.objects.create(
+                    user=user,
+                    action='update',
+                    entityType='Users',
+                    entityId=user.pk,
+                    fieldChanged=field,
+                    actionDescr=f'Updated profile field: {field}.',
+                )
+
+    if changed_fields:
+        dj_messages.success(request, 'Profile saved.')
+    return redirect('home')
 
 
 def _coming_soon(request, active_page, title):
@@ -287,6 +859,7 @@ def _serialize_team(t):
             'initials': initials,
             'email': e.user.email or '',
             'username': e.user.username,
+            'avatar_url': e.user.avatar.url if e.user.avatar else '',
         })
     repos = [
         {

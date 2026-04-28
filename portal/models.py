@@ -13,6 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -32,6 +33,8 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=50, db_column='lName')
     dob = models.DateField(null=True, blank=True, db_column='dob')
     about_me = models.TextField(null=True, blank=True, db_column='aboutMe')
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True,
+                               db_column='avatar')
 
     REQUIRED_FIELDS = ['email', 'first_name', 'last_name']
 
@@ -50,6 +53,10 @@ class User(AbstractUser):
     def l_name(self):
         return self.last_name
 
+    @property
+    def date_of_birth(self):
+        return self.dob
+
 
 # ────────────────────────────────────────────────────────────────────
 #  Department
@@ -59,6 +66,7 @@ class Department(models.Model):
     departName = models.CharField(max_length=100, unique=True, db_column='departName')
     specialization = models.CharField(max_length=100, null=True, blank=True,
                                       db_column='specialization')
+    createdAt = models.DateTimeField(default=timezone.now, db_column='createdAt')
 
     class Meta:
         db_table = 'Department'
@@ -174,6 +182,7 @@ class Employee(models.Model):
                                related_name='employees')
     position = models.CharField(max_length=50, null=True, blank=True,
                                 db_column='position')
+    joinedAt = models.DateTimeField(default=timezone.now, db_column='joinedAt')
 
     class Meta:
         db_table = 'Employee'
@@ -199,6 +208,7 @@ class TeamManager(models.Model):
                                related_name='manager_role')
     teamId = models.ForeignKey(Team, on_delete=models.CASCADE,
                                db_column='teamId', related_name='managers')
+    assignedAt = models.DateTimeField(default=timezone.now, db_column='assignedAt')
 
     class Meta:
         db_table = 'TeamManager'
@@ -224,6 +234,7 @@ class DepartmentLeader(models.Model):
     department = models.OneToOneField(Department, on_delete=models.CASCADE,
                                       db_column='departmentId',
                                       related_name='leader')
+    assignedAt = models.DateTimeField(default=timezone.now, db_column='assignedAt')
 
     class Meta:
         db_table = 'DepartmentLeader'

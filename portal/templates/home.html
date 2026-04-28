@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+
+  /* ── Main content container ── */
+  .dash-content { max-width: 1080px; margin: 0 auto; padding: var(--sky-sp6) var(--sky-sp8) var(--sky-sp12); }
+
+  /* ── Widget idle/hover effect (signature pattern — widgets fade until hovered) ── */
+  .wg { transition: opacity .25s, filter .25s, box-shadow .2s, border .15s; opacity: .75; filter: grayscale(.55); }
+  .wg:hover { opacity: 1 !important; filter: none !important; box-shadow: 0 4px 20px rgba(0, 0, 0, .08) !important; }
+
+  /* ── Hero row ── */
+  .hero-row {
+    display: flex; gap: var(--sky-sp4);
+    margin-bottom: var(--sky-sp4);
+    animation: sUp .5s cubic-bezier(.22, 1, .36, 1) both;
+  }
+  .hero-card {
+    background: var(--sky-white);
+    border-radius: var(--sky-sp3);
+    padding: var(--sky-sp5) var(--sky-sp6);
+    position: relative; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .03), 0 8px 24px rgba(0, 0, 0, .024);
+  }
+  .hero-card--welcome { flex: 2 1 0; border-left: 6px solid var(--sky-primary); }
+  .hero-card--team    { flex: 3 1 0; border-left: 6px solid var(--sky-positive); }
+
+  .hero-greeting {
+    font-size: 24px; font-weight: 800;
+    color: var(--sky-grey90); letter-spacing: -0.03em; line-height: 1.2;
+  }
+  .hero-sub { font-size: 13px; color: var(--sky-grey40); margin-top: var(--sky-sp1); }
+  .hero-stats { display: flex; gap: var(--sky-sp5); margin-top: var(--sky-sp5); }
+  .hero-stat-num { font-size: 22px; font-weight: 800; color: var(--sky-primary); letter-spacing: -0.02em; }
+  .hero-stat-lbl { font-size: 10px; font-weight: 600; color: var(--sky-grey40); text-transform: uppercase; letter-spacing: .05em; }
+
+  .team-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: var(--sky-sp3);
+  }
+  .team-name {
+    font-size: 20px; font-weight: 800;
+    color: var(--sky-grey90); letter-spacing: -0.02em;
+  }
+  .team-descrip {
+    font-size: 12px; color: var(--sky-grey50);
+    line-height: 1.6; margin-bottom: var(--sky-sp4); max-width: 420px;
+  }
+  .team-footer {
+    display: flex; align-items: center;
+    gap: var(--sky-sp5); padding-top: var(--sky-sp3);
+    border-top: 1px solid rgba(0, 0, 0, .024);
+  }
+  .team-meta { display: flex; gap: var(--sky-sp4); font-size: 12px; color: var(--sky-grey50); }
+  .team-meta strong { color: var(--sky-grey90); }
+
+  .type-badge {
+    padding: 1px 6px; border-radius: var(--sky-rad-xs);
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .03em;
+  }
+
+  .status-dot { display: inline-flex; align-items: center; gap: var(--sky-sp1); font-size: 11px; font-weight: 700; }
+  .status-dot__circle { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+
+  /* ── Avatar circles (4 sizes — variable bg/color per-person) ── */
+  .avatar-stack { display: flex; }
+  .avatar-stack__item { margin-left: -6px; position: relative; }
+  .avatar-stack__item:first-child { margin-left: 0; }
+  .avatar-circle {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+    letter-spacing: -0.02em; position: relative;
+    overflow: hidden;
+  }
+  .avatar-circle img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+  }
+  .avatar-circle--large { width: 56px; height: 56px; font-size: 21px; }
+  .avatar-circle--36    { width: 36px; height: 36px; font-size: 13px; }
+  .avatar-circle--30    { width: 30px; height: 30px; font-size: 11px; }
+  .avatar-mgr-badge {
+    position: absolute; bottom: -2px; right: -2px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--sky-positive);
+    border: 1.5px solid var(--sky-white);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .avatar-mgr-badge span { font-size: 6px; font-weight: 800; color: var(--sky-white); }
+  .avatar-extra {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(0, 0, 0, .024);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--sky-grey40);
+    margin-left: -6px;
+  }
+
+  /* ── Widget grid (bento layout with drag/drop + resize) ──
+     Fixed row height keeps S widgets compact and prevents the Activity
+     widget (when sized M/L) from stretching the whole grid. Body scrolls
+     internally if content overflows. */
+  .widget-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    grid-auto-flow: dense; gap: var(--sky-sp4); align-items: stretch;
+    grid-auto-rows: 280px;
+  }
+  .wg--s { grid-column: span 1; }
+  .wg--m { grid-column: span 2; }
+  .wg--l { grid-column: span 2; grid-row: span 2; }
+
+  .wg-inner {
+    background: rgba(255, 255, 255, .72);
+    backdrop-filter: blur(24px) saturate(180%);
+    border-radius: var(--sky-sp3);
+    border: 1px solid rgba(0, 15, 245, .04);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .016);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    position: relative; cursor: grab;
+    transition: border .15s;
+    height: 100%;
+  }
+  .wg-inner.is-dragging { opacity: .3; filter: saturate(.3); }
+  .wg-inner.is-over { border-color: var(--sky-primary); }
+  .wg-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: var(--sky-sp3) var(--sky-sp4);
+    border-bottom: 1px solid rgba(0, 0, 0, .016);
+    flex-shrink: 0;
+  }
+  .wg-title {
+    display: flex; align-items: center; gap: var(--sky-sp2);
+    font-size: 11px; font-weight: 700;
+    color: var(--sky-grey80);
+    text-transform: uppercase; letter-spacing: .06em;
+  }
+  .wg-body {
+    flex: 1; min-height: 0;
+    padding: var(--sky-sp4);
+    overflow-y: auto;
+  }
+  /* Subtle scrollbar — Webkit-style, falls back gracefully on Firefox. */
+  .wg-body::-webkit-scrollbar { width: 6px; }
+  .wg-body::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, .08);
+    border-radius: 3px;
+  }
+  .wg-body { scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, .08) transparent; }
+
+  .resize-btn {
+    display: flex; align-items: center; gap: 3px;
+    padding: 2px 6px; border-radius: var(--sky-rad-xs);
+    border: 1px solid transparent; background: transparent;
+    cursor: pointer;
+    font-size: 10px; font-weight: 700;
+    color: var(--sky-grey30);
+    transition: all .15s;
+    font-family: var(--sky-font);
+  }
+  .resize-btn:hover {
+    border-color: rgba(0, 15, 245, .12);
+    background: rgba(0, 15, 245, .024);
+    color: var(--sky-primary);
+  }
+
+  /* ── Widget: dep alerts ── */
+  .dep-alert {
+    display: flex; align-items: center; gap: var(--sky-sp2);
+    padding: var(--sky-sp2) var(--sky-sp3);
+    border-radius: var(--sky-rad-xs);
+    font-size: 12px; font-weight: 600;
+  }
+
+  /* ── Widget: meetings ── */
+  .meeting-row { display: flex; align-items: center; gap: var(--sky-sp3); padding: 9px 0; }
+  .meeting-row + .meeting-row { border-top: 1px solid rgba(0, 0, 0, .016); }
+  .meeting-time { width: 44px; text-align: center; flex-shrink: 0; }
+  .meeting-time__day {
+    font-size: 9px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  .meeting-time__hour { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; }
+  .meeting-bar { width: 3px; height: 28px; border-radius: 2px; flex-shrink: 0; }
+  .meeting-title {
+    font-size: 13px; font-weight: 600; color: var(--sky-grey90);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .meeting-meta { font-size: 11px; color: var(--sky-grey40); }
+
+  /* ── Widget: messages preview ── */
+  .msg-row { display: flex; gap: var(--sky-sp3); padding: 9px 0; cursor: pointer; }
+  .msg-row + .msg-row { border-top: 1px solid rgba(0, 0, 0, .016); }
+  .msg-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+  .msg-name { font-size: 13px; color: var(--sky-grey90); }
+  .msg-name--unread { font-weight: 700; }
+  .msg-time { font-size: 10px; color: var(--sky-grey30); flex-shrink: 0; }
+  .msg-subject { font-size: 12px; }
+  .msg-subject--unread { font-weight: 700; color: var(--sky-grey80); }
+  .msg-subject--read { font-weight: 500; color: var(--sky-grey50); }
+  .msg-preview {
+    font-size: 11px; color: var(--sky-grey30);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    margin-top: 1px;
+  }
+  .msg-unread-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sky-primary);
+    flex-shrink: 0; margin-top: 8px;
+  }
+
+  /* ── Widget: activity ── */
+  .activity-row { display: flex; gap: var(--sky-sp3); padding: 9px 0; }
+  .activity-row + .activity-row { border-top: 1px solid rgba(0, 0, 0, .016); }
+  .activity-icon {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .activity-text { font-size: 12px; color: var(--sky-grey60); line-height: 1.4; }
+  .activity-meta { font-size: 10px; color: var(--sky-grey30); margin-top: 1px; }
+
+  /* ── Widget: repos ── */
+  .repo-row {
+    display: flex; align-items: center; gap: var(--sky-sp3);
+    padding: var(--sky-sp2) var(--sky-sp3);
+    border-radius: var(--sky-rad-xs);
+    background: rgba(0, 0, 0, .012);
+    border: 1px solid rgba(0, 0, 0, .016);
+    cursor: pointer;
+  }
+  .repo-row + .repo-row { margin-top: var(--sky-sp2); }
+  .repo-name { font-size: 13px; font-weight: 600; color: var(--sky-grey90); }
+  .repo-url {
+    font-size: 11px; color: var(--sky-grey30);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .repo-main {
+    font-size: 9px; font-weight: 700;
+    padding: 1px 5px; border-radius: 3px;
+    background: rgba(0, 126, 19, .06);
+    color: var(--sky-positive);
+    text-transform: uppercase;
+  }
+
+  /* ── No-team empty state (shown when self-registered user has no team yet) ── */
+  .home-empty {
+    text-align: center; padding: var(--sky-sp10) var(--sky-sp5);
+    color: var(--sky-grey40);
+  }
+  .home-empty__title {
+    font-size: 18px; font-weight: 700;
+    color: var(--sky-grey50); margin-bottom: var(--sky-sp2);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-content">
+
+  {% if not team %}
+    <div class="home-empty">
+      <div class="home-empty__title">Welcome, {{ home_user.f_name }}!</div>
+      <p>Your account isn't assigned to a team yet — your manager will hook you up.</p>
+    </div>
+  {% else %}
+
+  {# ═══ Hero row: welcome + team card ═══ #}
+  <div class="hero-row">
+    {# Welcome card #}
+    <div class="hero-card hero-card--welcome">
+      <div class="hero-greeting">{{ greeting }}, {{ home_user.f_name }}</div>
+      <div class="hero-sub">{{ home_user.position }} · {{ department.depart_name }}</div>
+      <div class="hero-stats">
+        <div style="text-align: center;">
+          <div class="hero-stat-num">{{ team_member_count }}</div>
+          <div class="hero-stat-lbl">Engineers</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="hero-stat-num">{{ repo_count }}</div>
+          <div class="hero-stat-lbl">Repos</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="hero-stat-num">{{ dep_count }}</div>
+          <div class="hero-stat-lbl">Deps</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="hero-stat-num">{{ team.concurrent_projs }}</div>
+          <div class="hero-stat-lbl">Projects</div>
+        </div>
+      </div>
+    </div>
+
+    {# Team card #}
+    <div class="hero-card hero-card--team">
+      <div class="team-header">
+        <div style="display: flex; align-items: center; gap: var(--sky-sp2);">
+          <span class="team-name">{{ team.team_name }}</span>
+          <span class="type-badge" style="background: {{ team_type_color }}10; color: {{ team_type_color }}; border: 1px solid {{ team_type_color }}18;">{{ team_type_name }}</span>
+        </div>
+        <span class="status-dot" style="color: {{ team_status_color }};">
+          <span class="status-dot__circle" style="background: {{ team_status_color }};"></span>
+          {{ team_status_label }}
+        </span>
+      </div>
+      <div class="team-descrip">{{ team.descrip }}</div>
+      <div class="team-footer">
+        <div class="team-meta">
+          <span style="display: flex; align-items: center; gap: var(--sky-sp1);">
+            <span class="sky-icon" data-icon="Users" data-size="13"></span>
+            <strong>{{ team_member_count }}</strong> engineers
+          </span>
+          <span style="display: flex; align-items: center; gap: var(--sky-sp1);">
+            <span class="sky-icon" data-icon="Folder" data-size="13"></span>
+            <strong>{{ team.concurrent_projs }}</strong> projects
+          </span>
+          <span style="display: flex; align-items: center; gap: var(--sky-sp1);">
+            <span class="sky-icon" data-icon="Layers" data-size="13"></span>
+            <strong>{{ dep_count }}</strong> deps
+          </span>
+        </div>
+        <div style="flex: 1;"></div>
+        <div class="avatar-stack">
+          {% for member in team_members_visible %}
+            <div class="avatar-stack__item" title="{{ member.f_name }} {{ member.l_name }}{% if member.is_manager %} (Manager){% endif %}">
+              <div class="avatar-circle" style="background: {{ member.avatar_bg }}; color: {{ member.avatar_color }};">
+                {% if member.avatar_url %}
+                  <img src="{{ member.avatar_url }}" alt="" />
+                {% else %}
+                  {{ member.f_name.0 }}{{ member.l_name.0 }}
+                {% endif %}
+              </div>
+              {% if member.is_manager %}
+                <div class="avatar-mgr-badge"><span>M</span></div>
+              {% endif %}
+            </div>
+          {% endfor %}
+          {% if team_members_extra > 0 %}
+            <div class="avatar-extra">+{{ team_members_extra }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ═══ Bento widget grid ═══ #}
+  <div id="widget-grid" class="widget-grid">
+
+    {# Widget: Dependency Alerts #}
+    <div class="wg wg--{{ widget_sizes.depAlerts|lower }}" data-widget="depAlerts" draggable="true"
+         style="animation: sUp .5s cubic-bezier(.22, 1, .36, 1) .04s both;">
+      <div class="wg-inner">
+        <div class="wg-header">
+          <div class="wg-title">
+            <span class="sky-icon" data-icon="AlertTri" data-size="13"></span>Dep. Alerts
+          </div>
+          <button class="resize-btn" data-widget="depAlerts" data-sizes="S,M">
+            <span class="sky-icon" data-icon="Resize" data-size="10"></span>
+            <span class="resize-label">{{ widget_sizes.depAlerts }}</span>
+          </button>
+        </div>
+        <div class="wg-body">
+          {% for alert in dep_alerts %}
+            <div class="dep-alert" style="background: {{ alert.color }}06; border: 1px solid {{ alert.color }}10; color: {{ alert.color }};{% if not forloop.first %} margin-top: var(--sky-sp2);{% endif %}">
+              <span class="sky-icon" data-icon="{{ alert.icon_name }}" data-size="13"></span>
+              <span style="flex: 1;">{{ alert.text }}</span>
+            </div>
+          {% empty %}
+            <div class="dep-alert" style="background: rgba(0, 126, 19, .04); border: 1px solid rgba(0, 126, 19, .08); color: var(--sky-positive);">
+              <span class="sky-icon" data-icon="Layers" data-size="13"></span>
+              <span style="flex: 1;">No active dependency alerts</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# Widget: Upcoming Meetings #}
+    <div class="wg wg--{{ widget_sizes.meetings|lower }}" data-widget="meetings" draggable="true"
+         style="animation: sUp .5s cubic-bezier(.22, 1, .36, 1) .08s both;">
+      <div class="wg-inner">
+        <div class="wg-header">
+          <div class="wg-title">
+            <span class="sky-icon" data-icon="Calendar" data-size="13"></span>Upcoming
+          </div>
+          <button class="resize-btn" data-widget="meetings" data-sizes="S,M">
+            <span class="sky-icon" data-icon="Resize" data-size="10"></span>
+            <span class="resize-label">{{ widget_sizes.meetings }}</span>
+          </button>
+        </div>
+        <div class="wg-body">
+          {% for meeting in upcoming_meetings %}
+            <div class="meeting-row">
+              <div class="meeting-time">
+                <div class="meeting-time__day" style="color: {% if meeting.is_today %}var(--sky-primary){% else %}var(--sky-grey30){% endif %};">
+                  {% if meeting.is_today %}Today{% else %}{{ meeting.day_short }}{% endif %}
+                </div>
+                <div class="meeting-time__hour" style="color: {% if meeting.is_today %}var(--sky-primary){% else %}var(--sky-grey90){% endif %};">
+                  {{ meeting.time_display }}
+                </div>
+              </div>
+              <div class="meeting-bar" style="background: {{ meeting.platform_color }};"></div>
+              <div style="flex: 1; min-width: 0;">
+                <div class="meeting-title">{{ meeting.title }}</div>
+                <div class="meeting-meta">{{ meeting.duration }} · {{ meeting.platform }}</div>
+              </div>
+            </div>
+          {% empty %}
+            <div style="text-align: center; color: var(--sky-grey40); font-size: 12px; padding: var(--sky-sp4) 0;">No upcoming meetings.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# Widget: Messages #}
+    <div class="wg wg--{{ widget_sizes.messages|lower }}" data-widget="messages" draggable="true"
+         style="animation: sUp .5s cubic-bezier(.22, 1, .36, 1) .12s both;">
+      <div class="wg-inner">
+        <div class="wg-header">
+          <div class="wg-title">
+            <span class="sky-icon" data-icon="Mail" data-size="13"></span>Messages
+          </div>
+          <button class="resize-btn" data-widget="messages" data-sizes="S,M">
+            <span class="sky-icon" data-icon="Resize" data-size="10"></span>
+            <span class="resize-label">{{ widget_sizes.messages }}</span>
+          </button>
+        </div>
+        <div class="wg-body">
+          {% for msg in recent_messages %}
+            <div class="msg-row">
+              <div class="avatar-circle avatar-circle--30" style="background: {{ msg.from_avatar_bg }}; color: {{ msg.from_avatar_color }};">
+                {% if msg.from_avatar_url %}
+                  <img src="{{ msg.from_avatar_url }}" alt="" />
+                {% else %}
+                  {{ msg.from_initials }}
+                {% endif %}
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div class="msg-head">
+                  <span class="msg-name {% if msg.unread %}msg-name--unread{% endif %}">{{ msg.from_name }}</span>
+                  <span class="msg-time">{{ msg.time }}</span>
+                </div>
+                <div class="msg-subject {% if msg.unread %}msg-subject--unread{% else %}msg-subject--read{% endif %}">{{ msg.subject }}</div>
+                {% if widget_sizes.messages != 'S' %}
+                  <div class="msg-preview">{{ msg.preview }}</div>
+                {% endif %}
+              </div>
+              {% if msg.unread %}
+                <div class="msg-unread-dot"></div>
+              {% endif %}
+            </div>
+          {% empty %}
+            <div style="text-align: center; color: var(--sky-grey40); font-size: 12px; padding: var(--sky-sp4) 0;">No messages.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# Widget: Activity #}
+    <div class="wg wg--{{ widget_sizes.activity|lower }}" data-widget="activity" draggable="true"
+         style="animation: sUp .5s cubic-bezier(.22, 1, .36, 1) .16s both;">
+      <div class="wg-inner">
+        <div class="wg-header">
+          <div class="wg-title">
+            <span class="sky-icon" data-icon="Activity" data-size="13"></span>Activity
+          </div>
+          <button class="resize-btn" data-widget="activity" data-sizes="S,M,L">
+            <span class="sky-icon" data-icon="Resize" data-size="10"></span>
+            <span class="resize-label">{{ widget_sizes.activity }}</span>
+          </button>
+        </div>
+        <div class="wg-body">
+          {% for act in recent_activity %}
+            <div class="activity-row">
+              <div class="activity-icon" style="background: {{ act.color }}10; color: {{ act.color }};">
+                <span class="sky-icon" data-icon="{{ act.icon_name }}" data-size="13"></span>
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div class="activity-text">{{ act.text }}</div>
+                <div class="activity-meta">{{ act.actor }} · {{ act.time }}</div>
+              </div>
+            </div>
+          {% empty %}
+            <div style="text-align: center; color: var(--sky-grey40); font-size: 12px; padding: var(--sky-sp4) 0;">No recent activity.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# Widget: Repositories #}
+    <div class="wg wg--{{ widget_sizes.repos|lower }}" data-widget="repos" draggable="true"
+         style="animation: sUp .5s cubic-bezier(.22, 1, .36, 1) .20s both;">
+      <div class="wg-inner">
+        <div class="wg-header">
+          <div class="wg-title">
+            <span class="sky-icon" data-icon="Folder" data-size="13"></span>Repositories
+          </div>
+          <button class="resize-btn" data-widget="repos" data-sizes="S,M">
+            <span class="sky-icon" data-icon="Resize" data-size="10"></span>
+            <span class="resize-label">{{ widget_sizes.repos }}</span>
+          </button>
+        </div>
+        <div class="wg-body">
+          {% for repo in repos %}
+            <a href="{{ repo.repo_url }}" target="_blank" rel="noopener" class="repo-row" style="text-decoration: none;">
+              <span class="sky-icon" data-icon="Folder" data-size="14"></span>
+              <div style="flex: 1; min-width: 0;">
+                <div class="repo-name">{{ repo.repo_name }}</div>
+                {% if widget_sizes.repos != 'S' %}
+                  <div class="repo-url">{{ repo.repo_url }}</div>
+                {% endif %}
+              </div>
+              {% if repo.is_main_proj %}
+                <span class="repo-main">Main</span>
+              {% endif %}
+              <span class="sky-icon" data-icon="Link" data-size="12"></span>
+            </a>
+          {% empty %}
+            <div style="text-align: center; color: var(--sky-grey40); font-size: 12px; padding: var(--sky-sp4) 0;">No repositories yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </div>{# /.widget-grid #}
+  {% endif %}
+</div>{# /.dash-content #}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/home.js' %}"></script>
+{% endblock %}

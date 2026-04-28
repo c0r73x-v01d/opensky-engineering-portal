@@ -130,7 +130,8 @@
   }
 
   // ────────────────────────────────────────────────────────────────
-  //  Detail panel renderers
+  //  Detail panel renderers — markup style mirrors the Organisation
+  //  page so the two slide-panels feel like one consistent surface.
   // ────────────────────────────────────────────────────────────────
   function statusModifier(status) {
     if (status === 'active') return 'positive';
@@ -227,9 +228,12 @@
           var avatarMod = m.is_manager ? ' tm-member-avatar--manager' : '';
           var managerTag = m.is_manager
             ? ' <span class="skill-pill skill-pill--manager">Manager</span>' : '';
+          var avatarInner = m.avatar_url
+            ? '<img src="' + esc(m.avatar_url) + '" alt="" />'
+            : esc(m.initials || '?');
           return (
             '<div class="tm-member-row">' +
-              '<div class="tm-member-avatar' + avatarMod + '">' + esc(m.initials || '?') + '</div>' +
+              '<div class="tm-member-avatar' + avatarMod + '">' + avatarInner + '</div>' +
               '<div style="flex: 1;">' +
                 '<span class="tm-member-name">' + esc(m.name) + '</span>' +
                 '<span class="tm-member-pos">' + esc(m.position) + '</span>' +

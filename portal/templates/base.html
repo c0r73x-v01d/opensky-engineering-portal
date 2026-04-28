@@ -6,6 +6,175 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}OpenSky{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'css/sky-base.css' %}">
+  <style>
+    /* ── Profile modal (rendered from base.html, opened from any page) ── */
+    .profile-modal {
+      position: relative;
+      width: min(680px, 94vw);
+      max-height: 90vh;
+      background: rgba(250, 250, 253, .99);
+      border-radius: 16px;
+      border: 1px solid rgba(0, 15, 245, .05);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .07);
+      display: flex;
+      overflow: hidden;
+      animation: sComposeIn 0.3s ease-out;
+    }
+    .profile-sidebar {
+      width: 180px;
+      background: rgba(255, 255, 255, .5);
+      border-right: 1px solid rgba(0, 0, 0, .024);
+      padding: var(--sky-sp6) var(--sky-sp3);
+      flex-shrink: 0;
+      display: flex; flex-direction: column;
+      gap: var(--sky-sp1);
+    }
+    .profile-sidebar__avatar { text-align: center; margin-bottom: var(--sky-sp5); }
+    .profile-avatar-wrap { position: relative; display: inline-block; }
+    .profile-avatar-circle {
+      width: 56px; height: 56px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 21px; font-weight: 700;
+      background: rgba(0, 15, 245, .08); color: var(--sky-primary);
+      letter-spacing: -0.02em; overflow: hidden;
+    }
+    .profile-avatar-circle img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .profile-sidebar__cam {
+      position: absolute; bottom: -2px; right: -2px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--sky-white);
+      border: 1.5px solid var(--sky-grey20);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--sky-grey50);
+    }
+    .profile-sidebar__name {
+      font-size: 13px; font-weight: 700;
+      color: var(--sky-grey90);
+      margin-top: var(--sky-sp2);
+    }
+    .profile-sidebar__pos { font-size: 11px; color: var(--sky-grey40); }
+    .profile-tab-btn {
+      display: flex; align-items: center; gap: var(--sky-sp2);
+      padding: 10px var(--sky-sp3);
+      border-radius: var(--sky-rad-s);
+      border: none; cursor: pointer;
+      background: transparent;
+      color: var(--sky-grey50);
+      font-size: 13px; font-weight: 500;
+      font-family: var(--sky-font);
+      transition: all .15s;
+      text-align: left;
+    }
+    .profile-tab-btn.is-active {
+      background: rgba(0, 15, 245, .04);
+      color: var(--sky-primary);
+      font-weight: 700;
+    }
+    .profile-content { flex: 1; padding: var(--sky-sp6); overflow-y: auto; }
+    .profile-content__head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: var(--sky-sp6);
+    }
+    .profile-content__title {
+      font-size: 20px; font-weight: 800;
+      color: var(--sky-grey90);
+      margin: 0; letter-spacing: -0.02em;
+    }
+    .field-group { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sky-sp3) var(--sky-sp5); }
+    .field-group--full { grid-column: 1 / -1; }
+    .read-field { margin-bottom: var(--sky-sp4); }
+    .read-field__label {
+      font-size: 11px; font-weight: 700;
+      color: var(--sky-grey40);
+      text-transform: uppercase; letter-spacing: .06em;
+      margin-bottom: var(--sky-sp1);
+    }
+    .read-field__value {
+      font-size: 14px; font-weight: 500;
+      color: var(--sky-grey90);
+      padding: var(--sky-sp2) 0;
+      border-bottom: 1px solid rgba(0, 0, 0, .024);
+    }
+    .about-label {
+      font-size: 11px; font-weight: 700;
+      color: var(--sky-grey40);
+      text-transform: uppercase; letter-spacing: .06em;
+      margin-bottom: var(--sky-sp2);
+    }
+    .about-textarea {
+      width: 100%; padding: var(--sky-sp3);
+      border-radius: var(--sky-rad-s);
+      border: 1.5px solid rgba(0, 0, 0, .04);
+      background: rgba(255, 255, 255, .72);
+      font-size: 13px; font-family: var(--sky-font);
+      color: var(--sky-grey80);
+      resize: vertical; outline: none; line-height: 1.6;
+    }
+    .about-textarea:focus { border-color: rgba(0, 15, 245, .25); }
+    .profile-actions {
+      margin-top: var(--sky-sp5);
+      display: flex; justify-content: flex-end;
+      gap: var(--sky-sp3); align-items: center;
+    }
+    .security-intro {
+      font-size: 13px; color: var(--sky-grey50);
+      margin-bottom: var(--sky-sp5); line-height: 1.6;
+    }
+    .team-info-card {
+      padding: var(--sky-sp5);
+      border-radius: var(--sky-sp3);
+      background: rgba(255, 255, 255, .5);
+      border: 1px solid rgba(0, 0, 0, .024);
+      margin-bottom: var(--sky-sp5);
+    }
+    .team-info-card__name {
+      font-size: 17px; font-weight: 800;
+      color: var(--sky-grey90);
+      letter-spacing: -0.02em;
+    }
+    .team-info-card__dept { font-size: 12px; color: var(--sky-grey50); margin-top: 2px; }
+    .team-info-card__desc {
+      font-size: 13px; color: var(--sky-grey60);
+      line-height: 1.6;
+      margin: var(--sky-sp3) 0 0;
+    }
+    .manager-label {
+      font-size: 11px; font-weight: 700;
+      color: var(--sky-grey40);
+      text-transform: uppercase; letter-spacing: .06em;
+      margin-bottom: var(--sky-sp3);
+    }
+    .manager-card {
+      display: flex; align-items: center; gap: var(--sky-sp3);
+      padding: var(--sky-sp3);
+      border-radius: var(--sky-rad-s);
+      background: rgba(0, 0, 0, .012);
+      border: 1px solid rgba(0, 0, 0, .016);
+    }
+    .manager-card__avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .manager-card__name { font-size: 13px; font-weight: 700; color: var(--sky-grey90); }
+    .manager-card__meta { font-size: 11px; color: var(--sky-grey40); }
+    .status-dot { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; }
+    .status-dot__circle { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+
+    /* ── Generic avatar-img rule: any <img> inside an avatar circle ── */
+    .sky-nav-btn--avatar img,
+    .manager-card__avatar img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+    }
+    .sky-nav-btn--avatar { padding: 0; overflow: hidden; border-radius: 50%; }
+  </style>
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -55,15 +224,16 @@
       </div>
 
       <div class="sky-nav-dd-wrap">
-        <button class="sky-nav-btn sky-nav-btn--avatar" id="avatarBtn" aria-label="User menu" aria-haspopup="true" aria-expanded="false">{{ user.f_name.0 }}{{ user.l_name.0 }}</button>
+        <button class="sky-nav-btn sky-nav-btn--avatar" id="avatarBtn" aria-label="User menu" aria-haspopup="true" aria-expanded="false">{% if user.avatar %}<img src="{{ user.avatar.url }}" alt="" />{% else %}{{ user.f_name.0 }}{{ user.l_name.0 }}{% endif %}</button>
         <div class="sky-nav-dd" id="avatarDropdown" role="menu">
           <div class="sky-nav-dd__head">
             <div class="sky-nav-dd__name">{{ user.f_name }} {{ user.l_name }}</div>
             <div class="sky-nav-dd__sub">{{ user.email }}</div>
           </div>
-          <a href="{% url 'schedule' %}" class="sky-nav-dd__btn" role="menuitem">
-            <span class="sky-icon" data-icon="Calendar" data-size="15"></span>My Schedule
-          </a>
+          <button type="button" id="view-profile-btn" class="sky-nav-dd__btn" role="menuitem"
+                  style="width:100%; border:none; background:none; cursor:pointer; text-align:left;">
+            <span class="sky-icon" data-icon="User" data-size="15"></span>View Profile
+          </button>
           <div class="sky-nav-dd__divider">
             <form method="post" action="{% url 'logout' %}" style="margin:0;">
               {% csrf_token %}
@@ -78,6 +248,8 @@
   </nav>
 
   {% block content %}{% endblock %}
+
+  {% if user.is_authenticated %}{% include "_profile_modal.html" %}{% endif %}
 
   <!-- Toast container -->
   <div id="toastContainer"></div>
@@ -149,6 +321,7 @@
       setTimeout(() => toast.remove(), 3000);
     }
   </script>
+  {% if user.is_authenticated %}<script src="{% static 'js/profile.js' %}"></script>{% endif %}
   {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -18,6 +18,7 @@ urlpatterns = [
     path('messages/delete/<int:message_id>/', views.message_delete, name='message_delete'),
     path('organisation/', views.organisation,  name='organisation'),
     path('reports/',      views.reports,       name='reports'),
+    path('profile/update/', views.profile_update, name='profile_update'),
     path('reports/pdf/',  views.export_pdf,    name='export_pdf'),
     path('reports/excel/', views.export_excel, name='export_excel'),
 

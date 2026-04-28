@@ -1,0 +1,200 @@
+{% load static %}
+{# Profile modal — included from base.html for every authenticated page; data comes from nav_context as profile_modal_ctx. #}
+<div id="profile-modal" class="sky-overlay">
+  <div class="profile-modal">
+    {# Sidebar #}
+    <div class="profile-sidebar">
+      <div class="profile-sidebar__avatar">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar-circle" id="profile-avatar-display">
+            {% if user.avatar %}
+              <img src="{{ user.avatar.url }}" alt="" />
+            {% else %}
+              {{ user.f_name.0 }}{{ user.l_name.0 }}
+            {% endif %}
+          </div>
+          <button type="button" class="profile-sidebar__cam" id="profile-avatar-trigger"
+                  title="Change avatar">
+            <span class="sky-icon" data-icon="Camera" data-size="11"></span>
+          </button>
+        </div>
+        <div class="profile-sidebar__name">{{ user.f_name }} {{ user.l_name }}</div>
+        <div class="profile-sidebar__pos">{{ profile_modal_ctx.position|default:"" }}</div>
+      </div>
+      <button type="button" class="profile-tab-btn is-active" data-tab="personal">
+        <span class="sky-icon" data-icon="User" data-size="15"></span>Personal
+      </button>
+      <button type="button" class="profile-tab-btn" data-tab="security">
+        <span class="sky-icon" data-icon="Lock" data-size="15"></span>Security
+      </button>
+      <button type="button" class="profile-tab-btn" data-tab="team">
+        <span class="sky-icon" data-icon="Users" data-size="15"></span>My Team
+      </button>
+    </div>
+
+    {# Content panels #}
+    <div class="profile-content">
+      <div class="profile-content__head">
+        <h2 class="profile-content__title" id="profile-panel-title">Personal</h2>
+        <button type="button" id="close-profile-btn" class="sky-modal__close">
+          <span class="sky-icon" data-icon="X" data-size="20"></span>
+        </button>
+      </div>
+
+      {# Personal tab — about_me + avatar upload #}
+      <div id="panel-personal" class="profile-panel">
+        <form method="post" action="{% url 'profile_update' %}" enctype="multipart/form-data" id="profile-personal-form">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="personal" />
+          {# Hidden file input — triggered by camera button click in JS #}
+          <input type="file" name="avatar" id="profile-avatar-file"
+                 accept="image/*" style="display: none;" />
+
+          <div class="field-group">
+            <div class="read-field">
+              <div class="read-field__label">First Name</div>
+              <div class="read-field__value">{{ user.f_name }}</div>
+            </div>
+            <div class="read-field">
+              <div class="read-field__label">Last Name</div>
+              <div class="read-field__value">{{ user.l_name }}</div>
+            </div>
+            <div class="read-field">
+              <div class="read-field__label">Username</div>
+              <div class="read-field__value">@{{ user.username }}</div>
+            </div>
+            <div class="read-field">
+              <div class="read-field__label">Date of Birth</div>
+              <div class="read-field__value">
+                {% if user.dob %}{{ user.dob|date:"j F Y" }}{% else %}—{% endif %}
+              </div>
+            </div>
+            <div class="read-field field-group--full">
+              <div class="read-field__label">Email</div>
+              <div class="read-field__value">{{ user.email }}</div>
+            </div>
+          </div>
+          <div style="margin-top: var(--sky-sp2);">
+            <div class="about-label">About Me</div>
+            <textarea id="about-me-input" name="about_me" class="about-textarea" rows="4"
+                      maxlength="1000">{{ profile_modal_ctx.about_me|default:"" }}</textarea>
+          </div>
+          <div class="profile-actions">
+            <button type="submit" class="sky-btn sky-btn--primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+
+      {# Security tab #}
+      <div id="panel-security" class="profile-panel" style="display: none;">
+        <form method="post" action="{% url 'profile_update' %}">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="security" />
+          <p class="security-intro">
+            Update your password to keep your account secure.
+            Password must be at least 8 characters.
+          </p>
+
+          <div class="sky-field">
+            <label class="sky-field__label">Current Password</label>
+            <div class="sky-field__wrap">
+              <input type="password" name="current_password" required
+                     class="sky-field__input sky-field__input--with-right" />
+              <button type="button" class="sky-field__right toggle-pw-btn">
+                <span class="sky-icon" data-icon="Eye" data-size="16"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="sky-field">
+            <label class="sky-field__label">New Password</label>
+            <div class="sky-field__wrap">
+              <input type="password" name="new_password" required minlength="8"
+                     class="sky-field__input sky-field__input--with-right" />
+              <button type="button" class="sky-field__right toggle-pw-btn">
+                <span class="sky-icon" data-icon="Eye" data-size="16"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="sky-field">
+            <label class="sky-field__label">Confirm New Password</label>
+            <div class="sky-field__wrap">
+              <input type="password" name="confirm_password" required minlength="8"
+                     class="sky-field__input sky-field__input--with-right" />
+              <button type="button" class="sky-field__right toggle-pw-btn">
+                <span class="sky-icon" data-icon="Eye" data-size="16"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="profile-actions">
+            <button type="submit" class="sky-btn sky-btn--primary">Update Password</button>
+          </div>
+        </form>
+      </div>
+
+      {# Team tab #}
+      <div id="panel-team" class="profile-panel" style="display: none;">
+        {% if profile_modal_ctx.team %}
+          <div class="team-info-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sky-sp3);">
+              <div>
+                <div class="team-info-card__name">{{ profile_modal_ctx.team.team_name }}</div>
+                <div class="team-info-card__dept">{{ profile_modal_ctx.department.depart_name }}</div>
+              </div>
+              <span class="status-dot" style="color: {{ profile_modal_ctx.team_status_color }};">
+                <span class="status-dot__circle" style="background: {{ profile_modal_ctx.team_status_color }};"></span>
+                {{ profile_modal_ctx.team_status_label }}
+              </span>
+            </div>
+            <p class="team-info-card__desc">{{ profile_modal_ctx.team.descrip }}</p>
+          </div>
+          <div class="field-group" style="margin-bottom: var(--sky-sp5);">
+            <div class="read-field">
+              <div class="read-field__label">Focus</div>
+              <div class="read-field__value">{{ profile_modal_ctx.team.focus }}</div>
+            </div>
+            <div class="read-field">
+              <div class="read-field__label">Agile Practice</div>
+              <div class="read-field__value">{{ profile_modal_ctx.team.agile_practice }}</div>
+            </div>
+            <div class="read-field">
+              <div class="read-field__label">Department</div>
+              <div class="read-field__value">{{ profile_modal_ctx.department.depart_name }}</div>
+            </div>
+            <div class="read-field">
+              <div class="read-field__label">Team Type</div>
+              <div class="read-field__value">{{ profile_modal_ctx.team_type_name|default:"—" }}</div>
+            </div>
+          </div>
+          {% if profile_modal_ctx.manager %}
+            <div class="manager-label">Manager</div>
+            <div class="manager-card">
+              <div class="manager-card__avatar"
+                   style="background: {{ profile_modal_ctx.manager.avatar_bg }}; color: {{ profile_modal_ctx.manager.avatar_color }};">
+                {% if profile_modal_ctx.manager.avatar_url %}
+                  <img src="{{ profile_modal_ctx.manager.avatar_url }}" alt="" />
+                {% else %}
+                  {{ profile_modal_ctx.manager.f_name.0 }}{{ profile_modal_ctx.manager.l_name.0 }}
+                {% endif %}
+              </div>
+              <div>
+                <div class="manager-card__name">
+                  {{ profile_modal_ctx.manager.f_name }} {{ profile_modal_ctx.manager.l_name }}
+                </div>
+                <div class="manager-card__meta">
+                  {{ profile_modal_ctx.manager.position }} · {{ profile_modal_ctx.manager.email }}
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        {% else %}
+          <p style="color: var(--sky-grey40); font-size: 13px;">
+            You aren't assigned to a team yet.
+          </p>
+        {% endif %}
+      </div>
+    </div>{# /.profile-content #}
+  </div>{# /.profile-modal #}
+</div>{# /#profile-modal #}
