@@ -547,6 +547,14 @@
         <button class="msg-icon-btn msg-icon-btn--accent" title="Reply" type="button" id="btn-reply">
           <span class="sky-icon" data-icon="Reply" data-size="16"></span>
         </button>
+      
+        <form method="post" id="delete-message-form" style="display:none;">
+          {% csrf_token %}
+          <button class="msg-icon-btn" title="Delete" type="submit"
+                  onclick="return confirm('Delete this message?');">
+            🗑️
+          </button>
+        </form>
       </div>
     </div>
 
@@ -686,6 +694,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const detailAttachments = document.getElementById("detail-attachments");
     const detailAvatar = document.getElementById("detail-avatar");
     const sendDraftForm = document.getElementById("send-draft-form");
+    const deleteMessageForm = document.getElementById("delete-message-form");
     const replyPrompt = document.getElementById("btn-reply-prompt");
     const replyBtn = document.getElementById("btn-reply");
     const searchInput = document.getElementById("search-input");
@@ -819,6 +828,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const messageId = item.dataset.id;
             const folder = item.dataset.folder;
+            if (deleteMessageForm) {
+              deleteMessageForm.style.display = "block";
+              deleteMessageForm.action = `/messages/delete/${messageId}/?folder=${folder}`;
+          }
             const sender = item.dataset.sender || "";
             const subject = item.dataset.subject || "No Subject";
             const senderEmail = item.dataset.senderEmail || "";
@@ -935,6 +948,9 @@ document.addEventListener("DOMContentLoaded", function () {
             if (replyBtn) {
                 replyBtn.style.display = "inline-flex";
             }
+            if (deleteMessageForm) {
+              deleteMessageForm.style.display = "none";
+          }
         });
     }
 
