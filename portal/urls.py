@@ -15,6 +15,7 @@ urlpatterns = [
     path('messages/star/<int:message_id>/', views.message_star, name='message_star'),
     path('messages/send-draft/<int:message_id>/', views.message_send_draft, name='message_send_draft'),
     path('messages/read/<int:message_id>/', views.message_mark_read, name='message_mark_read'),
+    path('messages/delete/<int:message_id>/', views.message_delete, name='message_delete'),
     path('organisation/', views.organisation,  name='organisation'),
     path('reports/',      views.reports,       name='reports'),
     path('reports/pdf/',  views.export_pdf,    name='export_pdf'),

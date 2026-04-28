@@ -736,6 +736,43 @@ def message_mark_read(request, message_id):
     return JsonResponse({'ok': True})
 
 @login_required
+@require_POST
+def message_delete(request, message_id):
+    folder = request.GET.get('folder', 'inbox')
+
+    if folder == 'sent' or folder == 'drafts':
+        msg = get_object_or_404(Message, messageId=message_id, user=request.user)
+        msg.senderMsgDeleted = True
+        msg.save(update_fields=['senderMsgDeleted'])
+
+        Action.objects.create(
+            user=request.user,
+            action='delete',
+            entityType='Message',
+            entityId=msg.messageId,
+            actionDescr=f'Deleted message from {folder}.',
+        )
+
+    else:
+        recipient = get_object_or_404(
+            MessageRecipient,
+            message_id=message_id,
+            user=request.user,
+        )
+        recipient.recipMsgDeleted = True
+        recipient.save(update_fields=['recipMsgDeleted'])
+
+        Action.objects.create(
+            user=request.user,
+            action='delete',
+            entityType='Message',
+            entityId=message_id,
+            actionDescr='Deleted message from inbox.',
+        )
+
+    return _messages_redirect(folder)
+
+@login_required
 def reports(request):
     teams = (
         Team.objects
