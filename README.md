@@ -29,7 +29,7 @@ The database schema in [`db_creator.sql`](db_creator.sql) is mirrored in
    python manage.py migrate
    ```
 
-4. (Optional) Populate demo data so Schedule has meetings to render.
+4. (Optional) Populate demo data.
    ```bash
    python manage.py seed_demo
    ```
