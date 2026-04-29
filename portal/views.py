@@ -7,6 +7,7 @@ import json
 from django.contrib import messages as dj_messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
 from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
@@ -43,6 +44,43 @@ from .services.schedule import assemble_for_user
 # ════════════════════════════════════════════════════════════════════
 # === AUTH ===
 # ════════════════════════════════════════════════════════════════════
+class SkyLoginView(LoginView):
+    """
+    Login view that supports two flows from the same form:
+    a regular user login (default) and an explicit "Admin Login" flow
+    activated by the toggle in login.html, which sends `is_admin_login=true`
+    as a hidden field.
+
+    When admin login is requested:
+      - the authenticated user must have is_staff=True, otherwise the
+        login is rejected (form-level error, no session created);
+      - after a successful auth the user is redirected to /admin/
+        instead of the default LOGIN_REDIRECT_URL.
+
+    Regular logins keep the standard Django behaviour: redirect to ?next=
+    if present, otherwise LOGIN_REDIRECT_URL ('/').
+    """
+    template_name = 'login.html'
+    redirect_authenticated_user = True
+
+    def _is_admin_request(self):
+        return (self.request.POST.get('is_admin_login') or '').strip().lower() == 'true'
+
+    def form_valid(self, form):
+        # form.get_user() is the authenticated User instance — auth has
+        # already happened by this point, but no session has been created
+        # yet, so refusing now leaves the user logged out.
+        if self._is_admin_request() and not form.get_user().is_staff:
+            form.add_error(None, 'This account does not have admin privileges.')
+            return self.form_invalid(form)
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        if self._is_admin_request():
+            return '/admin/'
+        return super().get_success_url()
+
+
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('home')
