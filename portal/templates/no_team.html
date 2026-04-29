@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Awaiting Team Assignment{% endblock %}
+
+{% block extra_css %}
+<style>
+  .no-team-wrap {
+    max-width: 560px;
+    margin: 96px auto 0;
+    padding: var(--sky-sp8) var(--sky-sp6);
+    text-align: center;
+    animation: sUp 0.5s cubic-bezier(.22, 1, .36, 1) both;
+  }
+  .no-team-icon {
+    width: 72px; height: 72px;
+    margin: 0 auto var(--sky-sp5);
+    border-radius: 50%;
+    background: rgba(0, 15, 245, 0.05);
+    color: var(--sky-primary);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .no-team-title {
+    font-size: 22px; font-weight: 800;
+    color: var(--sky-grey90);
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--sky-sp3);
+  }
+  .no-team-body {
+    font-size: 14px; line-height: 1.7;
+    color: var(--sky-grey50);
+    margin: 0 0 var(--sky-sp6);
+  }
+  .no-team-actions {
+    display: flex; justify-content: center; gap: var(--sky-sp3);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="no-team-wrap">
+  <div class="no-team-icon">
+    <span class="sky-icon" data-icon="Users" data-size="32"></span>
+  </div>
+  <h1 class="no-team-title">You're not on a team yet</h1>
+  <p class="no-team-body">
+    This page is only available once you've been assigned to an engineering
+    team. An administrator needs to add you to a team before you can browse
+    the org structure, team directory, or reports.
+  </p>
+  <div class="no-team-actions">
+    <a href="{% url 'home' %}" class="sky-btn sky-btn--primary">Back to Home</a>
+  </div>
+</div>
+{% endblock %}

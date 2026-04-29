@@ -2,6 +2,7 @@
 OpenSky Engineering Portal views.
 """
 import datetime
+import functools
 import json
 
 from django.contrib import messages as dj_messages
@@ -79,6 +80,41 @@ class SkyLoginView(LoginView):
         if self._is_admin_request():
             return '/admin/'
         return super().get_success_url()
+
+
+def team_member_required(active_page=''):
+    """
+    Gate a view behind 'user has been assigned to a team'.
+
+    Self-registered users start out with an Employee row whose teamId is
+    NULL — they're authenticated but not yet placed in an engineering
+    team. Org-wide pages (Teams, Organisation, Reports) shouldn't expose
+    sensitive structural data to people in that state. This decorator
+    short-circuits to a friendly empty-state page rendered server-side
+    (no redirect, so the user stays on the URL they tried).
+
+    Staff (is_staff=True) always pass — admins legitimately need access
+    even though they typically don't have an Employee row themselves.
+
+    Use as @team_member_required('teams') — active_page is forwarded to
+    the empty-state template so the navbar still highlights the section
+    the user tried to reach.
+    """
+    def _decorator(view_func):
+        @functools.wraps(view_func)
+        @login_required
+        def _wrapped(request, *args, **kwargs):
+            user = request.user
+            if user.is_staff:
+                return view_func(request, *args, **kwargs)
+            emp = Employee.objects.filter(user=user).first()
+            if emp and emp.teamId_id is not None:
+                return view_func(request, *args, **kwargs)
+            return render(request, 'no_team.html', {
+                'active_page': active_page,
+            })
+        return _wrapped
+    return _decorator
 
 
 def register_view(request):
@@ -944,11 +980,6 @@ def meeting_create(request):
     })
 
 
-@login_required
-def teams(request):
-    return _coming_soon(request, 'teams', 'Teams')
-
-
 # ════════════════════════════════════════════════════════════════════
 # === TEAMS ===
 # ════════════════════════════════════════════════════════════════════
@@ -1046,7 +1077,7 @@ def _serialize_team(t):
     }
 
 
-@login_required
+@team_member_required('teams')
 def teams(request):
     teams_qs = (
         Team.objects
@@ -1084,7 +1115,7 @@ def teams(request):
     })
 
 
-@login_required
+@team_member_required('organisation')
 def organisation(request):
     type_colours = {
         "Platform": "#0010f5",
@@ -1496,7 +1527,7 @@ def message_delete(request, message_id):
 
     return _messages_redirect(folder)
 
-@login_required
+@team_member_required('reports')
 def reports(request):
     teams = (
         Team.objects
@@ -1539,7 +1570,7 @@ def reports(request):
     return render(request, 'reports.html', context)
 
 
-@login_required
+@team_member_required('reports')
 def export_pdf(request):
     from django.http import HttpResponse
     try:
@@ -1596,7 +1627,7 @@ def export_pdf(request):
     return response
 
 
-@login_required
+@team_member_required('reports')
 def export_excel(request):
     from django.http import HttpResponse
     try:
