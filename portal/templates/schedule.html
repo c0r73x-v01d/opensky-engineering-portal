@@ -14,10 +14,12 @@
       <h1 class="sky-schedule__title">Schedule</h1>
       <p class="sky-schedule__subtitle">{{ kpis.today }} meeting{{ kpis.today|pluralize }} today &middot; {{ kpis.this_week }} this week &middot; {{ kpis.upcoming }} upcoming</p>
     </div>
+    {% if user_can_create_meeting %}
     <button type="button" class="sky-btn sky-btn--primary sky-schedule__cta" data-modal-open="schedule-meeting">
       <span aria-hidden="true" class="sky-schedule__cta-plus">+</span>
       Schedule Meeting
     </button>
+    {% endif %}
   </header>
 
   <section class="sky-schedule__kpis" aria-label="Schedule summary">
@@ -303,7 +305,7 @@
       </button>
     </header>
 
-    <form class="sky-meeting-form" autocomplete="off" novalidate data-meeting-type="team"
+    <form class="sky-meeting-form" autocomplete="off" novalidate data-meeting-type="{% if user_can_manage_team %}team{% else %}personal{% endif %}"
           method="post" action="{% url 'meeting_create' %}"
           data-team-members='{{ team_members_by_team_json|safe }}'>
       {% csrf_token %}
@@ -319,8 +321,12 @@
       <div class="sky-field">
         <span class="sky-field__label">MEETING TYPE</span>
         <div class="sky-segmented" role="radiogroup" aria-label="Meeting type">
+          {% if user_can_manage_team %}
           <button type="button" class="sky-segmented__option is-active" role="radio" aria-checked="true" data-meeting-type="team">Team Meeting</button>
           <button type="button" class="sky-segmented__option" role="radio" aria-checked="false" data-meeting-type="personal">Personal Meeting</button>
+          {% else %}
+          <button type="button" class="sky-segmented__option is-active" role="radio" aria-checked="true" data-meeting-type="personal">Personal Meeting</button>
+          {% endif %}
         </div>
       </div>
 
