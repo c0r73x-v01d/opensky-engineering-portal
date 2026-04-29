@@ -198,6 +198,107 @@
       hostSelect.addEventListener('change', renderTeamMembers);
     }
 
+    // ── Guest search dropdown ─────────────────────────────────────
+    var guestsInput = form.querySelector('#mf-guests');
+    var resultsList = form.querySelector('[data-slot="search-results"]');
+
+    function activeAttendeeSet() {
+      var type = form.getAttribute('data-meeting-type') || 'team';
+      return form.querySelector('[data-attendee-set="' + type + '"]');
+    }
+
+    function existingIds() {
+      var ids = {};
+      form.querySelectorAll('.sky-attendee[data-user-id]').forEach(function (li) {
+        ids[li.getAttribute('data-user-id')] = true;
+      });
+      return ids;
+    }
+
+    function buildChip(userId, name, tone) {
+      var li = document.createElement('li');
+      li.className = 'sky-attendee';
+      li.setAttribute('data-tone', tone || 'team');
+      li.setAttribute('data-user-id', String(userId));
+      li.innerHTML =
+        '<span class="sky-attendee__dot"></span>' +
+        '<span class="sky-attendee__name"></span>' +
+        '<button type="button" class="sky-attendee__remove" aria-label="Remove">' +
+          '<span class="sky-icon" data-icon="X" data-size="11"></span>' +
+        '</button>';
+      li.querySelector('.sky-attendee__name').textContent = name;
+      li.querySelector('.sky-attendee__remove').addEventListener('click', function () {
+        li.remove();
+      });
+      return li;
+    }
+
+    function hideResults() {
+      if (!resultsList) return;
+      resultsList.innerHTML = '';
+      resultsList.hidden = true;
+    }
+
+    function renderResults(items) {
+      if (!resultsList) return;
+      resultsList.innerHTML = '';
+      if (!items.length) {
+        var empty = document.createElement('li');
+        empty.className = 'sky-attendee-search__empty';
+        empty.textContent = 'No matches.';
+        resultsList.appendChild(empty);
+        resultsList.hidden = false;
+        return;
+      }
+      var seen = existingIds();
+      items.forEach(function (u) {
+        if (seen[String(u.id)]) return;
+        var li = document.createElement('li');
+        li.className = 'sky-attendee-search__item';
+        li.setAttribute('data-user-id', String(u.id));
+        var nm = document.createElement('span');
+        nm.className = 'sky-attendee-search__name';
+        nm.textContent = u.name;
+        var em = document.createElement('span');
+        em.className = 'sky-attendee-search__email';
+        em.textContent = u.email + (u.position ? ' · ' + u.position : '');
+        li.appendChild(nm);
+        li.appendChild(em);
+        li.addEventListener('mousedown', function (ev) {
+          ev.preventDefault();
+          var set = activeAttendeeSet();
+          if (!set) return;
+          var type = form.getAttribute('data-meeting-type') || 'team';
+          set.appendChild(buildChip(u.id, u.name, type === 'personal' ? 'blue' : 'team'));
+          if (guestsInput) guestsInput.value = '';
+          hideResults();
+        });
+        resultsList.appendChild(li);
+      });
+      resultsList.hidden = false;
+    }
+
+    var searchTimer = null;
+    if (guestsInput) {
+      guestsInput.addEventListener('input', function () {
+        var q = guestsInput.value.trim();
+        if (searchTimer) clearTimeout(searchTimer);
+        if (q.length < 2) { hideResults(); return; }
+        searchTimer = setTimeout(function () {
+          fetch('/schedule/users/search/?q=' + encodeURIComponent(q), {
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          })
+          .then(function (r) { return r.ok ? r.json() : { results: [] }; })
+          .then(function (body) { renderResults(body.results || []); })
+          .catch(function () { hideResults(); });
+        }, 220);
+      });
+      guestsInput.addEventListener('blur', function () {
+        setTimeout(hideResults, 120);  // give mousedown time to fire
+      });
+    }
+
     // Sync the platform pill into the hidden input on click.
     form.querySelectorAll('.sky-platform[data-platform]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -427,11 +528,28 @@
 
       var foot = $('foot');
       foot.innerHTML = '';
-      if (d.isPast === '1' || d.isPast === 'true') {
+      var isPast = (d.isPast === '1' || d.isPast === 'true');
+      if (isPast) {
         foot.style.display = 'none';
       } else {
         foot.style.display = '';
         foot.appendChild(buildFoot(d.myStatus || 'accepted'));
+      }
+
+      // Delete button — only visible when the current user is the organiser.
+      var scheduleEl = document.querySelector('.sky-schedule');
+      var currentUserId = scheduleEl ? scheduleEl.getAttribute('data-current-user-id') : '';
+      var organiserId = d.organizerId || '';
+      if (currentUserId && organiserId && String(currentUserId) === String(organiserId)) {
+        if (foot.style.display === 'none') {
+          foot.style.display = '';
+        }
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'sky-btn sky-panel__delete sky-panel__foot-btn';
+        del.appendChild(makeIcon('Trash', 14));
+        del.appendChild(document.createTextNode('Delete'));
+        foot.appendChild(del);
       }
     }
 
@@ -547,6 +665,38 @@
       var status = btn.classList.contains('sky-panel__decline') || btn.classList.contains('sky-panel__decline-outline')
         ? 'declined' : 'accepted';
       postRsvp(current.meetId, status, btn);
+    });
+
+    panel.addEventListener('click', function (e) {
+      var btn = e.target.closest('.sky-panel__delete');
+      if (!btn || !current.meetId) return;
+      if (!window.confirm('Delete this meeting? This will remove it for everyone invited.')) return;
+      btn.disabled = true;
+      var token = (typeof getCsrfToken === 'function') ? getCsrfToken() : '';
+      fetch('/schedule/meeting/' + encodeURIComponent(current.meetId) + '/delete/', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': token, 'X-Requested-With': 'XMLHttpRequest' },
+      })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        btn.disabled = false;
+        if (!res.ok || !res.body || !res.body.ok) {
+          if (typeof showToast === 'function') showToast((res.body && res.body.error) || 'Could not delete.', 'error');
+          return;
+        }
+        // Remove every card on the page that targets this meeting id.
+        document.querySelectorAll('[data-meet-id="' + current.meetId + '"]').forEach(function (trigger) {
+          var card = trigger.closest('.sky-event, .sky-month__event, .sky-meeting, .sky-past');
+          if (card) card.remove();
+        });
+        closePanel();
+        if (typeof showToast === 'function') showToast('Meeting deleted.', 'success');
+      })
+      .catch(function () {
+        btn.disabled = false;
+        if (typeof showToast === 'function') showToast('Network error — try again.', 'error');
+      });
     });
 
     document.addEventListener('click', function (e) {

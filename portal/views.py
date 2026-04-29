@@ -15,7 +15,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from .context_processors import _max_dob_today
 from .forms import MeetingForm, RegisterForm
@@ -978,6 +978,77 @@ def meeting_create(request):
             'end': meeting.endedAt.isoformat() if meeting.endedAt else None,
         },
     })
+
+
+# ════════════════════════════════════════════════════════════════════
+# === SCHEDULE — DELETE ===
+# ════════════════════════════════════════════════════════════════════
+@login_required
+@require_POST
+def meeting_delete(request, meet_id):
+    try:
+        meeting = Meeting.objects.select_related('emp__user', 'teamEmp__emp__user').get(meetId=meet_id)
+    except Meeting.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Meeting not found.'}, status=404)
+
+    organiser = meeting.organiser_user
+    if not organiser or organiser.pk != request.user.pk:
+        return JsonResponse({'ok': False, 'error': 'Only the organiser can delete this meeting.'}, status=403)
+
+    title_first_line = (meeting.message or '').split('\n', 1)[0] if meeting.message else f'Meeting {meet_id}'
+
+    with transaction.atomic():
+        MeetingInvitation.objects.filter(meet=meeting).delete()
+        meeting.delete()
+        Action.objects.create(
+            user=request.user,
+            action='delete',
+            entityType='Meeting',
+            entityId=meet_id,
+            actionDescr=f'Deleted meeting "{title_first_line}".',
+        )
+
+    return JsonResponse({'ok': True, 'meet_id': meet_id})
+
+
+# ════════════════════════════════════════════════════════════════════
+# === SCHEDULE — USER SEARCH (for the guests autocomplete) ===
+# ════════════════════════════════════════════════════════════════════
+@login_required
+@require_GET
+def meeting_user_search(request):
+    q = (request.GET.get('q') or '').strip()
+    if len(q) < 2:
+        return JsonResponse({'results': []})
+    qs = (
+        User.objects
+        .exclude(pk=request.user.pk)
+        .filter(
+            Q(first_name__icontains=q)
+            | Q(last_name__icontains=q)
+            | Q(username__icontains=q)
+            | Q(email__icontains=q)
+        )
+        .select_related('employee')
+        .distinct()
+        .order_by('first_name', 'last_name', 'username')[:8]
+    )
+    results = []
+    for u in qs:
+        full = f'{u.first_name} {u.last_name}'.strip() or u.username
+        emp = getattr(u, 'employee', None)
+        results.append({
+            'id': u.pk,
+            'name': full,
+            'email': u.email,
+            'position': (emp.position if emp else '') or '',
+        })
+    return JsonResponse({'results': results})
+
+
+@login_required
+def teams(request):
+    return _coming_soon(request, 'teams', 'Teams')
 
 
 # ════════════════════════════════════════════════════════════════════

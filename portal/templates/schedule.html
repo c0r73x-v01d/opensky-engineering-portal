@@ -8,16 +8,18 @@
 {% endblock %}
 
 {% block content %}
-<main class="sky-schedule" data-view="weekly">
+<main class="sky-schedule" data-view="weekly" data-current-user-id="{{ user.userId }}">
   <header class="sky-schedule__header">
     <div class="sky-schedule__title-group">
       <h1 class="sky-schedule__title">Schedule</h1>
       <p class="sky-schedule__subtitle">{{ kpis.today }} meeting{{ kpis.today|pluralize }} today &middot; {{ kpis.this_week }} this week &middot; {{ kpis.upcoming }} upcoming</p>
     </div>
+    {% if user_can_create_meeting %}
     <button type="button" class="sky-btn sky-btn--primary sky-schedule__cta" data-modal-open="schedule-meeting">
       <span aria-hidden="true" class="sky-schedule__cta-plus">+</span>
       Schedule Meeting
     </button>
+    {% endif %}
   </header>
 
   <section class="sky-schedule__kpis" aria-label="Schedule summary">
@@ -124,6 +126,7 @@
               data-type="{{ e.type }}"
               {% if e.cadence %}data-cadence="{{ e.cadence }}"{% endif %}
               {% if e.host %}data-host="{{ e.host }}"{% endif %}
+              {% if e.organizer_user_id %}data-organizer-id="{{ e.organizer_user_id }}"{% endif %}
               {% if e.organizer %}data-organizer="{{ e.organizer }}"
               data-organizer-role="{{ e.organizer_role }}"{% endif %}
               {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
@@ -169,6 +172,7 @@
               data-type="{{ e.type }}"
               {% if e.cadence %}data-cadence="{{ e.cadence }}"{% endif %}
               {% if e.host %}data-host="{{ e.host }}"{% endif %}
+              {% if e.organizer_user_id %}data-organizer-id="{{ e.organizer_user_id }}"{% endif %}
               {% if e.organizer %}data-organizer="{{ e.organizer }}"
               data-organizer-role="{{ e.organizer_role }}"{% endif %}
               {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
@@ -234,7 +238,8 @@
                 data-type="{{ e.type }}"
                 {% if e.cadence %}data-cadence="{{ e.cadence }}"{% endif %}
                 {% if e.host %}data-host="{{ e.host }}"{% endif %}
-                {% if e.organizer %}data-organizer="{{ e.organizer }}"
+                {% if e.organizer_user_id %}data-organizer-id="{{ e.organizer_user_id }}"{% endif %}
+              {% if e.organizer %}data-organizer="{{ e.organizer }}"
                 data-organizer-role="{{ e.organizer_role }}"{% endif %}
                 {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
                 data-my-status="{{ e.my_status }}"{% if e.is_past %} data-is-past="1"{% endif %}
@@ -277,6 +282,7 @@
               data-platform="{{ e.platform }}"
               data-type="{{ e.type }}"
               {% if e.host %}data-host="{{ e.host }}"{% endif %}
+              {% if e.organizer_user_id %}data-organizer-id="{{ e.organizer_user_id }}"{% endif %}
               {% if e.organizer %}data-organizer="{{ e.organizer }}"
               data-organizer-role="{{ e.organizer_role }}"{% endif %}
               {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
@@ -303,7 +309,7 @@
       </button>
     </header>
 
-    <form class="sky-meeting-form" autocomplete="off" novalidate data-meeting-type="team"
+    <form class="sky-meeting-form" autocomplete="off" novalidate data-meeting-type="{% if user_can_manage_team %}team{% else %}personal{% endif %}"
           method="post" action="{% url 'meeting_create' %}"
           data-team-members='{{ team_members_by_team_json|safe }}'>
       {% csrf_token %}
@@ -319,8 +325,12 @@
       <div class="sky-field">
         <span class="sky-field__label">MEETING TYPE</span>
         <div class="sky-segmented" role="radiogroup" aria-label="Meeting type">
+          {% if user_can_manage_team %}
           <button type="button" class="sky-segmented__option is-active" role="radio" aria-checked="true" data-meeting-type="team">Team Meeting</button>
           <button type="button" class="sky-segmented__option" role="radio" aria-checked="false" data-meeting-type="personal">Personal Meeting</button>
+          {% else %}
+          <button type="button" class="sky-segmented__option is-active" role="radio" aria-checked="true" data-meeting-type="personal">Personal Meeting</button>
+          {% endif %}
         </div>
       </div>
 
@@ -376,39 +386,15 @@
       <div class="sky-field">
         <span class="sky-field__label">ATTENDEES</span>
         <p class="sky-field__hint" data-hint-for="team">Team members</p>
-        <ul class="sky-attendees" aria-label="Selected attendees" data-attendee-set="team">
-          <li class="sky-attendee" data-tone="team">
-            <span class="sky-attendee__dot"></span>
-            <span class="sky-attendee__name">Maria Santos</span>
-            <button type="button" class="sky-attendee__remove" aria-label="Remove Maria Santos">
-              <span class="sky-icon" data-icon="X" data-size="11"></span>
-            </button>
-          </li>
-          <li class="sky-attendee" data-tone="team">
-            <span class="sky-attendee__dot"></span>
-            <span class="sky-attendee__name">Chris Evans</span>
-            <button type="button" class="sky-attendee__remove" aria-label="Remove Chris Evans">
-              <span class="sky-icon" data-icon="X" data-size="11"></span>
-            </button>
-          </li>
-        </ul>
-        <ul class="sky-attendees" aria-label="Selected attendees" data-attendee-set="personal">
-          <li class="sky-attendee" data-tone="red">
-            <span class="sky-attendee__dot"></span>
-            <span class="sky-attendee__name">Sarah Chen</span>
-            <button type="button" class="sky-attendee__remove" aria-label="Remove Sarah Chen">
-              <span class="sky-icon" data-icon="X" data-size="11"></span>
-            </button>
-          </li>
-          <li class="sky-attendee" data-tone="purple">
-            <span class="sky-attendee__dot"></span>
-            <span class="sky-attendee__name">Maria Santos</span>
-            <button type="button" class="sky-attendee__remove" aria-label="Remove Maria Santos">
-              <span class="sky-icon" data-icon="X" data-size="11"></span>
-            </button>
-          </li>
-        </ul>
-        <input class="sky-field__input" type="text" id="mf-guests" data-team-placeholder="Add guests outside the team..." data-personal-placeholder="Search by name or email..." placeholder="Add guests outside the team...">
+        <ul class="sky-attendees" aria-label="Selected attendees" data-attendee-set="team"></ul>
+        <ul class="sky-attendees" aria-label="Selected attendees" data-attendee-set="personal"></ul>
+        <div class="sky-attendee-search-wrap">
+          <input class="sky-field__input" type="text" id="mf-guests" autocomplete="off"
+                 data-team-placeholder="Add guests outside the team..."
+                 data-personal-placeholder="Search by name or email..."
+                 placeholder="Add guests outside the team...">
+          <ul class="sky-attendee-search" data-slot="search-results" hidden></ul>
+        </div>
       </div>
 
       <div class="sky-field">
