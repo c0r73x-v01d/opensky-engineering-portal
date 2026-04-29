@@ -241,6 +241,18 @@
         </div>
 
         <div class="sky-field">
+          <label class="sky-field__label" for="regDob">Date of Birth</label>
+          <div class="sky-field__wrap">
+            <input class="sky-field__input"
+                   id="regDob" name="dob" type="date"
+                   max="{{ dob_max_date|date:'Y-m-d' }}"
+                   value="{{ form.data.dob|default:'' }}"
+                   required>
+          </div>
+          <div class="sky-field__hint">You must be at least 18 years old.</div>
+        </div>
+
+        <div class="sky-field">
           <label class="sky-field__label" for="regPw">Password</label>
           <div class="sky-field__wrap">
             <span class="sky-field__icon"><span class="sky-icon" data-icon="Lock" data-size="16"></span></span>

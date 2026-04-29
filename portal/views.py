@@ -15,6 +15,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from .context_processors import _max_dob_today
 from .forms import MeetingForm, RegisterForm
 from .models import (
     Action,
@@ -62,6 +63,7 @@ def register_view(request):
         'form': form,
         'register_form': form,
         'active_auth_view': 'Register',
+        'dob_max_date': _max_dob_today(),
     })
 
 
