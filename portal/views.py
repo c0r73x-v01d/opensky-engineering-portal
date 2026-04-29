@@ -798,7 +798,10 @@ def schedule(request):
             })
     ctx['managed_teams'] = [{'id': tid, 'name': name} for tid, name in managed_teams]
     ctx['team_members_by_team_json'] = json.dumps(team_members_by_team)
-    ctx['user_is_employee'] = Employee.objects.filter(user=user).exists()
+    user_is_employee = Employee.objects.filter(user=user).exists()
+    ctx['user_is_employee'] = user_is_employee
+    ctx['user_can_manage_team'] = bool(managed_teams)
+    ctx['user_can_create_meeting'] = bool(managed_teams) or user_is_employee
 
     # Prefill the meeting modal when the user arrives via "Schedule Meeting"
     # from a team detail panel: ?compose=team&team_id=N.
