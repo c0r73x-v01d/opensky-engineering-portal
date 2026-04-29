@@ -829,6 +829,37 @@ def meeting_create(request):
 
 
 # ════════════════════════════════════════════════════════════════════
+# === SCHEDULE — DELETE ===
+# ════════════════════════════════════════════════════════════════════
+@login_required
+@require_POST
+def meeting_delete(request, meet_id):
+    try:
+        meeting = Meeting.objects.select_related('emp__user', 'teamEmp__emp__user').get(meetId=meet_id)
+    except Meeting.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Meeting not found.'}, status=404)
+
+    organiser = meeting.organiser_user
+    if not organiser or organiser.pk != request.user.pk:
+        return JsonResponse({'ok': False, 'error': 'Only the organiser can delete this meeting.'}, status=403)
+
+    title_first_line = (meeting.message or '').split('\n', 1)[0] if meeting.message else f'Meeting {meet_id}'
+
+    with transaction.atomic():
+        MeetingInvitation.objects.filter(meet=meeting).delete()
+        meeting.delete()
+        Action.objects.create(
+            user=request.user,
+            action='delete',
+            entityType='Meeting',
+            entityId=meet_id,
+            actionDescr=f'Deleted meeting "{title_first_line}".',
+        )
+
+    return JsonResponse({'ok': True, 'meet_id': meet_id})
+
+
+# ════════════════════════════════════════════════════════════════════
 # === SCHEDULE — USER SEARCH (for the guests autocomplete) ===
 # ════════════════════════════════════════════════════════════════════
 @login_required

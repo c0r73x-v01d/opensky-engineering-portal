@@ -10,6 +10,7 @@ urlpatterns = [
     path('schedule/',     views.schedule,      name='schedule'),
     path('schedule/meeting/new/', views.meeting_create, name='meeting_create'),
     path('schedule/meeting/<int:meet_id>/rsvp/', views.meeting_rsvp, name='meeting_rsvp'),
+    path('schedule/meeting/<int:meet_id>/delete/', views.meeting_delete, name='meeting_delete'),
     path('schedule/users/search/', views.meeting_user_search, name='meeting_user_search'),
     path('messages/', views.messages_view, name='messages'),
     path('messages/send/', views.message_send, name='message_send'),
