@@ -384,7 +384,13 @@
         <p class="sky-field__hint" data-hint-for="team">Team members</p>
         <ul class="sky-attendees" aria-label="Selected attendees" data-attendee-set="team"></ul>
         <ul class="sky-attendees" aria-label="Selected attendees" data-attendee-set="personal"></ul>
-        <input class="sky-field__input" type="text" id="mf-guests" data-team-placeholder="Add guests outside the team..." data-personal-placeholder="Search by name or email..." placeholder="Add guests outside the team...">
+        <div class="sky-attendee-search-wrap">
+          <input class="sky-field__input" type="text" id="mf-guests" autocomplete="off"
+                 data-team-placeholder="Add guests outside the team..."
+                 data-personal-placeholder="Search by name or email..."
+                 placeholder="Add guests outside the team...">
+          <ul class="sky-attendee-search" data-slot="search-results" hidden></ul>
+        </div>
       </div>
 
       <div class="sky-field">

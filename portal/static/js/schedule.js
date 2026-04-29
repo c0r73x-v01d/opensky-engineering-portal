@@ -198,6 +198,107 @@
       hostSelect.addEventListener('change', renderTeamMembers);
     }
 
+    // ── Guest search dropdown ─────────────────────────────────────
+    var guestsInput = form.querySelector('#mf-guests');
+    var resultsList = form.querySelector('[data-slot="search-results"]');
+
+    function activeAttendeeSet() {
+      var type = form.getAttribute('data-meeting-type') || 'team';
+      return form.querySelector('[data-attendee-set="' + type + '"]');
+    }
+
+    function existingIds() {
+      var ids = {};
+      form.querySelectorAll('.sky-attendee[data-user-id]').forEach(function (li) {
+        ids[li.getAttribute('data-user-id')] = true;
+      });
+      return ids;
+    }
+
+    function buildChip(userId, name, tone) {
+      var li = document.createElement('li');
+      li.className = 'sky-attendee';
+      li.setAttribute('data-tone', tone || 'team');
+      li.setAttribute('data-user-id', String(userId));
+      li.innerHTML =
+        '<span class="sky-attendee__dot"></span>' +
+        '<span class="sky-attendee__name"></span>' +
+        '<button type="button" class="sky-attendee__remove" aria-label="Remove">' +
+          '<span class="sky-icon" data-icon="X" data-size="11"></span>' +
+        '</button>';
+      li.querySelector('.sky-attendee__name').textContent = name;
+      li.querySelector('.sky-attendee__remove').addEventListener('click', function () {
+        li.remove();
+      });
+      return li;
+    }
+
+    function hideResults() {
+      if (!resultsList) return;
+      resultsList.innerHTML = '';
+      resultsList.hidden = true;
+    }
+
+    function renderResults(items) {
+      if (!resultsList) return;
+      resultsList.innerHTML = '';
+      if (!items.length) {
+        var empty = document.createElement('li');
+        empty.className = 'sky-attendee-search__empty';
+        empty.textContent = 'No matches.';
+        resultsList.appendChild(empty);
+        resultsList.hidden = false;
+        return;
+      }
+      var seen = existingIds();
+      items.forEach(function (u) {
+        if (seen[String(u.id)]) return;
+        var li = document.createElement('li');
+        li.className = 'sky-attendee-search__item';
+        li.setAttribute('data-user-id', String(u.id));
+        var nm = document.createElement('span');
+        nm.className = 'sky-attendee-search__name';
+        nm.textContent = u.name;
+        var em = document.createElement('span');
+        em.className = 'sky-attendee-search__email';
+        em.textContent = u.email + (u.position ? ' · ' + u.position : '');
+        li.appendChild(nm);
+        li.appendChild(em);
+        li.addEventListener('mousedown', function (ev) {
+          ev.preventDefault();
+          var set = activeAttendeeSet();
+          if (!set) return;
+          var type = form.getAttribute('data-meeting-type') || 'team';
+          set.appendChild(buildChip(u.id, u.name, type === 'personal' ? 'blue' : 'team'));
+          if (guestsInput) guestsInput.value = '';
+          hideResults();
+        });
+        resultsList.appendChild(li);
+      });
+      resultsList.hidden = false;
+    }
+
+    var searchTimer = null;
+    if (guestsInput) {
+      guestsInput.addEventListener('input', function () {
+        var q = guestsInput.value.trim();
+        if (searchTimer) clearTimeout(searchTimer);
+        if (q.length < 2) { hideResults(); return; }
+        searchTimer = setTimeout(function () {
+          fetch('/schedule/users/search/?q=' + encodeURIComponent(q), {
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          })
+          .then(function (r) { return r.ok ? r.json() : { results: [] }; })
+          .then(function (body) { renderResults(body.results || []); })
+          .catch(function () { hideResults(); });
+        }, 220);
+      });
+      guestsInput.addEventListener('blur', function () {
+        setTimeout(hideResults, 120);  // give mousedown time to fire
+      });
+    }
+
     // Sync the platform pill into the hidden input on click.
     form.querySelectorAll('.sky-platform[data-platform]').forEach(function (btn) {
       btn.addEventListener('click', function () {
