@@ -545,6 +545,7 @@ def home(request):
 # ════════════════════════════════════════════════════════════════════
 
 _ABOUT_ME_MAX_LEN = 1000
+_MIN_DOB_AGE_YEARS = 18
 
 
 @login_required
@@ -602,7 +603,7 @@ def profile_update(request):
         dj_messages.success(request, 'Password updated.')
         return redirect('home')
 
-    # ---- Personal: about_me + optional avatar ----
+    # ---- Personal: about_me + optional avatar + DOB ----
     about_me = (request.POST.get('about_me') or '').strip()
     if len(about_me) > _ABOUT_ME_MAX_LEN:
         dj_messages.error(
@@ -611,6 +612,45 @@ def profile_update(request):
         )
         return redirect('home')
 
+    # DOB is required and must place the user at or above the minimum age.
+    # We only run the validator if the field is actually present in the
+    # POST — older HTML caches without the new input shouldn't wipe an
+    # existing value. The field is required in the form, so an empty
+    # string from a freshly-rendered modal is treated as a validation
+    # failure rather than a clear-the-field action.
+    new_dob = None
+    dob_changed = False
+    raw_dob = request.POST.get('dob')
+    if raw_dob is not None:
+        raw_dob = raw_dob.strip()
+        if not raw_dob:
+            dj_messages.error(request, 'Date of birth is required.')
+            return redirect('home')
+        try:
+            new_dob = datetime.date.fromisoformat(raw_dob)
+        except ValueError:
+            dj_messages.error(request, 'Date of birth is not a valid date.')
+            return redirect('home')
+
+        today = timezone.localdate()
+        if new_dob > today:
+            dj_messages.error(request, 'Date of birth cannot be in the future.')
+            return redirect('home')
+
+        # Compute age accounting for whether the birthday has occurred yet
+        # this year. (today.year - dob.year) over-counts before the birthday.
+        age = today.year - new_dob.year - (
+            (today.month, today.day) < (new_dob.month, new_dob.day)
+        )
+        if age < _MIN_DOB_AGE_YEARS:
+            dj_messages.error(
+                request,
+                f'You must be at least {_MIN_DOB_AGE_YEARS} years old.',
+            )
+            return redirect('home')
+
+        dob_changed = (user.dob != new_dob)
+
     avatar_file = request.FILES.get('avatar')
     changed_fields = []
 
@@ -618,6 +658,10 @@ def profile_update(request):
         if about_me != (user.about_me or ''):
             user.about_me = about_me
             changed_fields.append('about_me')
+
+        if dob_changed:
+            user.dob = new_dob
+            changed_fields.append('dob')
 
         if avatar_file:
             # Pillow opens lazily on .save(); ImageField will reject non-images.
@@ -679,6 +723,41 @@ def schedule(request):
     ctx['managed_teams'] = [{'id': tid, 'name': name} for tid, name in managed_teams]
     ctx['team_members_by_team_json'] = json.dumps(team_members_by_team)
     ctx['user_is_employee'] = Employee.objects.filter(user=user).exists()
+
+    # Prefill the meeting modal when the user arrives via "Schedule Meeting"
+    # from a team detail panel: ?compose=team&team_id=N.
+    # If the user manages that team, the meeting modal opens in 'team' mode
+    # with the host_team selector preset. Otherwise it opens in 'personal'
+    # mode with the team's members preloaded as invitees.
+    prefill = {'open': False}
+    if (request.GET.get('compose') or '').strip().lower() == 'team':
+        try:
+            req_team_id = int(request.GET.get('team_id') or 0)
+        except ValueError:
+            req_team_id = 0
+        if req_team_id:
+            prefill['open'] = True
+            prefill['team_id'] = req_team_id
+            if req_team_id in managed_team_ids:
+                prefill['mode'] = 'team'
+            else:
+                prefill['mode'] = 'personal'
+                # Build the personal-invitees list excluding the current user.
+                invitees = []
+                personal_qs = (
+                    Employee.objects
+                    .filter(teamId_id=req_team_id)
+                    .exclude(user=user)
+                    .select_related('user')
+                )
+                for emp in personal_qs:
+                    u = emp.user
+                    invitees.append({
+                        'user_id': u.pk,
+                        'name': f'{u.first_name} {u.last_name}'.strip() or u.username,
+                    })
+                prefill['invitees'] = invitees
+    ctx['meeting_prefill_json'] = json.dumps(prefill)
     return render(request, 'schedule.html', ctx)
 
 
@@ -1144,6 +1223,36 @@ def messages_view(request):
     current_folder = request.GET.get('folder', 'inbox')
     starred_ids = set(request.session.get('starred_messages', []))
 
+    # Prefill recipients for the compose modal — set when the user arrives
+    # via "Email Team" from a team detail panel: ?compose=team&team_id=N.
+    # The frontend opens the compose overlay automatically and pre-populates
+    # the recipient chips. The current user is excluded — you don't email
+    # yourself.
+    prefill_recipients = []
+    prefill_compose_open = False
+    compose_mode = (request.GET.get('compose') or '').strip().lower()
+    if compose_mode == 'team':
+        try:
+            team_id = int(request.GET.get('team_id') or 0)
+        except ValueError:
+            team_id = 0
+        if team_id:
+            members_qs = (
+                Employee.objects
+                .filter(teamId_id=team_id)
+                .exclude(user=request.user)
+                .select_related('user')
+            )
+            for emp in members_qs:
+                u = emp.user
+                full = f'{u.first_name} {u.last_name}'.strip()
+                label = full or u.username
+                # Compose dropdown labels follow the existing convention:
+                # "First Last (username)" or just "username" if no real name.
+                display = f'{label} ({u.username})' if full else u.username
+                prefill_recipients.append({'id': u.pk, 'name': display})
+            prefill_compose_open = True
+
     inbox_qs = Message.objects.filter(
         recipients__user=request.user,
         status='sent',
@@ -1190,6 +1299,8 @@ def messages_view(request):
         'draft_count': draft_qs.count(),
         'unread_count': inbox_qs.filter(recipients__isRead=False).count(),
         'employees': User.objects.all().order_by('first_name', 'last_name', 'username'),
+        'prefill_recipients': prefill_recipients,
+        'prefill_compose_open': prefill_compose_open,
     }
 
     return render(request, 'messages.html', context)

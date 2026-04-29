@@ -68,6 +68,65 @@ class ProfileUpdatePersonalTests(TestCase):
         self.user.refresh_from_db()
         self.assertNotEqual(self.user.about_me, long_text)
 
+    def test_dob_valid_update_persists_and_audits(self):
+        import datetime
+        valid_dob = datetime.date.today().replace(year=datetime.date.today().year - 30)
+        r = self.client.post(reverse('profile_update'), data={
+            'form_type': 'personal',
+            'about_me': '',
+            'dob': valid_dob.isoformat(),
+        })
+        self.assertEqual(r.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.dob, valid_dob)
+        self.assertTrue(Action.objects.filter(
+            user=self.user, fieldChanged='dob',
+        ).exists())
+
+    def test_dob_under_18_rejected(self):
+        import datetime
+        too_young = datetime.date.today().replace(year=datetime.date.today().year - 16)
+        r = self.client.post(reverse('profile_update'), data={
+            'form_type': 'personal',
+            'about_me': '',
+            'dob': too_young.isoformat(),
+        })
+        self.assertEqual(r.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertNotEqual(self.user.dob, too_young)
+
+    def test_dob_in_future_rejected(self):
+        import datetime
+        future = datetime.date.today() + datetime.timedelta(days=365)
+        r = self.client.post(reverse('profile_update'), data={
+            'form_type': 'personal',
+            'about_me': '',
+            'dob': future.isoformat(),
+        })
+        self.assertEqual(r.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertNotEqual(self.user.dob, future)
+
+    def test_dob_empty_rejected(self):
+        r = self.client.post(reverse('profile_update'), data={
+            'form_type': 'personal',
+            'about_me': '',
+            'dob': '',
+        })
+        self.assertEqual(r.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertIsNone(self.user.dob)
+
+    def test_dob_invalid_format_rejected(self):
+        r = self.client.post(reverse('profile_update'), data={
+            'form_type': 'personal',
+            'about_me': '',
+            'dob': 'not-a-date',
+        })
+        self.assertEqual(r.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertIsNone(self.user.dob)
+
 
 class ProfileUpdateSecurityTests(TestCase):
     def setUp(self):

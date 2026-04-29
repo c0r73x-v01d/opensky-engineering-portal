@@ -2,7 +2,26 @@
 Context processors. Populate the navbar notification bell, user dropdown
 data, and profile-modal context for every authenticated response.
 """
+import datetime
+
+from django.utils import timezone
+
 from .models import Employee, Notification, NotificationRecipient, TeamManager
+
+
+# Minimum age for DOB on the profile form. The portal is an internal
+# Sky engineering tool, so users are expected to be working adults.
+_MIN_DOB_AGE_YEARS = 18
+
+
+def _max_dob_today():
+    """Latest acceptable DOB — exactly _MIN_DOB_AGE_YEARS ago today."""
+    today = timezone.localdate()
+    try:
+        return today.replace(year=today.year - _MIN_DOB_AGE_YEARS)
+    except ValueError:
+        # 29 Feb edge case — fall back to 28 Feb of that year.
+        return today.replace(month=2, day=28, year=today.year - _MIN_DOB_AGE_YEARS)
 
 
 def nav_context(request):
@@ -11,6 +30,7 @@ def nav_context(request):
             'notifications': [],
             'unread_notif_count': 0,
             'profile_modal_ctx': None,
+            'dob_max_date': None,
         }
 
     recipient_rows = (
@@ -39,6 +59,7 @@ def nav_context(request):
         'notifications': notifications,
         'unread_notif_count': unread,
         'profile_modal_ctx': profile_ctx,
+        'dob_max_date': _max_dob_today(),
     }
 
 
