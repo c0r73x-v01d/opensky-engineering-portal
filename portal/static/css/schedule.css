@@ -1605,3 +1605,15 @@
 .sky-panel__accept-full:hover {
   background: var(--sky-positive-dark);
 }
+
+.sky-panel__delete {
+  background: transparent;
+  color: var(--sky-grey60);
+  border: 1px solid var(--sky-grey10);
+}
+.sky-panel__delete .sky-icon { color: var(--sky-negative); }
+.sky-panel__delete:hover {
+  background: rgba(221, 23, 23, 0.04);
+  color: var(--sky-negative);
+  border-color: rgba(221, 23, 23, 0.22);
+}

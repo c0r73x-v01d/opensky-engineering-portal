@@ -528,11 +528,28 @@
 
       var foot = $('foot');
       foot.innerHTML = '';
-      if (d.isPast === '1' || d.isPast === 'true') {
+      var isPast = (d.isPast === '1' || d.isPast === 'true');
+      if (isPast) {
         foot.style.display = 'none';
       } else {
         foot.style.display = '';
         foot.appendChild(buildFoot(d.myStatus || 'accepted'));
+      }
+
+      // Delete button — only visible when the current user is the organiser.
+      var scheduleEl = document.querySelector('.sky-schedule');
+      var currentUserId = scheduleEl ? scheduleEl.getAttribute('data-current-user-id') : '';
+      var organiserId = d.organizerId || '';
+      if (currentUserId && organiserId && String(currentUserId) === String(organiserId)) {
+        if (foot.style.display === 'none') {
+          foot.style.display = '';
+        }
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'sky-btn sky-panel__delete sky-panel__foot-btn';
+        del.appendChild(makeIcon('Trash', 14));
+        del.appendChild(document.createTextNode('Delete'));
+        foot.appendChild(del);
       }
     }
 
@@ -648,6 +665,38 @@
       var status = btn.classList.contains('sky-panel__decline') || btn.classList.contains('sky-panel__decline-outline')
         ? 'declined' : 'accepted';
       postRsvp(current.meetId, status, btn);
+    });
+
+    panel.addEventListener('click', function (e) {
+      var btn = e.target.closest('.sky-panel__delete');
+      if (!btn || !current.meetId) return;
+      if (!window.confirm('Delete this meeting? This will remove it for everyone invited.')) return;
+      btn.disabled = true;
+      var token = (typeof getCsrfToken === 'function') ? getCsrfToken() : '';
+      fetch('/schedule/meeting/' + encodeURIComponent(current.meetId) + '/delete/', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': token, 'X-Requested-With': 'XMLHttpRequest' },
+      })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        btn.disabled = false;
+        if (!res.ok || !res.body || !res.body.ok) {
+          if (typeof showToast === 'function') showToast((res.body && res.body.error) || 'Could not delete.', 'error');
+          return;
+        }
+        // Remove every card on the page that targets this meeting id.
+        document.querySelectorAll('[data-meet-id="' + current.meetId + '"]').forEach(function (trigger) {
+          var card = trigger.closest('.sky-event, .sky-month__event, .sky-meeting, .sky-past');
+          if (card) card.remove();
+        });
+        closePanel();
+        if (typeof showToast === 'function') showToast('Meeting deleted.', 'success');
+      })
+      .catch(function () {
+        btn.disabled = false;
+        if (typeof showToast === 'function') showToast('Network error — try again.', 'error');
+      });
     });
 
     document.addEventListener('click', function (e) {
