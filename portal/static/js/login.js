@@ -68,12 +68,15 @@
       });
     }
 
-    /* Admin/User toggle is cosmetic — form always posts to the same endpoint. */
     document.querySelectorAll('.sky-toggle__btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.sky-toggle__btn').forEach(b =>
           b.classList.remove('sky-toggle__btn--active'));
         btn.classList.add('sky-toggle__btn--active');
+        const isAdminInput = document.getElementById('loginIsAdmin');
+        if (isAdminInput) {
+          isAdminInput.value = btn.dataset.admin === 'true' ? 'true' : 'false';
+        }
       });
     });
   });

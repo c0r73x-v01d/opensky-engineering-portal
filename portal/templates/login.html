@@ -143,6 +143,7 @@
 
       <form method="post" action="{% url 'login' %}" id="loginForm" novalidate>
         {% csrf_token %}
+        <input type="hidden" name="is_admin_login" id="loginIsAdmin" value="false">
 
         <div class="sky-field">
           <label class="sky-field__label" for="loginUser">Username</label>
@@ -238,6 +239,18 @@
                    placeholder="you@sky.uk" autocomplete="email"
                    value="{{ form.data.email|default:'' }}">
           </div>
+        </div>
+
+        <div class="sky-field">
+          <label class="sky-field__label" for="regDob">Date of Birth</label>
+          <div class="sky-field__wrap">
+            <input class="sky-field__input"
+                   id="regDob" name="dob" type="date"
+                   max="{{ dob_max_date|date:'Y-m-d' }}"
+                   value="{{ form.data.dob|default:'' }}"
+                   required>
+          </div>
+          <div class="sky-field__hint">You must be at least 18 years old.</div>
         </div>
 
         <div class="sky-field">

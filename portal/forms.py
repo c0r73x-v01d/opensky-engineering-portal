@@ -11,14 +11,23 @@ from django.utils import timezone
 from .models import Team, User
 
 
+# Minimum age for self-registration. Mirrors the constant used by the
+# profile view; kept in sync with portal.context_processors.
+_MIN_DOB_AGE_YEARS = 18
+
+
 class RegisterForm(UserCreationForm):
     first_name = forms.CharField(max_length=50, required=True)
     last_name = forms.CharField(max_length=50, required=True)
     email = forms.EmailField(max_length=100, required=True)
+    dob = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+    )
 
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'email',
+        fields = ('first_name', 'last_name', 'username', 'email', 'dob',
                   'password1', 'password2')
 
     def __init__(self, *args, **kwargs):
@@ -39,6 +48,29 @@ class RegisterForm(UserCreationForm):
         if User.objects.filter(email__iexact=email).exists():
             raise ValidationError('An account with this email already exists.')
         return email
+
+    def clean_dob(self):
+        dob = self.cleaned_data['dob']
+        today = timezone.localdate()
+        if dob > today:
+            raise ValidationError('Date of birth cannot be in the future.')
+        # Calculate full years, accounting for whether the birthday has
+        # already occurred this calendar year.
+        age = today.year - dob.year - (
+            (today.month, today.day) < (dob.month, dob.day)
+        )
+        if age < _MIN_DOB_AGE_YEARS:
+            raise ValidationError(
+                f'You must be at least {_MIN_DOB_AGE_YEARS} years old to register.'
+            )
+        return dob
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.dob = self.cleaned_data['dob']
+        if commit:
+            user.save()
+        return user
 
 
 # ════════════════════════════════════════════════════════════════════

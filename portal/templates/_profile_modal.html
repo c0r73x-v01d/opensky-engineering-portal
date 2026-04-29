@@ -65,9 +65,12 @@
             </div>
             <div class="read-field">
               <div class="read-field__label">Date of Birth</div>
-              <div class="read-field__value">
-                {% if user.dob %}{{ user.dob|date:"j F Y" }}{% else %}—{% endif %}
-              </div>
+              <input type="date"
+                     name="dob"
+                     class="dob-input"
+                     value="{% if user.dob %}{{ user.dob|date:'Y-m-d' }}{% endif %}"
+                     max="{{ dob_max_date|date:'Y-m-d' }}"
+                     required />
             </div>
             <div class="read-field field-group--full">
               <div class="read-field__label">Email</div>

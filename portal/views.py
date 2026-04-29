@@ -2,11 +2,13 @@
 OpenSky Engineering Portal views.
 """
 import datetime
+import functools
 import json
 
 from django.contrib import messages as dj_messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
 from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
@@ -15,6 +17,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
+from .context_processors import _max_dob_today
 from .forms import MeetingForm, RegisterForm
 from .models import (
     Action,
@@ -42,6 +45,78 @@ from .services.schedule import assemble_for_user
 # ════════════════════════════════════════════════════════════════════
 # === AUTH ===
 # ════════════════════════════════════════════════════════════════════
+class SkyLoginView(LoginView):
+    """
+    Login view that supports two flows from the same form:
+    a regular user login (default) and an explicit "Admin Login" flow
+    activated by the toggle in login.html, which sends `is_admin_login=true`
+    as a hidden field.
+
+    When admin login is requested:
+      - the authenticated user must have is_staff=True, otherwise the
+        login is rejected (form-level error, no session created);
+      - after a successful auth the user is redirected to /admin/
+        instead of the default LOGIN_REDIRECT_URL.
+
+    Regular logins keep the standard Django behaviour: redirect to ?next=
+    if present, otherwise LOGIN_REDIRECT_URL ('/').
+    """
+    template_name = 'login.html'
+    redirect_authenticated_user = True
+
+    def _is_admin_request(self):
+        return (self.request.POST.get('is_admin_login') or '').strip().lower() == 'true'
+
+    def form_valid(self, form):
+        # form.get_user() is the authenticated User instance — auth has
+        # already happened by this point, but no session has been created
+        # yet, so refusing now leaves the user logged out.
+        if self._is_admin_request() and not form.get_user().is_staff:
+            form.add_error(None, 'This account does not have admin privileges.')
+            return self.form_invalid(form)
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        if self._is_admin_request():
+            return '/admin/'
+        return super().get_success_url()
+
+
+def team_member_required(active_page=''):
+    """
+    Gate a view behind 'user has been assigned to a team'.
+
+    Self-registered users start out with an Employee row whose teamId is
+    NULL — they're authenticated but not yet placed in an engineering
+    team. Org-wide pages (Teams, Organisation, Reports) shouldn't expose
+    sensitive structural data to people in that state. This decorator
+    short-circuits to a friendly empty-state page rendered server-side
+    (no redirect, so the user stays on the URL they tried).
+
+    Staff (is_staff=True) always pass — admins legitimately need access
+    even though they typically don't have an Employee row themselves.
+
+    Use as @team_member_required('teams') — active_page is forwarded to
+    the empty-state template so the navbar still highlights the section
+    the user tried to reach.
+    """
+    def _decorator(view_func):
+        @functools.wraps(view_func)
+        @login_required
+        def _wrapped(request, *args, **kwargs):
+            user = request.user
+            if user.is_staff:
+                return view_func(request, *args, **kwargs)
+            emp = Employee.objects.filter(user=user).first()
+            if emp and emp.teamId_id is not None:
+                return view_func(request, *args, **kwargs)
+            return render(request, 'no_team.html', {
+                'active_page': active_page,
+            })
+        return _wrapped
+    return _decorator
+
+
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('home')
@@ -62,6 +137,7 @@ def register_view(request):
         'form': form,
         'register_form': form,
         'active_auth_view': 'Register',
+        'dob_max_date': _max_dob_today(),
     })
 
 
@@ -545,6 +621,7 @@ def home(request):
 # ════════════════════════════════════════════════════════════════════
 
 _ABOUT_ME_MAX_LEN = 1000
+_MIN_DOB_AGE_YEARS = 18
 
 
 @login_required
@@ -602,7 +679,7 @@ def profile_update(request):
         dj_messages.success(request, 'Password updated.')
         return redirect('home')
 
-    # ---- Personal: about_me + optional avatar ----
+    # ---- Personal: about_me + optional avatar + DOB ----
     about_me = (request.POST.get('about_me') or '').strip()
     if len(about_me) > _ABOUT_ME_MAX_LEN:
         dj_messages.error(
@@ -611,6 +688,45 @@ def profile_update(request):
         )
         return redirect('home')
 
+    # DOB is required and must place the user at or above the minimum age.
+    # We only run the validator if the field is actually present in the
+    # POST — older HTML caches without the new input shouldn't wipe an
+    # existing value. The field is required in the form, so an empty
+    # string from a freshly-rendered modal is treated as a validation
+    # failure rather than a clear-the-field action.
+    new_dob = None
+    dob_changed = False
+    raw_dob = request.POST.get('dob')
+    if raw_dob is not None:
+        raw_dob = raw_dob.strip()
+        if not raw_dob:
+            dj_messages.error(request, 'Date of birth is required.')
+            return redirect('home')
+        try:
+            new_dob = datetime.date.fromisoformat(raw_dob)
+        except ValueError:
+            dj_messages.error(request, 'Date of birth is not a valid date.')
+            return redirect('home')
+
+        today = timezone.localdate()
+        if new_dob > today:
+            dj_messages.error(request, 'Date of birth cannot be in the future.')
+            return redirect('home')
+
+        # Compute age accounting for whether the birthday has occurred yet
+        # this year. (today.year - dob.year) over-counts before the birthday.
+        age = today.year - new_dob.year - (
+            (today.month, today.day) < (new_dob.month, new_dob.day)
+        )
+        if age < _MIN_DOB_AGE_YEARS:
+            dj_messages.error(
+                request,
+                f'You must be at least {_MIN_DOB_AGE_YEARS} years old.',
+            )
+            return redirect('home')
+
+        dob_changed = (user.dob != new_dob)
+
     avatar_file = request.FILES.get('avatar')
     changed_fields = []
 
@@ -618,6 +734,10 @@ def profile_update(request):
         if about_me != (user.about_me or ''):
             user.about_me = about_me
             changed_fields.append('about_me')
+
+        if dob_changed:
+            user.dob = new_dob
+            changed_fields.append('dob')
 
         if avatar_file:
             # Pillow opens lazily on .save(); ImageField will reject non-images.
@@ -678,10 +798,42 @@ def schedule(request):
             })
     ctx['managed_teams'] = [{'id': tid, 'name': name} for tid, name in managed_teams]
     ctx['team_members_by_team_json'] = json.dumps(team_members_by_team)
-    user_is_employee = Employee.objects.filter(user=user).exists()
-    ctx['user_is_employee'] = user_is_employee
-    ctx['user_can_manage_team'] = bool(managed_teams)
-    ctx['user_can_create_meeting'] = bool(managed_teams) or user_is_employee
+    ctx['user_is_employee'] = Employee.objects.filter(user=user).exists()
+
+    # Prefill the meeting modal when the user arrives via "Schedule Meeting"
+    # from a team detail panel: ?compose=team&team_id=N.
+    # If the user manages that team, the meeting modal opens in 'team' mode
+    # with the host_team selector preset. Otherwise it opens in 'personal'
+    # mode with the team's members preloaded as invitees.
+    prefill = {'open': False}
+    if (request.GET.get('compose') or '').strip().lower() == 'team':
+        try:
+            req_team_id = int(request.GET.get('team_id') or 0)
+        except ValueError:
+            req_team_id = 0
+        if req_team_id:
+            prefill['open'] = True
+            prefill['team_id'] = req_team_id
+            if req_team_id in managed_team_ids:
+                prefill['mode'] = 'team'
+            else:
+                prefill['mode'] = 'personal'
+                # Build the personal-invitees list excluding the current user.
+                invitees = []
+                personal_qs = (
+                    Employee.objects
+                    .filter(teamId_id=req_team_id)
+                    .exclude(user=user)
+                    .select_related('user')
+                )
+                for emp in personal_qs:
+                    u = emp.user
+                    invitees.append({
+                        'user_id': u.pk,
+                        'name': f'{u.first_name} {u.last_name}'.strip() or u.username,
+                    })
+                prefill['invitees'] = invitees
+    ctx['meeting_prefill_json'] = json.dumps(prefill)
     return render(request, 'schedule.html', ctx)
 
 
@@ -996,7 +1148,7 @@ def _serialize_team(t):
     }
 
 
-@login_required
+@team_member_required('teams')
 def teams(request):
     teams_qs = (
         Team.objects
@@ -1034,7 +1186,7 @@ def teams(request):
     })
 
 
-@login_required
+@team_member_required('organisation')
 def organisation(request):
     type_colours = {
         "Platform": "#0010f5",
@@ -1213,6 +1365,36 @@ def messages_view(request):
     current_folder = request.GET.get('folder', 'inbox')
     starred_ids = set(request.session.get('starred_messages', []))
 
+    # Prefill recipients for the compose modal — set when the user arrives
+    # via "Email Team" from a team detail panel: ?compose=team&team_id=N.
+    # The frontend opens the compose overlay automatically and pre-populates
+    # the recipient chips. The current user is excluded — you don't email
+    # yourself.
+    prefill_recipients = []
+    prefill_compose_open = False
+    compose_mode = (request.GET.get('compose') or '').strip().lower()
+    if compose_mode == 'team':
+        try:
+            team_id = int(request.GET.get('team_id') or 0)
+        except ValueError:
+            team_id = 0
+        if team_id:
+            members_qs = (
+                Employee.objects
+                .filter(teamId_id=team_id)
+                .exclude(user=request.user)
+                .select_related('user')
+            )
+            for emp in members_qs:
+                u = emp.user
+                full = f'{u.first_name} {u.last_name}'.strip()
+                label = full or u.username
+                # Compose dropdown labels follow the existing convention:
+                # "First Last (username)" or just "username" if no real name.
+                display = f'{label} ({u.username})' if full else u.username
+                prefill_recipients.append({'id': u.pk, 'name': display})
+            prefill_compose_open = True
+
     inbox_qs = Message.objects.filter(
         recipients__user=request.user,
         status='sent',
@@ -1259,6 +1441,8 @@ def messages_view(request):
         'draft_count': draft_qs.count(),
         'unread_count': inbox_qs.filter(recipients__isRead=False).count(),
         'employees': User.objects.all().order_by('first_name', 'last_name', 'username'),
+        'prefill_recipients': prefill_recipients,
+        'prefill_compose_open': prefill_compose_open,
     }
 
     return render(request, 'messages.html', context)
@@ -1414,7 +1598,7 @@ def message_delete(request, message_id):
 
     return _messages_redirect(folder)
 
-@login_required
+@team_member_required('reports')
 def reports(request):
     teams = (
         Team.objects
@@ -1457,7 +1641,7 @@ def reports(request):
     return render(request, 'reports.html', context)
 
 
-@login_required
+@team_member_required('reports')
 def export_pdf(request):
     from django.http import HttpResponse
     try:
@@ -1514,7 +1698,7 @@ def export_pdf(request):
     return response
 
 
-@login_required
+@team_member_required('reports')
 def export_excel(request):
     from django.http import HttpResponse
     try:
