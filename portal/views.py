@@ -13,7 +13,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from .forms import MeetingForm, RegisterForm
 from .models import (
@@ -826,6 +826,41 @@ def meeting_create(request):
             'end': meeting.endedAt.isoformat() if meeting.endedAt else None,
         },
     })
+
+
+# ════════════════════════════════════════════════════════════════════
+# === SCHEDULE — USER SEARCH (for the guests autocomplete) ===
+# ════════════════════════════════════════════════════════════════════
+@login_required
+@require_GET
+def meeting_user_search(request):
+    q = (request.GET.get('q') or '').strip()
+    if len(q) < 2:
+        return JsonResponse({'results': []})
+    qs = (
+        User.objects
+        .exclude(pk=request.user.pk)
+        .filter(
+            Q(first_name__icontains=q)
+            | Q(last_name__icontains=q)
+            | Q(username__icontains=q)
+            | Q(email__icontains=q)
+        )
+        .select_related('employee')
+        .distinct()
+        .order_by('first_name', 'last_name', 'username')[:8]
+    )
+    results = []
+    for u in qs:
+        full = f'{u.first_name} {u.last_name}'.strip() or u.username
+        emp = getattr(u, 'employee', None)
+        results.append({
+            'id': u.pk,
+            'name': full,
+            'email': u.email,
+            'position': (emp.position if emp else '') or '',
+        })
+    return JsonResponse({'results': results})
 
 
 @login_required
