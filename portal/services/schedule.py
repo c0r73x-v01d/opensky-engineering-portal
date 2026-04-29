@@ -48,6 +48,7 @@ class EventVM:
     host: str               # team name (empty for personal without team)
     organizer: str
     organizer_role: str
+    organizer_user_id: int  # 0 if no resolvable organiser
     agenda: str
     my_status: str          # 'accepted' | 'pending' | 'declined'
     attendees_json: str     # JSON-encoded list of {name, role, status}
@@ -203,6 +204,7 @@ def serialise_meeting(meeting: Meeting, current_user_id: int,
         host=_host_name(meeting),
         organizer=organizer_full,
         organizer_role=_organizer_role(meeting),
+        organizer_user_id=(organiser_user.pk if organiser_user else 0),
         agenda=(meeting.message or '').strip(),
         my_status=_my_status(meeting, current_user_id),
         attendees_json=json.dumps(attendees),

@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block content %}
-<main class="sky-schedule" data-view="weekly">
+<main class="sky-schedule" data-view="weekly" data-current-user-id="{{ user.userId }}">
   <header class="sky-schedule__header">
     <div class="sky-schedule__title-group">
       <h1 class="sky-schedule__title">Schedule</h1>
@@ -126,6 +126,7 @@
               data-type="{{ e.type }}"
               {% if e.cadence %}data-cadence="{{ e.cadence }}"{% endif %}
               {% if e.host %}data-host="{{ e.host }}"{% endif %}
+              {% if e.organizer_user_id %}data-organizer-id="{{ e.organizer_user_id }}"{% endif %}
               {% if e.organizer %}data-organizer="{{ e.organizer }}"
               data-organizer-role="{{ e.organizer_role }}"{% endif %}
               {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
@@ -171,6 +172,7 @@
               data-type="{{ e.type }}"
               {% if e.cadence %}data-cadence="{{ e.cadence }}"{% endif %}
               {% if e.host %}data-host="{{ e.host }}"{% endif %}
+              {% if e.organizer_user_id %}data-organizer-id="{{ e.organizer_user_id }}"{% endif %}
               {% if e.organizer %}data-organizer="{{ e.organizer }}"
               data-organizer-role="{{ e.organizer_role }}"{% endif %}
               {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
@@ -236,7 +238,8 @@
                 data-type="{{ e.type }}"
                 {% if e.cadence %}data-cadence="{{ e.cadence }}"{% endif %}
                 {% if e.host %}data-host="{{ e.host }}"{% endif %}
-                {% if e.organizer %}data-organizer="{{ e.organizer }}"
+                {% if e.organizer_user_id %}data-organizer-id="{{ e.organizer_user_id }}"{% endif %}
+              {% if e.organizer %}data-organizer="{{ e.organizer }}"
                 data-organizer-role="{{ e.organizer_role }}"{% endif %}
                 {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
                 data-my-status="{{ e.my_status }}"{% if e.is_past %} data-is-past="1"{% endif %}
@@ -279,6 +282,7 @@
               data-platform="{{ e.platform }}"
               data-type="{{ e.type }}"
               {% if e.host %}data-host="{{ e.host }}"{% endif %}
+              {% if e.organizer_user_id %}data-organizer-id="{{ e.organizer_user_id }}"{% endif %}
               {% if e.organizer %}data-organizer="{{ e.organizer }}"
               data-organizer-role="{{ e.organizer_role }}"{% endif %}
               {% if e.agenda %}data-agenda="{{ e.agenda }}"{% endif %}
